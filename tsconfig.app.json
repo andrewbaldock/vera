@@ -16,7 +16,14 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
+    /* Path alias — shadcn/ui convention. No baseUrl: deprecated in TS 6,
+       and paths resolve relative to this file without it. */
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+
     /* Linting */
+    "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
