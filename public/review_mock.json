@@ -1,0 +1,228 @@
+{
+  "id": "souj5sd12c8a3f",
+  "name": "Annual Compliance Report - Northeast Region.pdf",
+  "uploaded_at": "2025-03-20T14:30:00Z",
+  "status": "on_review",
+  "version": 2,
+  "document": {
+    "pdf_url": "https://example.com/pdf/example_document.pdf",
+    "pages": [
+      { "page_num": 1, "height": 792, "width": 612 },
+      { "page_num": 2, "height": 792, "width": 612 },
+      { "page_num": 3, "height": 792, "width": 612 },
+      { "page_num": 4, "height": 792, "width": 612 },
+      { "page_num": 5, "height": 792, "width": 612 },
+      { "page_num": 6, "height": 792, "width": 612 },
+      { "page_num": 7, "height": 792, "width": 612 },
+      { "page_num": 8, "height": 792, "width": 612 },
+      { "page_num": 9, "height": 792, "width": 612 },
+      { "page_num": 10, "height": 792, "width": 612 },
+      { "page_num": 11, "height": 792, "width": 612 },
+      { "page_num": 12, "height": 792, "width": 612 },
+      { "page_num": 13, "height": 792, "width": 612 },
+      { "page_num": 14, "height": 792, "width": 612 },
+      { "page_num": 15, "height": 792, "width": 612 },
+      { "page_num": 16, "height": 792, "width": 612 },
+      { "page_num": 17, "height": 792, "width": 612 },
+      { "page_num": 18, "height": 792, "width": 612 },
+      { "page_num": 19, "height": 792, "width": 612 },
+      { "page_num": 20, "height": 792, "width": 612 },
+      { "page_num": 21, "height": 792, "width": 612 },
+      { "page_num": 22, "height": 792, "width": 612 },
+      { "page_num": 23, "height": 792, "width": 612 },
+      { "page_num": 24, "height": 792, "width": 612 },
+      { "page_num": 25, "height": 792, "width": 612 },
+      { "page_num": 26, "height": 792, "width": 612 },
+      { "page_num": 27, "height": 792, "width": 612 },
+      { "page_num": 28, "height": 792, "width": 612 },
+      { "page_num": 29, "height": 792, "width": 612 },
+      { "page_num": 30, "height": 792, "width": 612 },
+      { "page_num": 31, "height": 792, "width": 612 },
+      { "page_num": 32, "height": 792, "width": 612 },
+      { "page_num": 33, "height": 792, "width": 612 },
+      { "page_num": 34, "height": 792, "width": 612 }
+    ]
+  },
+  "user": {
+    "id": "user_42",
+    "first_name": "Jane",
+    "last_name": "Cooper"
+  },
+  "issues": [
+    {
+      "id": "issue_1",
+      "title": "Missing Summary of Findings",
+      "description": "The report must include a summary of findings section. This section was not detected in the uploaded document.",
+      "severity": "critical",
+      "page": 3
+    },
+    {
+      "id": "issue_2",
+      "title": "Effective Date Mismatch",
+      "description": "The effective date on page 3 (01/15/2024) doesn't match the inspection date on the cover page (03/10/2025).",
+      "severity": "critical",
+      "page": 1
+    },
+    {
+      "id": "issue_3",
+      "title": "Missing Comparable Sale",
+      "description": "The sales comparison approach requires at least 3 comparable sales. Only 2 were found in Section 7.",
+      "severity": "critical",
+      "page": 14
+    },
+    {
+      "id": "issue_4",
+      "title": "Appraiser Certification Unsigned",
+      "description": "The appraiser certification on page 33 is missing a signature. All reports must be signed before submission.",
+      "severity": "critical",
+      "page": 33
+    },
+    {
+      "id": "issue_5",
+      "title": "GLA Calculation Discrepancy",
+      "description": "Gross Living Area reported as 2,450 sq ft in the executive summary but the floor plan sketch on page 28 calculates to 2,380 sq ft. Difference exceeds the 2% tolerance.",
+      "severity": "major",
+      "page": 28
+    },
+    {
+      "id": "issue_6",
+      "title": "Inconsistent Sale Price — Comp #2",
+      "description": "Comparable Sale #2 is listed as $292,000 on the adjustment grid (page 14) but $289,000 in the detailed writeup (page 15).",
+      "severity": "major",
+      "page": 14
+    },
+    {
+      "id": "issue_7",
+      "title": "Cost Approach Math Error",
+      "description": "The depreciated cost of improvements ($315,560) minus entrepreneurial adjustment ($53,716) plus site value ($45,000) should equal $306,844, but page 18 shows $308,120.",
+      "severity": "major",
+      "page": 18
+    },
+    {
+      "id": "issue_8",
+      "title": "Missing Flood Zone Documentation",
+      "description": "FEMA flood zone determination references Map #17167C0215E but no supporting documentation or map excerpt is included in the addenda.",
+      "severity": "major",
+      "page": 7
+    },
+    {
+      "id": "issue_9",
+      "title": "Neighborhood Boundary Inconsistency",
+      "description": "The neighborhood boundaries described on page 9 (Springfield Blvd to Route 54) don't match the location map on page 27 which shows a different southern boundary.",
+      "severity": "major",
+      "page": 9
+    },
+    {
+      "id": "issue_10",
+      "title": "Zoning Compliance Not Verified",
+      "description": "Site analysis states zoning compliance is 'Legal conforming' but no verification source or zoning letter is referenced.",
+      "severity": "major",
+      "page": 7
+    },
+    {
+      "id": "issue_11",
+      "title": "Depreciation Table Rounding Error",
+      "description": "Individual depreciation items in the table on page 12 sum to $116,105 but the total line shows $116,200. Rounding differences should not exceed $50.",
+      "severity": "major",
+      "page": 12
+    },
+    {
+      "id": "issue_12",
+      "title": "Missing Prior Sale Data — Comp #1",
+      "description": "Prior sale/transfer history for Comparable #1 shows 'N/A' but county records indicate a transfer in 2019. This must be researched and disclosed.",
+      "severity": "major",
+      "page": 15
+    },
+    {
+      "id": "issue_13",
+      "title": "Low Resolution Exterior Photos",
+      "description": "2 of 6 exterior photographs on pages 21-22 have resolution below the 300 DPI minimum required threshold.",
+      "severity": "minor",
+      "page": 21
+    },
+    {
+      "id": "issue_14",
+      "title": "Incomplete Market Trend Data",
+      "description": "The market conditions table on page 10 is missing Q3 2024 data. All four quarters should be represented for a complete 12-month trend analysis.",
+      "severity": "minor",
+      "page": 10
+    },
+    {
+      "id": "issue_15",
+      "title": "Methodology Section Incomplete",
+      "description": "The scope of work on page 31 does not describe the regression analysis methodology referenced in the GLA adjustment rationale on page 16.",
+      "severity": "minor",
+      "page": 31
+    },
+    {
+      "id": "issue_16",
+      "title": "Comparable Photo Caption Mismatch",
+      "description": "The photo labeled 'Front Exterior — 509 Birch Lane' on page 26 appears to show the same property as the photo on page 24 labeled '118 Oak Avenue'.",
+      "severity": "minor",
+      "page": 26
+    },
+    {
+      "id": "issue_17",
+      "title": "Site Improvement Cost Not Sourced",
+      "description": "The renovation cost estimates in the table on page 6 (totaling $78,700) are listed without attribution. Source should be noted (owner interview, receipts, etc).",
+      "severity": "minor",
+      "page": 6
+    },
+    {
+      "id": "issue_18",
+      "title": "Exposure Time Justification Weak",
+      "description": "Exposure time estimate of 30-60 days on page 20 references average DOM of 45 days but doesn't account for the subject's specific characteristics or price point.",
+      "severity": "minor",
+      "page": 20
+    },
+    {
+      "id": "issue_19",
+      "title": "Basement Finish Percentage Inconsistency",
+      "description": "Basement finish is reported as 65% on page 3 and page 6, but the improvement analysis on page 11 references 700 sq ft of 1,080 sq ft which is 64.8%.",
+      "severity": "minor",
+      "page": 11
+    },
+    {
+      "id": "issue_20",
+      "title": "Missing Energy Efficiency Details",
+      "description": "The HVAC section notes a 96% AFUE furnace and 16 SEER A/C but the energy efficient items row in the sales comparison grid is marked 'Typical' without elaboration.",
+      "severity": "minor",
+      "page": 14
+    },
+    {
+      "id": "issue_21",
+      "title": "Plat Map Scale Not Indicated",
+      "description": "The subdivision plat sketch on page 28 is labeled 'Not to Scale' but should include approximate dimensions for the surrounding lots for context.",
+      "severity": "minor",
+      "page": 28
+    },
+    {
+      "id": "issue_22",
+      "title": "Active Listing Data Stale",
+      "description": "The active listings table on page 30 does not include a 'data as of' date. Active listing data should be dated within 7 days of the report date.",
+      "severity": "minor",
+      "page": 30
+    },
+    {
+      "id": "issue_23",
+      "title": "Garage Dimensions Not Verified",
+      "description": "Garage described as 'approximately 22 x 24 feet' on page 5. The word 'approximately' suggests dimensions were estimated rather than measured.",
+      "severity": "minor",
+      "page": 5
+    },
+    {
+      "id": "issue_24",
+      "title": "Missing Sprinkler System in Site Improvements",
+      "description": "The automatic sprinkler system mentioned on page 8 is not reflected in the site improvements cost table on page 6 or the depreciation schedule.",
+      "severity": "minor",
+      "page": 8
+    },
+    {
+      "id": "issue_25",
+      "title": "Formatting: Inconsistent Currency Notation",
+      "description": "Some values use comma separators (e.g., $285,000) while others on page 12 omit them (e.g., $38500). Currency formatting should be consistent throughout.",
+      "severity": "minor",
+      "page": 12
+    }
+  ]
+}
