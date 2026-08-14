@@ -32,6 +32,7 @@ Fixing happens in the user's own system, and the corrected version is uploaded s
 - The mock JSON carries a working URL to the local PDF so the document actually loads.
 - Header: document title, version number, uploaded-at. Small user avatar/menu (the API gives us a user, so show one).
 - A back link to the (out-of-scope) document list. Inert for now — it establishes that this is a detail view, not the whole product.
+- **Works properly on iPhone and iPad**, in the right shape for each — not a squeezed desktop layout. Tested on real devices. See §6d.
 
 ### Out — because the brief puts it outside this ticket
 
@@ -68,7 +69,7 @@ Everything upstream and downstream belongs to teammates. The loop back to Upload
 
 | # | Criterion | Satisfied by |
 |---|---|---|
-| 1 | See the document, search text across the entire PDF with CMD+F | PDF rendered with a text layer for **every** page, all in the DOM at once |
+| 1 | See the document, search text across the entire PDF with CMD+F | A text layer for **every** page, all in the DOM at once, so the platform's own find can reach any of them. Canvases render only near the viewport — see §6d for why that separation matters. |
 | 2 | Cannot submit until all critical + major are resolved; minor may be ignored | `canSubmit` derived from the current issue list — no stored flag |
 | 3 | The page clearly communicates what's blocking submission | Blocking summary tied to the specific blockers, not a generic disabled button |
 
@@ -133,6 +134,66 @@ Cost: 34 pages of canvas + text in the DOM. Fine at this size. Virtualization is
 **C. Single page + intercept `CMD+F` with a custom search UI** over pdf.js's extracted text for all pages. Keeps the single-page look, and gives better search UX than the browser (result counts, next/prev, cross-page jumps). But it hijacks a browser shortcut, and a reviewer reading the criterion literally may score it as not meeting the ask.
 
 **Decided: A.** It satisfies the criterion by construction rather than by cleverness, and it costs the least code. This is the decision the whole viewer hangs off — the acceptance criterion dictated the architecture, not the other way round.
+
+**Checked before committing to it, not assumed.** This is the only genuinely unknown part of the build, so before writing any viewer code I went and looked at react-pdf's live demo myself. Two things were immediately clear: native `CMD+F` finds and highlights text in the rendered document, and the rendering is faithful — real type, tables and vector charts, not a degraded approximation.
+
+That was enough to settle the library choice and to know acceptance criterion #1 was achievable rather than hoping so. A bad answer here would have invalidated the viewer architecture, and discovering that late would have been expensive.
+
+**Licensing was part of the choice, not an afterthought.** `react-pdf` is MIT and sits on Mozilla's `pdfjs-dist`, which is Apache-2.0 — both permissive, both free, and both durably so given pdf.js is maintained by Mozilla rather than by a company that needs to monetise it. Several of the alternatives are commercial: `@react-pdf-viewer` doesn't publish an SPDX identifier at all, only a link to a license page.
+
+That matters more here than on a typical project. This is a document-processing product in mortgage and appraisal — a regulated industry, where a viewer sits in the path of every loan file. Picking a dependency whose terms could change, or that needs a per-seat negotiation to scale, is a procurement and audit problem long before it's an engineering one. MIT plus Apache-2.0 is a dependency nobody has to have a conversation about.
+
+One known upstream issue to watch during implementation ([wojtekmaj/react-pdf#1848](https://github.com/wojtekmaj/react-pdf/issues/1848)): when every page renders inside a single `<Document>`, pages after the first can pick up a scaled `scaleX` on the text layer in some documents, which misaligns the invisible text from the visible glyphs. Symptom is find highlighting the *wrong place* rather than failing — worth checking past page 20.
+
+### Three things the viewer spike taught us
+
+A standalone harness — [`src/demo/ReactPdfDemo.tsx`](../src/demo/ReactPdfDemo.tsx), **kept in the repo rather than deleted** — proved the four behaviours the viewer depends on — all pages mounted with text layers, whole-document find, jump-to-page, and knowing which page is in view. All four work. Getting there surfaced three problems that would each have been much more expensive to meet later.
+
+**1. Every overlay must clear react-pdf's stacking, or it stops accepting clicks.**
+
+react-pdf ships pdf.js's stylesheet, which sets:
+
+```css
+.textLayer       { position: absolute; inset: 0; z-index: 2 }
+.annotationLayer { z-index: 3 }
+```
+
+The text layer is the invisible copy of the page's text laid over the canvas — the thing that makes `CMD+F` work at all. At an equal `z-index` the pages win on DOM order, so a toolbar at `z-index: 2` gets covered by the text layer of every page you have scrolled past. It still *looks* correct; the elements are transparent. But `elementFromPoint` over a button returns a `<span>` of invisible PDF text, so hover stops showing a pointer and clicks land on the document instead.
+
+The symptom is bizarre and specific — **controls work until the first scroll, then go dead** — which is a long way from the cause.
+
+This affects three things in the real build, not just the spike: the **status bar** sits above the viewer, the **severity strip** beside it, and the **confirmation dialog** over everything. Every one of them needs to clear `z-index: 3`, and the reason belongs in a comment where the value is set, because `zIndex: 10` on its own looks arbitrary.
+
+**2. Page heights must be reserved before the canvases paint, and the API's dimensions are what makes that possible.**
+
+All 34 pages mount at once, but each renders asynchronously — until a canvas paints, its wrapper is a few pixels tall. Jumping to page 30 therefore scrolls to where page 30 is *at that instant*, near the top, and then the pages below finish rendering, the document grows, and the user ends up nowhere near what they asked for.
+
+Setting each wrapper's height from the API's per-page `height`/`width` fixes it: the document is its full length from the first paint, so scroll targets are stable.
+
+This reframes those fields. They looked like data for drawing the severity strip; they are actually **what makes scrolling correct**. A viewer that ignores them can't reliably navigate to a page — which is most of what this page does.
+
+**3. "Which page am I on" is a measurement, not an observation.**
+
+`IntersectionObserver` was the obvious tool and the wrong one. Its callback fires only when a threshold is *crossed*, so pages far from the viewport keep reporting whatever ratio they last had, and a page taller than the viewport can never reach the higher thresholds at all. The answer froze after the first scroll.
+
+What works is measuring against a *reading line* just below the toolbar: the current page is the last one whose top has scrolled past it. Deterministic, correct for pages taller than the viewport, and cheap — a rAF-throttled scroll handler that exits the loop early, since pages are in document order.
+
+**Scrolling is smooth, but honours `prefers-reduced-motion`.** Moving the page tells the user *where* they went in a way a hard jump doesn't; for people who've asked for reduced motion, a long animated scroll is nauseating rather than informative.
+
+**The harness is kept, not deleted.** It's the cheapest way to isolate a viewer problem from the rest of the app — if find or scrolling misbehaves later, the question "is it react-pdf or is it us?" is one page load away. It's also the evidence that the riskiest part of the build was tested rather than assumed.
+
+### D1b — Which library renders it — **DECIDED: `react-pdf`, wrapping Mozilla's `pdf.js`**
+
+Rendering a PDF in a browser is not something to hand-roll. PDF is a thirty-year-old spec — fonts, encodings, page geometry, malformed files in the wild — and getting it right is a specialist's job. The only serious open engine is **Mozilla's `pdf.js`**: the exact renderer built into Firefox, so it is exercised by a browser's worth of users every day rather than by a library's worth. It is Apache-2.0, first committed in **2011**, still actively maintained by Mozilla (last release mid-2026), and sits at roughly **53k GitHub stars**. Its npm engine package `pdfjs-dist` pulls about **23 million downloads a week**. As dependencies go this is near the safe end of the spectrum: an institutional owner, a fifteen-year track record, an enormous install base, and a permissive licence. I am not betting the build on a solo weekend project.
+
+`pdf.js` is the engine — a canvas painter and a text-layer builder — but it ships no React. Two ways to consume it:
+
+- **Raw `pdfjs-dist`** — drive the engine directly and own the canvas, the text layer, and the worker lifecycle myself. Most control, but it means re-implementing a React binding that already exists, and the text-layer wiring — the part `CMD+F` depends on — is exactly the fiddly piece I'd least want to own from scratch.
+- **`react-pdf`** *(chosen)* — a thin, long-lived React wrapper over that same `pdf.js`. Declarative `<Document>` / `<Page>` components, the text layer on by default, worker configured through Vite's `?url` import. It has been on npm since **2014**, is on its **v10** major line, and pulls roughly **5 million downloads a week**. Crucially it adds no rendering of its own — the pixels are still Mozilla's — so choosing the wrapper costs nothing in engine quality and saves me the integration code.
+
+**Decided: `react-pdf`.** I get Mozilla's renderer for the genuinely hard part and a maintained React surface for the binding, which is the right division of labour: depend on the heavy-hitter for what's hard, own only the thin glue. The one thing to configure carefully is the worker under Vite; the wrapper handles the rest. Rejected raw `pdfjs-dist` as needless re-invention of a solved binding, and the commercial SDKs (Nutrient/PSPDFKit, Apryse) as overkill — they sell annotation, form-filling, and enterprise licensing that a single read-only review screen does not need.
+
+*(Figures as of Aug 2026: `pdf.js` ≈53.5k stars, `pdfjs-dist` ≈23M weekly npm downloads; `react-pdf` ≈5M weekly downloads, on npm since 2014, current major v10.)*
 
 ### D2 — How precisely do we point at an issue in the document? — **DECIDED: a status bar above the viewer**
 
@@ -250,6 +311,91 @@ Three things end up in `localStorage`, and they do **not** share a lifetime. Get
 
 ---
 
+## 6d. Mobile-first
+
+**Mobile-first here means the constrained case was designed first, not that the desktop layout survives being squeezed.** The distinction matters: this page will be opened on an iPhone and an iPad, and the split view that makes sense at 1440px is not a small version of what works at 390px — it's a different shape.
+
+Practically that means base styles target the phone and breakpoints *add* complexity upward, which is also how Tailwind's `min-width` breakpoints work by default. The split view is an enhancement at `lg`, not a default being patched.
+
+### The mobile constraint produced a better desktop architecture
+
+The most useful thing to come out of taking the phone seriously is that it **broke an assumption we had already accepted on desktop.**
+
+Acceptance criterion #1 forced every page to be mounted so native find can reach it (D1). On a phone that is dangerous: at devicePixelRatio 2, one full-width page canvas is roughly 10 MB, so 34 of them approaches 350 MB of canvas memory. iOS Safari discards tabs for less, and a viewer that reloads itself mid-review is worthless.
+
+The resolution is a distinction we hadn't drawn: **the text layer is what find needs, and the canvas is what costs memory.** They're separable.
+
+- **Every page's text layer is mounted, always.** It's DOM spans — cheap. Whole-document `CMD+F` keeps working exactly as the criterion requires.
+- **Canvases render only for pages near the viewport**, in a window that widens on desktop and narrows on a phone. react-pdf's per-`<Page>` `renderMode` makes a page text-only until it comes near.
+
+One viewer, one architecture, a single tuning constant that differs by device — rather than two code paths that drift. And it's strictly better on desktop too: mounting 34 canvases was never a good idea, it was just survivable.
+
+This is the mobile-first argument in its most honest form. Not *"it also works on phones."* Designing for the phone found a real defect in the desktop design.
+
+### Layout by form factor
+
+| Form factor | Shape |
+|---|---|
+| **Phone** (< `md`) | One thing at a time, with a segmented control: **Issues / Document**. Tapping an issue switches to the document at that page — the same intent as the desktop click, expressed as navigation. The resizer is meaningless here and isn't rendered. |
+| **iPad portrait** (`md`) | Split view, issues panel narrower. Resizer available. |
+| **iPad landscape / desktop** (`lg`+) | The split view as designed — roughly one-third / two-thirds. |
+
+The **verdict summary always stays visible**, at every size. It's the answer to acceptance criterion #3, and it is the one thing that must never be a tab away.
+
+### The phone layout
+
+```
+   Issues tab                      Document tab
+┌──────────────────────────┐   ┌──────────────────────────┐
+│ ‹ Docs  Annual Complia… ⋯│   │ ‹ Docs  Annual Complia… ⋯│  nav bar
+├──────────────────────────┤   ├──────────────────────────┤
+│  [ Issues ] [ Document ] │   │  [ Issues ] [ Document ] │  segmented
+├──────────────────────────┤   ├──────────────────────────┤
+│ ☐ ⛔ 1 Effective Date M… │   │ PAGE 13 · 2 issues     ▾ │  status bar
+│     The effective date…  │   ├──────────────────────────┤
+│ ──────────────────────── │   │                          │
+│ ☐ ⚠ 2 Missing Flood Zo… │   │       [ pdf page ]       │
+│     FEMA flood zone de…  │   │                          │
+│ ──────────────────────── │   │                          │
+│ ☐ ● 3 Low Resolution P…  │   │                          │
+├──────────────────────────┤   ├──────────────────────────┤
+│ 12 must be fixed         │   │ 12 must be fixed [Submit]│  verdict + action
+│ [    Submit review    ]  │   │                          │
+└──────────────────────────┘   └──────────────────────────┘
+        ↑ safe-area inset               ↑ safe-area inset
+```
+
+Five decisions are baked into that:
+
+**The verdict and the submit button merge into one bottom bar.** A 390-point-wide screen can't afford separate chrome for each — but the merge is also *better than the desktop arrangement*. The blocking count sits directly against the button it is blocking, which is the plainest possible statement of acceptance criterion #3, and the bottom of the screen is both thumb reach and where iOS puts primary actions.
+
+**The nav bar collapses to a back chevron, a truncated title and an overflow.** Version, uploaded-at and assigned user move behind the `⋯` — they're reference data you consult, not things you act on, so they lose the fight for vertical space.
+
+**Tapping an issue switches to the Document tab at that page.** The same intent as the desktop click, expressed as navigation instead of as a scroll in an adjacent panel. Returning is one tap.
+
+**The severity strip is dropped on phone, not miniaturised.** It is the third of three redundant routes to a page — the list and the status bar both survive — and its ~24pt segments cannot be made touch-legal without consuming the viewport. A cramped horizontal version would be worse than its absence. This is a deliberate removal, not an oversight.
+
+**A segmented control, not a bottom tab bar.** Two views is not a tab bar's job, and the bottom edge is already carrying the verdict and the submit button.
+
+**iPad portrait** keeps the split: issues panel around 300pt, document taking the remainder, resizer available.
+
+### iOS specifics that actually bite
+
+- **`100dvh`, never `100vh`.** iOS Safari's `vh` ignores the browser chrome, so a full-height layout gets clipped and the submit button ends up under the toolbar.
+- **Safe areas.** `viewport-fit=cover` plus `env(safe-area-inset-*)` padding, or the home indicator sits over the controls at the bottom of the screen.
+- **Nothing may depend on hover.** The status-bar labels reveal an issue's description on hover — on touch that has to be tap-to-expand. Any hover-only affordance is an unreachable feature on half our target devices.
+- **Touch targets are 44px minimum.** This is a real problem for the severity strip, whose segments are ~24px tall in order to fit 34 pages in a column. On a phone it becomes a horizontal scroller with wider targets, or it hides behind the segmented control — it is the least essential of the three navigation routes.
+- **Momentum scrolling and a rAF scroll handler.** The reading-line measurement runs on scroll; on iOS that fires during momentum and must stay cheap. It already exits its loop early and is rAF-throttled.
+- **`CMD+F` doesn't exist on a phone.** iOS Safari does have Find on Page — via the share sheet, and via the address-bar menu — and it searches rendered DOM text, so our text layers make it work. But it's a browser affordance we can't invoke or point at. This is stated plainly rather than glossed: the criterion is met with the platform's own find on every platform that has one.
+
+### What "tested on mobile" means here
+
+**Xcode's iOS Simulator, iPhone and iPad, in Safari** — not a resized desktop window. That distinction matters: the Simulator runs real WebKit, so it faithfully reproduces the things most likely to break — `dvh` versus the browser toolbar, safe-area insets, momentum scrolling, and iOS Safari's own CSS behaviour. A narrow Chrome window reproduces none of them. It also shares the host's network, so the dev server is reachable at `localhost` with no extra setup.
+
+**What the Simulator cannot show us is the memory ceiling.** It runs on the Mac's RAM, so canvas usage that would get a real iPhone's tab discarded simply works there. That is exactly the risk the text-layer/canvas separation exists to avoid — so the windowing is built conservatively and treated as *reasoned*, not *proven*. Verifying it needs a physical device, and that limitation is named in the production-readiness writeup rather than quietly assumed away.
+
+---
+
 ## 6c. Accessibility
 
 **This is a deliberate strength of the build, not a checklist at the end.** The reasoning is domain-specific: this is a compliance tool in a regulated industry, used all day by people doing careful work. If it isn't operable without a mouse, it isn't finished.
@@ -322,6 +468,7 @@ That isn't a gap, it's the interesting part: it's a new primitive being added to
 - The splitter implements the WAI-ARIA window-splitter pattern: `role="separator"`, focusable, `aria-orientation`, `aria-valuenow/min/max`, arrow keys to nudge and Home/End to snap.
 - The back link is a real anchor with a real `href`, never `href="#"`.
 - Visible focus everywhere. Outlines are never removed.
+- Jumping to a page scrolls smoothly, so the movement shows you where you went — unless `prefers-reduced-motion` is set, in which case it jumps.
 - Every icon-only control has an accessible name.
 
 ### The honest limitation
@@ -358,6 +505,7 @@ We are not going to fix that client-side, and pretending otherwise would be wors
 | 2026-08-14 | Scope: no in-browser fixing, no real backend, no versioning | Simulating the re-upload loop | The spec puts resolution outside the app. Simulating it would misrepresent the product. |
 | 2026-08-14 | **UNDIRT does no uploading. It is a gate.** The re-upload loop exits the page. | An upload control on the Review Page; simulating the version bump | The flow diagram gives re-upload to the Upload Page — a teammate's ticket. Owning it would be building someone else's screen and blurring the one job this page has. |
 | 2026-08-14 | **Continuous-scroll PDF viewer**, all pages and text layers mounted | Single page at a time; single page + hijacked CMD+F | Native CMD+F only finds text in the DOM. Whole-document search is an acceptance criterion, so the viewer architecture follows from it. Virtualization is the production answer at larger page counts. |
+| 2026-08-14 | **`react-pdf`** as the renderer, wrapping Mozilla's `pdf.js` | Raw `pdfjs-dist`; commercial SDKs (Nutrient/PSPDFKit, Apryse) | `pdf.js` is the only serious open engine — Mozilla-owned, in Firefox, ~53k stars, since 2011, ~23M weekly downloads. `react-pdf` is a thin, maintained React binding over it (npm since 2014, v10, ~5M weekly) that adds no rendering of its own, so I get the heavy-hitter engine and skip writing the text-layer/worker glue. Raw `pdfjs-dist` = re-inventing a solved binding; commercial SDKs = annotation/licensing overkill for a read-only screen. |
 | 2026-08-14 | Issues list sorts by **page order by default**, with a severity sort available | Severity-first default | Jane works through the document in page order when she goes to fix things. "What's blocking" is communicated by the summary above the list, not by the list's ordering. |
 | 2026-08-14 | Simulated re-upload is a **stretch goal, built last** | Building it alongside the core; skipping it entirely | It satisfies no acceptance criterion. It exists to demonstrate the loop, so it earns its place only once the required work is done. |
 | 2026-08-14 | Checkboxes feed the **simulator**, never `canSubmit` | Letting checked blockers directly unlock submit | Reads correctly in the code and models the real rule: the gate opens because a new clean version arrived, not because a user asserted it. |
@@ -369,6 +517,11 @@ We are not going to fix that client-side, and pretending otherwise would be wors
 | 2026-08-14 | **Scroll restore across reloads — CUT** | Persisting a page number, restored on the viewer's render signal | Gold-plating. Satisfies no acceptance criterion, and correct restore is more work than it appears: no page geometry exists at mount, so it must hang off the render signal and fire exactly once or scrolling away snaps the user back. Documented in Out of Scope rather than deleted, so the reasoning survives the question. |
 | 2026-08-14 | **Accessibility is a deliberate strength**, not a checklist pass. Resizer keyboard support back **in scope** | Shipping it mouse-only as a documented gap | The cut was priced wrong: the WAI-ARIA separator pattern is a `role`, four ARIA attributes and an arrow-key handler on top of pointer logic we're writing anyway. "I skipped accessibility" is also the one gap in that list a frontend reviewer would actually poke at — and this is a compliance tool used all day by people doing careful work. |
 | 2026-08-14 | **shadcn/ui + Tailwind from the start** (Radix underneath) | Browser-native only; Radix directly; a runtime component library | I considered browser-native only — with ten controls it genuinely covers most of it, and native `<dialog>` handles the one hard piece. But this page is one screen of four in the spec's own diagram, inside a product that will certainly already have components to reach for. Deciding "no library" from a ten-control sample is precisely the reasoning that produces component soup: every screen looks small enough to hand-roll, and twenty screens later there are twenty slightly different buttons. shadcn resolves it rather than trading a side away — Radix behaviour underneath, source copied into the repo so the skin is ours, CSS-variable tokens, re-syncable from the registry. |
+| 2026-08-14 | **Mobile-first**: phone layout is the base, split view is an enhancement at `lg`. **All text layers mounted, canvases windowed** | Mounting every canvas (the original D1 plan); a separate mobile build; desktop-only | ~10 MB per full-width canvas at DPR 2 means 34 pages approach 350 MB — iOS Safari discards tabs for less. Separating the text layer (what find needs, cheap) from the canvas (what costs memory) preserves acceptance criterion #1 on every device and is strictly better on desktop too. One architecture, one tuning constant, no second code path to drift. |
+| 2026-08-14 | Page wrappers get their **height reserved from the API's page dimensions** before the canvas paints | Letting pages size themselves as they render | Pages render asynchronously, so an unreserved document has almost no height while it loads and any scroll target lands in the wrong place. The `height`/`width` fields turn out to be what makes navigation correct, not just strip decoration. |
+| 2026-08-14 | Current page is **measured against a reading line**, not observed | `IntersectionObserver` on each page | Observer callbacks fire only on threshold crossings, so distant pages report stale ratios and a page taller than the viewport never reaches the higher thresholds — the reading froze after one scroll. Measuring which page's top last passed a fixed line is deterministic and holds for oversized pages. |
+| 2026-08-14 | Every overlay sits **above `z-index: 3`** | Leaving overlays at the default stacking | react-pdf's `.textLayer` is `z-index: 2` and `.annotationLayer` is `z-index: 3`. At equal z-index the pages win on DOM order and their invisible text covers the UI — it looks fine and silently eats every click. |
+| 2026-08-14 | Scroll is **smooth, but honours `prefers-reduced-motion`** | Always smooth; always instant | Animating the movement shows the user *where* they went; a hard jump doesn't. For people who have asked for reduced motion, a long smooth scroll is nauseating rather than informative. |
 | 2026-08-14 | The **splitter is authored by us**, to system conventions | A splitter library; leaving it mouse-only | Radix has no splitter primitive. Writing it is the demonstration rather than the gap: a new primitive added to the system following its conventions, with the full WAI-ARIA window-splitter pattern. Consuming a system is table stakes; extending one correctly is the job. |
 | 2026-08-14 | Submit uses **`aria-disabled`, not `disabled`** | A genuinely `disabled` button | `disabled` drops the button out of the tab order and announces nothing, so a keyboard user tabs past the most important control on the page and is never told why. Focusable + `aria-disabled` + `aria-describedby` on the blocking summary means reaching it explains itself. Click handler no-ops while blocked. |
 
@@ -379,5 +532,6 @@ We are not going to fix that client-side, and pretending otherwise would be wors
 _Honest record of who drove what, so the walk-through is defensible._
 
 - **Andrew:** the scope boundary (in/out); recognizing the JSON is metadata rather than content, not a source to reconstruct the document from; the checkbox todo-list idea; the instinct to mark issues in the document; page-order default sort with a severity toggle; the status bar and the page strip; **the reversal to a component library** — that deciding "no library" from a ten-control sample is the reasoning that produces component soup, because this page is one screen in a suite; and the call that accessibility should be a genuine strength of the demo rather than a checklist.
+- **Andrew checked** react-pdf's `CMD+F` behaviour and render quality in its live demo before the library was committed to — the riskiest assumption in the build, looked at rather than trusted. He also made licensing part of the criteria: MIT over anything commercial, in a regulated industry where dependency terms are a procurement question.
 - **Claude Code proposed:** the continuous-scroll viewer, on the grounds that native CMD+F only searches the DOM (D1); the "checkbox must not gate submit" constraint and the simulated-reprocessor framing that preserves it (D3/D5); the observation that absence-type issues can never be highlighted by any technique; `aria-disabled` over `disabled` on submit; shadcn as the specific library that resolves own-vs-import rather than picking a side; the localStorage scoping table.
 - **Corrected by Andrew:** that a proportional page strip must scale *both* dimensions — my "uniform height, variable width" rule would have rendered Legal and Letter identically, hiding the most common real anomaly. Also that the page numbers in the strip are load-bearing rather than decoration.
