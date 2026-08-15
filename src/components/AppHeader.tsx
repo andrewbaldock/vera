@@ -88,19 +88,9 @@ export function AppHeader({ review, actions, version, onVersionChange }: AppHead
         <span className="max-sm:sr-only">Documents</span>
       </Link>
 
-      <h1 className="min-w-0 flex-1 truncate py-3 text-sm font-semibold lg:text-base">
+      <h1 className="min-w-0 truncate py-3 text-sm font-semibold lg:text-base">
         {review.name.replace(/\.pdf$/i, '')}
       </h1>
-
-      {/* Inline in the full shape; behind the ⋯ below it. Same three facts. */}
-      <dl className="hidden shrink-0 items-center gap-4 text-xs text-muted-foreground lg:flex">
-        {documentFacts.map((fact) => (
-          <div key={fact.label} className="flex items-center gap-1">
-            <dt className="sr-only">{fact.label}</dt>
-            <dd>{fact.value}</dd>
-          </div>
-        ))}
-      </dl>
 
       {/* The version is a control, not a fact — it changes what you are looking
           at, so it sits in the title bar rather than behind the overflow with
@@ -136,6 +126,20 @@ export function AppHeader({ review, actions, version, onVersionChange }: AppHead
           ))}
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* Everything after this is pushed to the far end. */}
+      <span className="flex-1" aria-hidden />
+
+      {/* Inline in the full shape; behind the ⋯ below it. Same three facts. */}
+      <dl className="hidden shrink-0 items-center gap-4 text-xs text-muted-foreground lg:flex">
+        {documentFacts.map((fact) => (
+          <div key={fact.label} className="flex items-center gap-1">
+            <dt className="sr-only">{fact.label}</dt>
+            <dd>{fact.value}</dd>
+          </div>
+        ))}
+      </dl>
+
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

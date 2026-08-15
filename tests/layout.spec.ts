@@ -59,6 +59,18 @@ async function gotoReview(page: Page) {
   await expect(page.getByRole('list', { name: 'Issues' })).toBeVisible()
 }
 
+/**
+ * The one thing to do next, whichever form it takes.
+ *
+ * Blocked it is a link to upload a new version; open it is the submit button.
+ * These assertions are about the *action* being present and reachable, not
+ * about which of the two it currently is.
+ */
+const primaryAction = (page: Page) =>
+  page
+    .getByRole('button', { name: 'Upload new version' })
+    .or(page.getByRole('button', { name: 'Submit review' }))
+
 /** Visible hairline plus the padded hit area its pseudo-element adds. */
 async function grabZoneWidth(page: Page) {
   return page.getByRole('separator', { name: 'Resize issues panel' }).evaluate((el) => {
@@ -115,14 +127,13 @@ for (const viewport of VIEWPORTS) {
       }
     })
 
-    test('shows exactly one submit button, fully on screen', async ({ page }) => {
+    test('shows exactly one primary action, fully on screen', async ({ page }) => {
       await gotoReview(page)
 
       // One in the header for the full shape, one in the bottom bar for the
-      // compact one. Never both, never neither — this is acceptance criterion
-      // #3's control, and it must never be a tab away.
-      const submit = page.getByRole('button', { name: 'Submit review' })
-      const visible = await submit.filter({ visible: true }).all()
+      // compact one. Never both, never neither — this is the control the whole
+      // page exists to gate, and it must never be a tab away.
+      const visible = await primaryAction(page).filter({ visible: true }).all()
       expect(visible).toHaveLength(1)
 
       const box = await visible[0].boundingBox()
@@ -159,8 +170,8 @@ test.describe('touch targets', () => {
       expect(box!.height).toBeGreaterThanOrEqual(TOUCH_TARGET)
     }
 
-    const submit = page.getByRole('button', { name: 'Submit review' }).filter({ visible: true })
-    expect((await submit.boundingBox())!.height).toBeGreaterThanOrEqual(TOUCH_TARGET)
+    const action = primaryAction(page).filter({ visible: true })
+    expect((await action.boundingBox())!.height).toBeGreaterThanOrEqual(TOUCH_TARGET)
   })
 })
 

@@ -1,4 +1,5 @@
-import { Link } from 'react-router'
+import { useEffect, useState } from 'react'
+import { Link, useSearchParams } from 'react-router'
 import { ChevronRight } from 'lucide-react'
 import { UserMenu } from '@/components/UserMenu'
 import { Wordmark } from '@/components/Wordmark'
@@ -9,6 +10,7 @@ import {
   type PlaceholderDocument,
 } from '@/lib/documents'
 import { cn } from '@/lib/utils'
+import { readSubmission } from '@/lib/submission'
 import type { ReviewStatus } from '@/types/review'
 
 /**
@@ -47,6 +49,27 @@ function stripExtension(name: string): string {
 
 export function DocumentsPage() {
   const latest = REVIEW_DOCUMENT.versions[REVIEW_DOCUMENT.versions.length - 1]
+  const [params] = useSearchParams()
+
+  /**
+   * The row that was just finished.
+   *
+   * Read once on mount rather than kept in the URL — the reward is for the
+   * arrival, and a reload should not replay it. The parameter stays in the
+   * address bar, which is harmless and makes the flow inspectable.
+   */
+  const [justSubmitted] = useState(() => params.get('submitted'))
+
+  // Status comes from the stored submission, not a hardcoded label: the list
+  // has to be able to say "Submitted" for a review that already is.
+  const [submitted, setSubmitted] = useState(false)
+  useEffect(() => {
+    setSubmitted(
+      REVIEW_DOCUMENT.versions.some(
+        (version) => readSubmission({ id: REVIEW_DOCUMENT.id, version: version.version }) !== null,
+      ),
+    )
+  }, [])
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-background">
@@ -59,7 +82,7 @@ export function DocumentsPage() {
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         <ul aria-label="Documents" className="divide-y">
-          <li>
+          <li className={cn(justSubmitted === REVIEW_DOCUMENT.id && 'settle')}>
             <Link
               to={`/reviews/${REVIEW_DOCUMENT.id}`}
               className={cn(
@@ -77,8 +100,15 @@ export function DocumentsPage() {
                   {formatDate(latest.uploadedAt)}
                 </span>
               </span>
-              <span className="shrink-0 rounded-full bg-secondary px-2.5 py-1 text-xs font-medium">
-                {STATUS_LABEL.on_review}
+              <span
+                className={cn(
+                  'shrink-0 rounded-full px-2.5 py-1 text-xs font-medium',
+                  submitted
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-secondary text-secondary-foreground',
+                )}
+              >
+                {submitted ? STATUS_LABEL.submitted : STATUS_LABEL.on_review}
               </span>
               <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
             </Link>

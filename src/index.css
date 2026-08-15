@@ -168,6 +168,99 @@
     --focus-edge: #7c86f7;
 }
 
+/*
+  The row you just finished, settling.
+
+  Slow on purpose — three and a half seconds, easing out. A quick flash reads as
+  an error state; this should read as something completing. It starts as a solid
+  indigo ring and tint and releases gradually, so the eye is drawn to the right
+  row without anything demanding to be dismissed.
+*/
+@keyframes vera-settle {
+  0% {
+    background-color: var(--focus-tint);
+    box-shadow: inset 0 0 0 2px var(--primary);
+  }
+  55% {
+    background-color: var(--focus-tint);
+    box-shadow: inset 0 0 0 2px var(--primary);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: inset 0 0 0 2px transparent;
+  }
+}
+
+.settle {
+  animation: vera-settle 3.5s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+
+/* Reduced motion still gets the signal, it just doesn't move. */
+@media (prefers-reduced-motion: reduce) {
+  .settle {
+    animation: none;
+    background-color: var(--focus-tint);
+    box-shadow: inset 0 0 0 2px var(--primary);
+  }
+}
+
+/*
+  Submitting.
+
+  A sweep that runs while the work is happening, then a mark that lands. The
+  ring is deliberately unhurried — this is the one irreversible action in the
+  app, and a spinner that blurs past suggests something trivial just happened.
+*/
+@keyframes vera-sweep {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes vera-land {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  55% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes vera-halo {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 45%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 22px color-mix(in oklab, var(--primary) 0%, transparent);
+  }
+}
+
+.sweep {
+  animation: vera-sweep 1.6s linear infinite;
+}
+
+.land {
+  animation: vera-land 620ms cubic-bezier(0.34, 1.4, 0.5, 1) both;
+}
+
+.halo {
+  animation: vera-halo 1100ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sweep,
+  .land,
+  .halo {
+    animation: none;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

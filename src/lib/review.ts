@@ -101,11 +101,21 @@ const SEVERITY_RANK: Record<Severity, number> = { critical: 0, major: 1, minor: 
  * Severity sort falls back to page order within a severity, so the ordering is
  * total and stable rather than dependent on the input order.
  */
-export function sortIssues(issues: NumberedIssue[], mode: SortMode): NumberedIssue[] {
+export function sortIssues(
+  issues: NumberedIssue[],
+  mode: SortMode,
+  done: ReadonlySet<string> = new Set(),
+): NumberedIssue[] {
+  // Page order is a map of the document, so a handled issue keeps its place —
+  // moving it would misdescribe where things are. Severity order is a worklist,
+  // so anything already handled sinks: what is left to do belongs at the top.
   if (mode === 'page') return [...issues].sort((a, b) => a.page - b.page || a.number - b.number)
   return [...issues].sort(
     (a, b) =>
-      SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity] || a.page - b.page || a.number - b.number,
+      Number(done.has(a.id)) - Number(done.has(b.id)) ||
+      SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity] ||
+      a.page - b.page ||
+      a.number - b.number,
   )
 }
 
@@ -120,6 +130,12 @@ export function sortIssues(issues: NumberedIssue[], mode: SortMode): NumberedIss
 export function visibleIssues(
   issues: NumberedIssue[],
   hidden: ReadonlySet<Severity>,
+  options: { done?: ReadonlySet<string>; hideDone?: boolean } = {},
 ): NumberedIssue[] {
-  return hidden.size === 0 ? issues : issues.filter((issue) => !hidden.has(issue.severity))
+  const { done, hideDone } = options
+  return issues.filter((issue) => {
+    if (hidden.has(issue.severity)) return false
+    if (hideDone && done?.has(issue.id)) return false
+    return true
+  })
 }

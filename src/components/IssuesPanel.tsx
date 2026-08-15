@@ -1,8 +1,9 @@
-import { ArrowDownWideNarrow, Check } from 'lucide-react'
+import { ArrowDownWideNarrow, Check, MoreVertical } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { SeverityDot } from '@/components/severity'
 import { SEVERITY_LABEL, SEVERITY_TEXT } from '@/lib/severity'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,6 +43,9 @@ interface IssuesPanelProps {
   onSeek: (page: number) => void
   sort: SortMode
   onSortChange: (sort: SortMode) => void
+  done: ReadonlySet<string>
+  onToggleDone: (issueId: string) => void
+  onClearDone: () => void
 }
 
 export function IssuesPanel({
@@ -51,10 +55,15 @@ export function IssuesPanel({
   onSeek,
   sort,
   onSortChange,
+  done,
+  onToggleDone,
+  onClearDone,
 }: IssuesPanelProps) {
   return (
     <>
-      <div className="flex items-center justify-between gap-2 border-b px-3 py-1.5">
+      {/* Three slots so the sort control sits centred regardless of how long
+          the count text on the left happens to be. */}
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 border-b px-3 py-1.5">
         <p className="text-xs text-muted-foreground tabular-nums">
           {issues.length === totalCount
             ? `${totalCount} ${totalCount === 1 ? 'issue' : 'issues'}`
@@ -78,6 +87,22 @@ export function IssuesPanel({
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
+
+        <div className="flex justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="size-8">
+                <MoreVertical className="size-4" aria-hidden />
+                <span className="sr-only">List options</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem disabled={done.size === 0} onSelect={onClearDone}>
+                Clear all done
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       {issues.length === 0 && (
@@ -91,17 +116,27 @@ export function IssuesPanel({
       <ul aria-label="Issues" className="divide-y">
       {issues.map((issue) => {
         const onFocusedPage = issue.page === focusedPage
+        const isDone = done.has(issue.id)
         return (
-          <li key={issue.id}>
+          // The checkbox is a sibling of the row button, never inside it —
+          // nesting one interactive control in another is invalid, and it would
+          // mean ticking something off also navigated you away from it.
+          <li
+            key={issue.id}
+            className={cn(
+              'relative flex items-start transition-colors',
+              onFocusedPage && 'bg-focus-tint',
+              isDone && 'opacity-60',
+            )}
+          >
             <button
               type="button"
               onClick={() => onSeek(issue.page)}
               aria-current={onFocusedPage ? 'page' : undefined}
               className={cn(
-                'relative flex min-h-11 w-full items-start gap-3 px-4 py-3 text-left transition-colors',
+                'relative flex min-h-11 flex-1 items-start gap-3 py-3 ps-4 pe-2 text-left transition-colors',
                 'focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none',
                 'hover:bg-accent/60 active:bg-accent',
-                onFocusedPage && 'bg-focus-tint hover:bg-focus-tint',
               )}
             >
               {/* Not color alone: the focused rows carry an edge marker too. */}
@@ -134,6 +169,20 @@ export function IssuesPanel({
                 </span>
               </span>
             </button>
+
+            <label
+              className={cn(
+                'flex min-h-11 shrink-0 cursor-pointer select-none items-center gap-2 self-stretch py-3 pe-4 ps-2 text-xs',
+                'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              <Checkbox
+                checked={isDone}
+                onCheckedChange={() => onToggleDone(issue.id)}
+                aria-label={`Mark "${issue.title}" done`}
+              />
+              <span aria-hidden>Done</span>
+            </label>
           </li>
         )
       })}

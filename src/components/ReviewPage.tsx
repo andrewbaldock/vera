@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState, type CSSProperties } from 'react'
-import { useSearchParams } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import { AppHeader } from '@/components/AppHeader'
 import { DocumentPanel } from '@/components/DocumentPanel'
 import type { SeekTarget } from '@/components/DocumentViewer'
@@ -8,6 +8,7 @@ import { ReviewVerdict } from '@/components/ReviewVerdict'
 import { Splitter } from '@/components/Splitter'
 import { ThumbStrip } from '@/components/ThumbStrip'
 import { useReview } from '@/hooks/useReview'
+import { useDoneIssues } from '@/hooks/useDoneIssues'
 import { DEFAULT_VERSION, REVIEW_DOCUMENT, versionOf } from '@/lib/documents'
 import {
   canSubmit,
@@ -20,7 +21,7 @@ import {
 import { cn } from '@/lib/utils'
 import type { Review, Severity } from '@/types/review'
 import type { Submission } from '@/lib/submission'
-import { SubmitReviewButton } from '@/components/SubmitReviewButton'
+import { ReviewAction } from '@/components/ReviewAction'
 
 /**
  * The shell.
@@ -67,7 +68,22 @@ export function ReviewPage() {
     [setParams],
   )
 
+  const navigate = useNavigate()
   const { state, submit } = useReview(selected.url)
+
+  /**
+   * Submitting returns you to the queue.
+   *
+   * The review page's own submitted state still exists and still matters — a
+   * review can arrive already submitted, with no click involved. But having
+   * *just* submitted one, the useful next screen is the list you came from, and
+   * the confirmation is seeing that row land as finished rather than reading a
+   * banner about it.
+   */
+  const submitAndReturn = useCallback(() => {
+    submit()
+    navigate(`/documents?submitted=${REVIEW_DOCUMENT.id}`)
+  }, [submit, navigate])
 
   if (state.status === 'loading') {
     return (
@@ -92,7 +108,7 @@ export function ReviewPage() {
     <ReviewShell
       review={state.review}
       submission={state.submission}
-      onSubmit={submit}
+      onSubmit={submitAndReturn}
       version={selected.version}
       onVersionChange={setVersion}
     />
@@ -143,6 +159,8 @@ function ReviewShell({
    * why the same lozenges can both report and filter without lying.
    */
   const [hiddenSeverities, setHiddenSeverities] = useState<ReadonlySet<Severity>>(new Set())
+  const [hideDone, setHideDone] = useState(false)
+  const { done, toggle: toggleDone, clearAll: clearDone } = useDoneIssues(review)
 
   const toggleSeverity = useCallback((severity: Severity) => {
     setHiddenSeverities((previous) => {
@@ -158,8 +176,8 @@ function ReviewShell({
   // thumb strip describe the document, not the current view of the list.
   const issuesByPage = useMemo(() => groupByPage(issues), [issues])
   const listed = useMemo(
-    () => sortIssues(visibleIssues(issues, hiddenSeverities), sort),
-    [issues, hiddenSeverities, sort],
+    () => sortIssues(visibleIssues(issues, hiddenSeverities, { done, hideDone }), sort, done),
+    [issues, hiddenSeverities, sort, done, hideDone],
   )
   const submittable = canSubmit(review)
   const submitted = review.status === 'submitted'
@@ -195,8 +213,8 @@ function ReviewShell({
     [seekToPage],
   )
 
-  const submitButton = submitted ? null : (
-    <SubmitReviewButton review={review} submittable={submittable} onConfirm={onSubmit} />
+  const primaryAction = submitted ? null : (
+    <ReviewAction review={review} submittable={submittable} onConfirm={onSubmit} />
   )
 
   return (
@@ -212,7 +230,7 @@ function ReviewShell({
 
       <AppHeader
         review={review}
-        actions={submitButton}
+        actions={primaryAction}
         version={version}
         onVersionChange={onVersionChange}
       />
@@ -262,6 +280,9 @@ function ReviewShell({
             submission={submission}
             hidden={hiddenSeverities}
             onToggleSeverity={toggleSeverity}
+            doneCount={done.size}
+            hideDone={hideDone}
+            onToggleDone={() => setHideDone((previous) => !previous)}
             className="shrink-0"
           />
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
@@ -272,6 +293,9 @@ function ReviewShell({
               onSeek={openIssue}
               sort={sort}
               onSortChange={setSort}
+              done={done}
+              onToggleDone={toggleDone}
+              onClearDone={clearDone}
             />
           </div>
         </section>
@@ -316,7 +340,7 @@ function ReviewShell({
           of the screen is both thumb reach and where iOS puts primary actions. */}
       <div className="flex shrink-0 items-center gap-3 border-t bg-card px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] lg:hidden">
         <ReviewVerdict review={review} submission={submission} compact />
-        {submitButton}
+        {primaryAction}
       </div>
     </div>
   )

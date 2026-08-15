@@ -2,7 +2,7 @@ import { blockingIssues, countBySeverity } from '@/lib/review'
 import { SeverityDot } from '@/components/severity'
 import { SEVERITY_LABEL, SEVERITY_TEXT } from '@/lib/severity'
 import { cn } from '@/lib/utils'
-import { CheckCircle2 } from 'lucide-react'
+import { Check, CheckCircle2 } from 'lucide-react'
 import type { Review, Severity } from '@/types/review'
 import type { Submission } from '@/lib/submission'
 
@@ -39,6 +39,10 @@ interface ReviewVerdictProps {
   /** Severities currently hidden from the list. */
   hidden?: ReadonlySet<Severity>
   onToggleSeverity?: (severity: Severity) => void
+  /** How many issues the reviewer has ticked off, and whether they're listed. */
+  doneCount?: number
+  hideDone?: boolean
+  onToggleDone?: () => void
   className?: string
 }
 
@@ -57,6 +61,9 @@ export function ReviewVerdict({
   compact = false,
   hidden,
   onToggleSeverity,
+  doneCount = 0,
+  hideDone = false,
+  onToggleDone,
   className,
 }: ReviewVerdictProps) {
   const blocking = blockingIssues(review.issues)
@@ -136,7 +143,20 @@ export function ReviewVerdict({
 
   return (
     <div id={SUBMIT_BLOCKED_ID} aria-live="polite" className={cn('border-b px-4 py-4', className)}>
-      <p className="text-lg font-semibold tracking-tight text-balance">{headline}</p>
+      {/*
+        Progress sits on the opposite edge from the verdict, not appended to it.
+        Ticking issues off changes nothing about what is blocking — which is the
+        entire point of the checkbox — so the two counts share a line without
+        reading as one sentence.
+      */}
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="text-lg font-semibold tracking-tight text-balance">{headline}</p>
+        {doneCount > 0 && (
+          <p className="shrink-0 text-sm font-normal text-muted-foreground tabular-nums">
+            {doneCount} marked done
+          </p>
+        )}
+      </div>
       <p className="mt-0.5 text-sm text-muted-foreground">{detail}</p>
 
       {/*
@@ -174,6 +194,31 @@ export function ReviewVerdict({
             </li>
           )
         })}
+
+        {doneCount > 0 && onToggleDone && (
+          <li>
+            <button
+              type="button"
+              onClick={onToggleDone}
+              aria-pressed={!hideDone}
+              aria-label={
+                hideDone
+                  ? `${doneCount} marked done — hidden, show them`
+                  : `${doneCount} marked done — hide them`
+              }
+              className={cn(
+                'flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 text-sm transition-opacity',
+                'hover:bg-accent active:bg-accent',
+                'focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none',
+                hideDone && 'opacity-50',
+              )}
+            >
+              <Check className="size-3.5 text-muted-foreground" aria-hidden />
+              <span className="font-medium tabular-nums">{doneCount}</span>
+              <span className="text-muted-foreground">Done</span>
+            </button>
+          </li>
+        )}
       </ul>
     </div>
   )

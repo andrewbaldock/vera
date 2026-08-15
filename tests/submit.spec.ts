@@ -46,30 +46,31 @@ test.describe('while something is blocking', () => {
     await expect(breakdown.getByRole('listitem').filter({ hasText: 'Major' })).toContainText('8')
   })
 
-  test('submit stays reachable and explains itself, rather than going dead', async ({ page }) => {
+  test('offers the action that is actually available, not the one that is not', async ({
+    page,
+  }) => {
     await open(page, BLOCKED)
-    const submit = submitButton(page)
 
-    // aria-disabled, never disabled: a disabled button drops out of the tab
-    // order and announces nothing, so a keyboard user passes the most important
-    // control on the page and is never told why.
-    await expect(submit).toHaveAttribute('aria-disabled', 'true')
-    await expect(submit).not.toHaveAttribute('disabled', /.*/)
-    await expect(submit).toHaveAttribute('aria-describedby', 'submit-blocked')
+    // A control labelled with something it refuses to perform is a small lie
+    // told on every render, and disabling it only makes the lie quieter. While
+    // blockers remain, the available action is a new version of the document.
+    await expect(submitButton(page)).toHaveCount(0)
+
+    const action = page.getByRole('button', { name: 'Upload new version' }).first()
+    await expect(action).toBeVisible()
+    // Still explains itself: the reason is one keystroke away.
+    await expect(action).toHaveAttribute('aria-describedby', 'submit-blocked')
     await expect(page.locator('#submit-blocked')).toBeVisible()
 
-    // It is focusable — the whole point of the choice above.
-    await submit.focus()
-    await expect(submit).toBeFocused()
-  })
+    // Enabled and focusable — no dead control anywhere on the page.
+    await expect(action).toBeEnabled()
+    await action.focus()
+    await expect(action).toBeFocused()
 
-  test('pressing it does nothing at all', async ({ page }) => {
-    await open(page, BLOCKED)
-    // force, because Playwright treats aria-disabled as "not enabled" and would
-    // refuse the click — which is exactly the click being tested.
-    await submitButton(page).click({ force: true })
-    await expect(page.getByRole('alertdialog')).toHaveCount(0)
-    await expect(verdict(page).getByText('12 issues must be fixed')).toBeVisible()
+    // And it opens the handoff rather than pretending this app uploads.
+    await action.click()
+    await expect(page.getByRole('dialog', { name: 'Upload a new version' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Upload', exact: true })).toBeDisabled()
   })
 })
 
@@ -81,7 +82,10 @@ test.describe('once nothing is blocking', () => {
     // The build must not be overfitted to the supplied mock: hand it a clean
     // document and it declares the document good.
     await expect(verdict(page).getByText('Ready to submit')).toBeVisible()
-    await expect(submitButton(page)).toHaveAttribute('aria-disabled', 'false')
+    // The action swaps identity with the state: no upload prompt once there is
+    // nothing left to fix.
+    await expect(submitButton(page)).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Upload new version' })).toHaveCount(0)
   })
 
   test('asks for confirmation, naming the minors being ignored', async ({ page }) => {
@@ -105,11 +109,26 @@ test.describe('once nothing is blocking', () => {
     await expect(submitButton(page)).toBeVisible()
   })
 
-  test('confirming submits, and the page stops asking the question', async ({ page }) => {
+  test('confirming submits and returns you to the queue', async ({ page }) => {
     await open(page, CLEAN)
     await submitButton(page).click()
     await page.getByRole('alertdialog').getByRole('button', { name: 'Submit review' }).click()
 
+    // Having just finished one, the useful next screen is the list you came
+    // from — and the confirmation is seeing that row land as finished.
+    await expect(page).toHaveURL(/\/documents\?submitted=/)
+    await expect(
+      page.getByRole('list', { name: 'Documents' }).getByText('Submitted').first(),
+    ).toBeVisible()
+  })
+
+  test('and the review itself now reads as submitted', async ({ page }) => {
+    await open(page, CLEAN)
+    await submitButton(page).click()
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Submit review' }).click()
+    await expect(page).toHaveURL(/\/documents/)
+
+    await page.goto(CLEAN)
     await expect(verdict(page).getByText('Submitted')).toBeVisible()
     await expect(verdict(page).getByText(/accepted as-is/)).toBeVisible()
     // Gone, not disabled. The page has answered its own question.
@@ -120,6 +139,8 @@ test.describe('once nothing is blocking', () => {
     await open(page, CLEAN)
     await submitButton(page).click()
     await page.getByRole('alertdialog').getByRole('button', { name: 'Submit review' }).click()
+    await expect(page).toHaveURL(/\/documents/)
+    await page.goto(CLEAN)
     await expect(verdict(page).getByText('Submitted')).toBeVisible()
 
     // The case that matters: status: 'submitted' is a value the API can return,

@@ -1,0 +1,186 @@
+import { useCallback, useState } from 'react'
+import { Check, Loader2, Upload } from 'lucide-react'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import { Button } from '@/components/ui/button'
+import { SUBMIT_BLOCKED_ID } from '@/components/ReviewVerdict'
+import { UploadDialog } from '@/components/UploadDialog'
+import { countBySeverity } from '@/lib/review'
+import { cn } from '@/lib/utils'
+import type { Review } from '@/types/review'
+
+/**
+ * The one thing to do next, whichever state the review is in.
+ *
+ * **Blocked, the action is not "submit".** A button labelled with something it
+ * refuses to perform is a small lie told on every render, and disabling it only
+ * makes the lie quieter. What is actually available while critical or major
+ * issues remain is a new version of the document — so that is what the control
+ * says, and it is a real link rather than a dead button.
+ *
+ * That supersedes the earlier `aria-disabled` treatment, and it is a better
+ * answer to the same problem. `aria-disabled` existed so a keyboard user could
+ * still reach the control and hear why it was unavailable; not having an
+ * unavailable control at all beats explaining one. `aria-describedby` still
+ * points at the blocking summary, so the reason is one keystroke away either
+ * way.
+ *
+ * VERA does not upload — the upload flow is another screen in the spec's flow
+ * diagram and someone else's ticket. The control opens that conversation and
+ * stops at the boundary, deliberately inert. See UploadDialog.
+ *
+ * **Open, the action is submit**, and it asks first. Accepting minor findings is
+ * a judgment on a mortgage file, submission is a one-way door with no un-submit
+ * anywhere in the flow, and the dialog is the one moment to say both out loud.
+ * It names the count rather than saying "some issues" — a number is something
+ * you can decide against.
+ */
+
+interface ReviewActionProps {
+  review: Review
+  submittable: boolean
+  onConfirm: () => void
+}
+
+/**
+ * How long the submission is shown taking.
+ *
+ * There is no backend, so this is theatre — but it is the honest kind. A real
+ * submission of a mortgage file is a network round trip, and collapsing the one
+ * irreversible action in the app into an instant nothing makes it feel like it
+ * did not happen. The sequence is deliberately unhurried for the same reason
+ * the confirmation exists: this is the moment worth marking.
+ */
+const SUBMITTING_MS = 1500
+const LANDED_MS = 1200
+
+type Phase = 'idle' | 'submitting' | 'landed'
+
+export function ReviewAction({ review, submittable, onConfirm }: ReviewActionProps) {
+  const [open, setOpen] = useState(false)
+  const [phase, setPhase] = useState<Phase>('idle')
+
+  const run = useCallback(() => {
+    setPhase('submitting')
+    window.setTimeout(() => {
+      setPhase('landed')
+      window.setTimeout(onConfirm, LANDED_MS)
+    }, SUBMITTING_MS)
+  }, [onConfirm])
+
+  if (!submittable) {
+    return (
+      <UploadDialog
+        review={review}
+        trigger={
+          // Outlined, not filled — but still in the brand color. Submitting is
+          // the goal of this page and keeps the solid weight; uploading is what
+          // you do when you cannot reach it yet, so it steps back without
+          // becoming grey furniture. A neutral outline would read as a cancel.
+          <Button
+            variant="outline"
+            className="min-h-11 border-2 border-primary/55 text-primary hover:border-primary/75 hover:bg-accent hover:text-primary active:bg-accent"
+            aria-describedby={SUBMIT_BLOCKED_ID}
+          >
+            <Upload aria-hidden />
+            Upload new version
+          </Button>
+        }
+      />
+    )
+  }
+
+  const busy = phase !== 'idle'
+
+  return (
+    <AlertDialog open={open} onOpenChange={(next) => !busy && setOpen(next)}>
+      <AlertDialogTrigger asChild>
+        {/* 44px, because shadcn's default is 32 — under the touch minimum, on
+            the one control this whole page exists to gate. */}
+        <Button className={cn('min-h-11')}>Submit review</Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        {busy ? (
+          <div className="flex flex-col items-center gap-4 py-8 text-center">
+            <div
+              className={cn(
+                'flex size-16 items-center justify-center rounded-full',
+                phase === 'landed' ? 'halo bg-primary text-primary-foreground' : 'bg-accent',
+              )}
+            >
+              {phase === 'landed' ? (
+                <Check className="land size-8" strokeWidth={3} aria-hidden />
+              ) : (
+                <Loader2 className="sweep size-8 text-primary" aria-hidden />
+              )}
+            </div>
+            <p className="text-lg font-semibold" role="status">
+              {phase === 'landed' ? 'Submitted' : 'Submitting…'}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {phase === 'landed'
+                ? 'Returning you to your documents.'
+                : 'Recording your decision on this version.'}
+            </p>
+          </div>
+        ) : (
+          <>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Submit this review?</AlertDialogTitle>
+          <AlertDialogDescription asChild>
+            <div className="space-y-2">
+              <p>
+                Nothing critical or major is outstanding on{' '}
+                <span className="font-medium text-foreground">
+                  {review.name.replace(/\.pdf$/i, '')}
+                </span>
+                .
+              </p>
+              {countBySeverity(review.issues).minor > 0 && (
+                <p>
+                  <span className="font-medium text-foreground">
+                    {countBySeverity(review.issues).minor} minor{' '}
+                    {countBySeverity(review.issues).minor === 1 ? 'issue' : 'issues'}
+                  </span>{' '}
+                  will be accepted as-is.
+                </p>
+              )}
+              <p>
+                This can’t be undone. Corrections are made by uploading a new version of the
+                document.
+              </p>
+            </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel className="min-h-11">Keep reviewing</AlertDialogCancel>
+          {/* The action names what happens, and matches the button that opened
+              it — an interface people learn their way around says the same word
+              at every step. */}
+          <AlertDialogAction
+            className="min-h-11"
+            onClick={(event) => {
+              // Hold the dialog open — it becomes the progress surface rather
+              // than vanishing and leaving the page to explain itself.
+              event.preventDefault()
+              run()
+            }}
+          >
+            Submit review
+          </AlertDialogAction>
+        </AlertDialogFooter>
+          </>
+        )}
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+}

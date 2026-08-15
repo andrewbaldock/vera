@@ -58,9 +58,11 @@ bunx playwright install chromium webkit
 
 ### Two things worth knowing
 
-**`?demo`** — <http://localhost:1337/?demo> opens the react-pdf spike that proved the viewer
-behaviors before the real one was written. It is kept as evidence rather than deleted, and
-it is lazy-loaded so it costs regular users nothing.
+**Routes.** `/documents` is the list and where the app lands, `/reviews/:id` is the review
+itself, and the version is a query parameter — `/reviews/souj5sd12c8a3f?v=3` is a link you can
+paste and reload. `/demo` opens the react-pdf spike that proved the viewer behaviors before
+the real one was written; it's kept as evidence rather than deleted, and lazy-loaded so it
+costs regular visitors nothing.
 
 **Testing on a phone.** The dev server binds all interfaces, and Xcode's iOS Simulator shares
 the host network, so `localhost:1337` works there directly. A physical device on the same
@@ -70,9 +72,19 @@ Wi-Fi needs your machine's LAN address instead.
 
 ## Read this first
 
-**[`docs/DESIGN.md`](docs/DESIGN.md)** is the record of every decision in this project — what
-was chosen, what was rejected, and why. It was written *before* the code and is updated *as*
-the code, and it ends in a decision log. If something here isn't explained there, that's a gap.
+**Two documents carry this project, and they answer different questions.**
+
+**[`docs/DESIGN.md`](docs/DESIGN.md) is the *why*** — every decision, what was rejected, and
+the reasoning. It was written *before* the code and updated *as* the code, and it ends in a
+decision log. If a choice here isn't explained there, that's a gap.
+
+**[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) is the *how*** — the layer map and which way
+dependencies point, the data flow, the single-writer rule that everything on screen hangs off,
+the viewer's internals, the token layer, the two test suites, and the named seams where this
+would change at production scale.
+
+Read DESIGN.md to understand the product, ARCHITECTURE.md to understand the code. Neither
+repeats the other.
 
 - [`docs/DESIGN.md`](docs/DESIGN.md) — **why**: scope, flow, decisions, decision log
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — **how**: layers, data flow, the viewer, the token layer, testing, and the seams where this changes at scale
@@ -195,6 +207,7 @@ not the resolved tree. The list is short on purpose, and every line should be de
 | Package | Version | Why it's here |
 |---|---|---|
 | `react`, `react-dom` | ^19.2.8 | The framework. React 19 for the current baseline, no experimental APIs used. |
+| `react-router` | ^8.3.0 | Two real routes and a spike. A router rather than a hand-rolled `pushState`, for the same reason this uses shadcn over hand-rolled components — reach for the library when one exists. |
 | `react-pdf` | ^10.4.1 | Thin, maintained React binding over Mozilla's pdf.js. Adds no rendering of its own — it saves writing the worker and text-layer glue, not the engine. |
 | `pdfjs-dist` | 5.4.296 | The PDF engine. **Pinned exactly**, with no caret: the worker version must match what `react-pdf` loads or it throws at runtime. Declared rather than relied on via hoisting. |
 | `tailwindcss`, `@tailwindcss/vite` | ^4.3.3 | Styling, and the token layer the whole theme rests on. |

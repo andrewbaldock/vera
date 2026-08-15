@@ -87,9 +87,14 @@ test('the demo reset puts a submitted review back', async ({ page }) => {
   await page.goto(`${REVIEW}?v=3`)
   await page.getByRole('button', { name: 'Submit review' }).filter({ visible: true }).click()
   await page.getByRole('alertdialog').getByRole('button', { name: 'Submit review' }).click()
-  await expect(page.getByRole('region', { name: 'Issues found' })).toContainText('Submitted')
 
-  await openList(page)
+  // Submitting plays a short sequence and then returns to the queue, so the
+  // confirmation to wait for is the arrival, not a banner on the page we left.
+  await expect(page).toHaveURL(/\/documents\?submitted=/, { timeout: 15_000 })
+  await expect(
+    page.getByRole('list', { name: 'Documents' }).getByText('Submitted').first(),
+  ).toBeVisible()
+
   await page.getByRole('button', { name: /Reset demo data/ }).click()
 
   // Without this, whoever is evaluating the build gets one shot at the most
