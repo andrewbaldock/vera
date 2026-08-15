@@ -64,11 +64,14 @@ function useRowSummary(version: number) {
   const [summary, setSummary] = useState<{ blocking: number; minor: number } | null>(null)
 
   useEffect(() => {
-    let cancelled = false
-    fetch(versionOf(REVIEW_DOCUMENT, version).url)
+    // Aborted rather than flagged, matching `useReview`. A boolean only stops
+    // the setState; the request still runs to completion and is thrown away,
+    // which under StrictMode means the queue fetches this twice on every load.
+    const controller = new AbortController()
+    fetch(versionOf(REVIEW_DOCUMENT, version).url, { signal: controller.signal })
       .then((response) => response.json())
       .then((payload: unknown) => {
-        if (cancelled || !isReview(payload)) return
+        if (controller.signal.aborted || !isReview(payload)) return
         setSummary({
           blocking: blockingIssues(payload.issues).length,
           minor: countBySeverity(payload.issues).minor,
@@ -77,9 +80,7 @@ function useRowSummary(version: number) {
       // A row that cannot say why is still a row that says what. The queue must
       // not fail to render because a summary did not arrive.
       .catch(() => {})
-    return () => {
-      cancelled = true
-    }
+    return () => controller.abort()
   }, [version])
 
   return summary

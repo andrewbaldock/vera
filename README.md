@@ -1,6 +1,6 @@
 # VERA
 
-HomeVision frontend take-home: the **Review Page**.
+Frontend take-home: the **Review Page**.
 
 *Latin* verus, *true. MIRA finds the problems; VERA is where a person decides.*
 
@@ -8,19 +8,14 @@ A user uploads a document; the backend's AI processes it and reports issues that
 resolved before submission. This page shows those issues, explains what is blocking
 submission, and opens the gate when nothing critical or major remains.
 
-**VERA does no uploading. It is the gate.**
+Uploading and fixing happen elsewhere — both are other screens in the brief's own flow. This
+one decides whether the document can go.
 
-### ▶︎ Live: **[vera.andrewbaldock.com](https://vera.andrewbaldock.com)**
+### ▶︎ Live: **[vera-baldrocks-projects.vercel.app](https://vera-baldrocks-projects.vercel.app)**
 
 Deployed so it can be opened on a real phone rather than a resized desktop window; the
 reasoning for that distinction is in [`docs/DESIGN.md`](docs/DESIGN.md). Rotating an iPad
-across 1024px switches between the two layouts, which is the quickest way to see that the wide
-one isn't the narrow one stretched.
-
-Hosted on Vercel as a static build. `vercel.json` carries the client-routing rewrite, matching
-**only extensionless paths**. A blanket rule would hand `index.html` back for a missing asset
-with a 200 status, which the browser then tries to parse as JavaScript: the "Unexpected token
-'<'" white screen, which only ever appears after a deploy.
+across 1024px switches between the two layouts.
 
 ---
 
@@ -65,7 +60,7 @@ bunx playwright install chromium webkit
 
 **Routes.** `/documents` is the list and where the app lands, `/reviews/:id` is the review
 itself, and the version is a query parameter, so `/reviews/souj5sd12c8a3f?v=3` is a link you
-can paste and reload. `/demo` opens the react-pdf spike that proves the viewer behaviors in
+can paste and reload. `/demo` opens the react-pdf harness that proves the viewer behaviors in
 isolation; it is kept rather than deleted, and lazy-loaded so it costs regular visitors
 nothing.
 
@@ -94,6 +89,7 @@ repeats the other.
 - [`docs/DESIGN.md`](docs/DESIGN.md) — **why**: scope, flow, decisions, decision log
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — **how**: layers, data flow, the viewer, the token layer, testing, and the seams where this changes at scale
 - [`docs/wireframes/`](docs/wireframes/) — UX sketches and the two layout shapes, drawn before implementation
+- [`docs/PRODUCTION.md`](docs/PRODUCTION.md) — what running this for real would take: the seams the build was shaped around, and the work it does not touch at all
 - [`docs/assignment.pdf`](docs/assignment.pdf) — the original brief
 
 ## How it's put together
@@ -155,14 +151,8 @@ net underneath it.
 Treated as a strength of this build rather than a pass at the end. It's a compliance tool in a
 regulated industry, used all day, by people doing careful work.
 
-- **There is no disabled submit button, because there is no submit button while blocked.** A
-  `disabled` control leaves the tab order and announces nothing, so a keyboard user walks past
-  the most important thing on the page and is never told why; `aria-disabled` fixes the
-  announcement but still offers a control labeled with something it refuses to do. Blocked, the
-  page offers *Upload new version* instead — the action that actually moves the document
-  forward. Nothing has to explain why it's unavailable, because nothing unavailable is shown.
 - **Severity is never carried by color alone.** Rows pair the dot with a text label; in the
-  thumb strip, where a 29px-wide segment has no room for words, the marks differ in *thickness*
+  thumb strip, where an 18px-wide segment has no room for words, the marks differ in *thickness*
   as well as hue, so they survive grayscale.
 - **The splitter is a real WAI-ARIA window splitter:** `role="separator"`, `aria-valuenow`,
   arrow keys and Home/End. Radix has no such primitive, so it's authored here to the system's
@@ -221,7 +211,7 @@ the resolved tree. The list is short, and every line should be defensible.
 | Package | Version | Why it's here |
 |---|---|---|
 | `react`, `react-dom` | ^19.2.8 | The framework. React 19 for the current baseline, no experimental APIs used. |
-| `react-router` | ^8.3.0 | Two real routes and a spike. A router rather than a hand-rolled `pushState`, for the same reason this uses shadcn over hand-rolled components: reach for the library when one exists. |
+| `react-router` | ^8.3.0 | Two real routes and a standalone harness. A router rather than a hand-rolled `pushState`, for the same reason this uses shadcn over hand-rolled components: reach for the library when one exists. |
 | `react-pdf` | ^10.4.1 | Thin, maintained React binding over Mozilla's pdf.js. Adds no rendering of its own; it saves writing the worker and text-layer glue, not the engine. |
 | `pdfjs-dist` | 5.4.296 | The PDF engine. **Pinned exactly**, with no caret: the worker version must match what `react-pdf` loads or it throws at runtime. Declared rather than relied on via hoisting. |
 | `tailwindcss`, `@tailwindcss/vite` | ^4.3.3 | Styling, and the token layer the whole theme rests on. |

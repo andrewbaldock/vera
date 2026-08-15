@@ -4,7 +4,7 @@ import { DocumentsPage } from '@/components/DocumentsPage'
 import { ReviewPage } from '@/components/ReviewPage'
 
 /**
- * Three routes: the queue, a review, and the spike.
+ * Three routes: the queue, a review, and the viewer harness.
  *
  * A router rather than a hand-rolled `pushState`, for the same reason the build
  * uses shadcn over hand-rolled components and react-pdf over raw pdf.js: use the
@@ -32,7 +32,7 @@ export default function App() {
           path="/demo"
           element={
             <Suspense
-              fallback={<p className="p-6 text-sm text-muted-foreground">Loading the spike…</p>}
+              fallback={<p className="p-6 text-sm text-muted-foreground">Loading the harness…</p>}
             >
               <ReactPdfDemo />
             </Suspense>

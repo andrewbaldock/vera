@@ -53,7 +53,7 @@ mistake you can make; it is a type error.
 
 ## 2. Routing
 
-Three routes and a spike, using React Router rather than a hand-rolled
+Three routes and a harness, using React Router rather than a hand-rolled
 `pushState`. Same rule that picked shadcn over hand-rolled components and
 react-pdf over raw pdf.js: reach for the library when one exists.
 
@@ -61,7 +61,7 @@ react-pdf over raw pdf.js: reach for the library when one exists.
 |---|---|
 | `/documents` | The queue. Where the app lands, and where submitting returns you. |
 | `/reviews/:documentId` | The review. `?v=3` selects the version. |
-| `/demo` | The react-pdf spike, lazily loaded so its ~420 KB never reaches a normal visitor. |
+| `/demo` | The react-pdf harness, lazily loaded so its ~420 KB never reaches a normal visitor. |
 
 **The version is a query parameter rather than component state** because it is a
 different thing to look at, and different things deserve addresses: `?v=2` is a
@@ -141,7 +141,8 @@ reading line measures rAF-throttled, against the scroll container
       │
       ▼
 focusedPage  ─────────┬─── thumb strip   marks the segment
-                      ├─── issues list   tints the rows on that page
+                      ├─── issues list   tints the rows on that page, and
+                      │                  scrolls to them if the user asked it to
                       └─── status bar    names the issues on that page
 ```
 
@@ -151,9 +152,12 @@ you asked for"*, and those two are different for the entire length of a smooth s
 
 Two consequences:
 
-- **Measurement is suppressed during a programmatic scroll**, released on `scrollend` with a
-  timeout fallback. Without it, a scroll to page 17 reports every page it passes and the list
-  strobes on the way.
+- **Measurement is suppressed during a programmatic scroll**, released on `scrollend` and
+  measured once more on release. Without the suppression, a scroll to page 17 reports every
+  page it passes and the list strobes on the way; without the measurement on release, a scroll
+  that finishes before anything else fires leaves the page reading whatever it said before.
+  The timeout is a fallback for browsers with no `scrollend`, and is deliberately too long to
+  win the race against a real one.
 - **The reading line is a measurement, not an `IntersectionObserver`.** Observer callbacks
   fire only when a threshold is *crossed*, so distant pages keep reporting stale ratios and a
   page taller than the viewport never reaches the higher thresholds at all, which freezes the
@@ -223,6 +227,7 @@ vocabulary rather than just chrome:
 ```css
 --severity-critical  --severity-major  --severity-minor
 --focus-tint         --focus-edge
+--ready              --ready-text      --ready-surface
 ```
 
 **No component ever names a color.** `SeverityDot` maps a severity to a token class and
@@ -242,7 +247,7 @@ Two suites, two runners, because they answer different questions.
 |---|---|---|
 | **Covers** | the rules and the payload guard | layout, shapes, touch targets, the viewer |
 | **Where** | no DOM at all | real Chromium and WebKit |
-| **Speed** | ~0.2s | ~25s |
+| **Speed** | ~0.2s | ~60s |
 
 **jsdom has no layout engine.** It will report that a 900px panel fits in a 320px window, so
 the class of bug the layout suite exists to catch is the class jsdom cannot see. That is the
@@ -259,7 +264,8 @@ on the one control the whole page exists to gate.
 ## 9. Seams — where this changes for production
 
 Named here so the answer to *"what would you do differently at scale"* points at code rather
-than at good intentions. Fuller treatment in the production-readiness writeup.
+than at good intentions. [`PRODUCTION.md`](PRODUCTION.md) expands each of these into the work
+behind it.
 
 | Seam | Today | At scale |
 |---|---|---|

@@ -150,23 +150,38 @@ for (const viewport of VIEWPORTS) {
 test.describe('touch targets', () => {
   test.use({ viewport: { width: 390, height: 844 } })
 
+  /**
+   * Every control, and it used to mean three of them. This measured the view
+   * tabs, the first five buttons inside the grid and the primary action, which
+   * left the toolbar and the severity filters — 32px, both of them — outside a
+   * test whose name says otherwise. A claim the README also makes.
+   *
+   * Measured against the wrapping `<label>` where there is one: a 16px checkbox
+   * inside a 44px label is a 44px target, and measuring the input instead
+   * reports a failure that no thumb would ever find.
+   */
   test('every control in the compact shape clears 44px', async ({ page }) => {
     await gotoReview(page)
 
-    const switcher = page.getByRole('tablist', { name: 'View' }).getByRole('tab')
-    for (const button of await switcher.all()) {
-      const box = await button.boundingBox()
-      expect(box!.height).toBeGreaterThanOrEqual(TOUCH_TARGET)
-    }
+    const undersized = await page.evaluate((minimum) => {
+      const failures: string[] = []
+      const selector = 'button, a[href], [role="tab"], [role="checkbox"], [role="slider"], [role="separator"]'
+      document.querySelectorAll<HTMLElement>(selector).forEach((element) => {
+        // The skip link is a keyboard affordance that is off-screen until
+        // focused. It is never a touch target.
+        if (element.closest('.sr-only') || element.textContent?.trim() === 'Skip to document') return
+        const target = element.closest('label') ?? element
+        const { width, height } = target.getBoundingClientRect()
+        if (width === 0 || height === 0) return
+        if (width < minimum || height < minimum) {
+          const name = element.getAttribute('aria-label') ?? element.textContent?.trim() ?? '?'
+          failures.push(`${name.slice(0, 30)} — ${Math.round(width)}x${Math.round(height)}`)
+        }
+      })
+      return failures
+    }, TOUCH_TARGET)
 
-    const rows = await page.getByRole('grid', { name: 'Issues' }).getByRole('button').all()
-    for (const row of rows.slice(0, 5)) {
-      const box = await row.boundingBox()
-      expect(box!.height).toBeGreaterThanOrEqual(TOUCH_TARGET)
-    }
-
-    const action = primaryAction(page).filter({ visible: true })
-    expect((await action.boundingBox())!.height).toBeGreaterThanOrEqual(TOUCH_TARGET)
+    expect(undersized, 'controls under the 44px minimum').toEqual([])
   })
 })
 

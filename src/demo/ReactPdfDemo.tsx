@@ -15,7 +15,7 @@ import { useReview } from '@/hooks/useReview'
  *   3. We can jump to an arbitrary page (issue click -> that issue's page).
  *   4. We can tell which page is currently in view (status bar + strip).
  *
- * Three constraints come out of it, written up as "Three things the viewer spike
+ * Three constraints come out of it, written up as "Three things the viewer harness
  * taught us" in docs/DESIGN.md:
  *
  *   - Overlays must clear react-pdf's z-index 2/3, or invisible text layers

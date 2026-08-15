@@ -20,7 +20,7 @@ This doc is written *before* the code and updated *as* the code. It is the recor
 
 This is an App that lets a user review the issues detected by automation in a PDF they uploaded, and understand what must be fixed before the document can be submitted.
 
-Fixing happens in the user's own system, and the corrected version is uploaded somewhere else. **VERA does no uploading. It is the gate.** It stays shut while any critical or major issue remains, and opens when none do — at which point the user can say "this doc is good."
+Fixing happens in the user's own system, and the corrected version is uploaded somewhere else. This app does neither. It is the gate between them: shut while any critical or major issue remains, open when none do, at which point the user can say "this doc is good."
 
 ---
 
@@ -154,7 +154,7 @@ That matters more here than on a typical project. This is a document-processing 
 
 One known upstream issue to watch during implementation ([wojtekmaj/react-pdf#1848](https://github.com/wojtekmaj/react-pdf/issues/1848)): when every page renders inside a single `<Document>`, pages after the first can pick up a scaled `scaleX` on the text layer in some documents, which misaligns the invisible text from the visible glyphs. The symptom is find highlighting the *wrong place* rather than failing, so it is worth checking past page 20.
 
-### Three things the viewer spike taught us
+### Three things the viewer harness taught us
 
 A standalone harness, [`src/demo/ReactPdfDemo.tsx`](../src/demo/ReactPdfDemo.tsx), **kept in the repo rather than deleted**, proved the four behaviors the viewer depends on: all pages mounted with text layers, whole-document find, jump-to-page, and knowing which page is in view. It surfaced three problems that would each have been much more expensive to meet later.
 
@@ -171,7 +171,7 @@ The text layer is the invisible copy of the page's text laid over the canvas, wh
 
 The symptom is specific and a long way from the cause: **controls work until the first scroll, then go dead.**
 
-This affects three things in the real build, not just the spike: the **status bar** sits above the viewer, the **thumb strip** beside it, and the **confirmation dialog** over everything. Every one of them needs to clear `z-index: 3`, and the reason belongs in a comment where the value is set, because `zIndex: 10` on its own looks arbitrary.
+This affects three things in the real build, not just the harness: the **status bar** sits above the viewer, the **thumb strip** beside it, and the **confirmation dialog** over everything. Every one of them needs to clear `z-index: 3`, and the reason belongs in a comment where the value is set, because `zIndex: 10` on its own looks arbitrary.
 
 **2. Page heights must be reserved before the canvases paint, and the API's dimensions are what makes that possible.**
 
@@ -233,7 +233,7 @@ On a page with no issues the bar still shows the page number and says so — *"n
 
 And a whole class of issue can never be highlighted regardless of technique: **"Missing Summary of Findings" is an absence.** There is nothing on page 3 to point at. Roughly a quarter of these issues are missing-thing findings, so any design resting on in-page highlighting is broken for them by construction.
 
-**The production answer is bounding boxes from the backend.** The AI that found "page 18 shows $308,120" knew where on page 18 it was looking. Location is the API's to return, not the client's to reverse-engineer. That request goes in the production-readiness writeup.
+**The production answer is bounding boxes from the backend.** The AI that found "page 18 shows $308,120" knew where on page 18 it was looking. Location is the API's to return, not the client's to reverse-engineer.
 
 ### D3 — The checkbox / personal todo list — **DECIDED**
 
@@ -260,7 +260,7 @@ Implementation open: a second mock file plus a way to switch to it (query param,
 
 A vertical strip down the edge of the viewer, one segment per page, mapping onto scroll position the way a scrollbar does:
 
-- Each segment is a **page-shaped rectangle**. It carries no page number — see the sizing rule below, which is what settled that.
+- Each segment is a **page-shaped rectangle**, carrying its page number when the segment is tall enough to hold one legibly. Whether it is tall enough is not a design choice but an outcome of the sizing rule below: the scale is computed from the column, and the number is drawn only above a measured 16px. An unlabeled block beats a clipped digit.
 - Inside it, **one colored bar per issue on that page**, in that issue's severity color — so page 14 visibly has three marks and page 4 has none. Richer than a single worst-severity fill: you see both severity and volume at a glance.
 - Clean pages are empty rectangles.
 - The **current viewport position** is marked.
@@ -297,7 +297,9 @@ Three formulations of this rule fail, and all three are invisible against a 34-p
 - **Fitting height only** ignores the other dimension, so a four-page document computes segments ~180px wide inside a 44px strip.
 - **Percentage heights plus a flex `gap`** sum to exactly 100% and then add the gaps on top, so the strip overflows its column by `(n−1) × gap` on *every* viewport, putting the last pages below the fold, unreachable by a control you drag rather than scroll.
 
-The last one is why there is no floor: the strip is a scrub surface with `touch-action: none`, so a scroll container inside it cannot be scrolled by the finger it exists for. A strip that always fits has no such conflict. With no floor there is no page number to protect, which is the right outcome anyway, since the readout that follows the thumb states the page far more legibly than 9px type inside a 29px box.
+The last one is why there is no floor: the strip is a scrub surface with `touch-action: none`, so a scroll container inside it cannot be scrolled by the finger it exists for. A strip that always fits has no such conflict.
+
+So the page number is a *consequence* of the scale rather than a constraint on it. At 34 Letter pages in a typical column the segment comes out around 18x23px and the number fits; on a longer document it does not, and the number simply stops being drawn rather than forcing a floor that would break the one-scale-factor rule. The readout that follows the thumb states the page either way, which is what makes that acceptable.
 
 The arithmetic is done in JavaScript against a measured column rather than expressed in CSS, because every CSS formulation of "one scale factor" stops being one the moment a constraint binds.
 
@@ -309,7 +311,22 @@ This recovers the whole-document view that the status bar gave up: *"pages 12 th
 
 **Explicitly not thumbnails.** Rendering 34 more pdf.js canvases on top of the 34 already mounted is real cost, and at that size the images are unreadable: you cannot tell page 22 from page 23 in a 60px thumbnail. What is wanted from this strip is the *pattern of problems*, not the pictures.
 
-### D5 — Simulated re-upload — **STRETCH GOAL, build last**
+### D5 — Simulated re-upload — **The reprocessor was not built. The loop is shown two other ways.**
+
+> **What shipped instead**, and it is two separate things:
+>
+> - **An inert *Upload new version* dialog** ([`UploadDialog.tsx`](../src/components/UploadDialog.tsx)),
+>   offered whenever the gate is shut. It names the document, says a new version replaces this
+>   one and is checked from scratch, and stops at the boundary with the drop zone disabled. It
+>   exists so a blocked state shows where the loop goes rather than looking like a dead end.
+> - **Two real versions of the document** in the catalog, v2 and v3, switched from the header.
+>
+> What was *not* built is the mock reprocessor described below: the demo control that would
+> take the current review, drop the issues ticked done, bump the version and hand back a new
+> review object. Two real fixtures do the same job more honestly — v3 is a payload the backend
+> could have returned, whereas a client-side reprocessor mutating a review in the browser is
+> the one thing D3 spends its length arguing must never happen. The reasoning below is kept
+> because it is what produced that conclusion.
 
 Not essential to the acceptance criteria. Built only after everything else is done, because it exists to *show* the loop rather than to satisfy a requirement.
 
@@ -494,7 +511,7 @@ Five decisions are baked into that:
 
 **Xcode's iOS Simulator, iPhone and iPad, in Safari**, not a resized desktop window. The Simulator runs real WebKit, so it reproduces the things most likely to break: `dvh` versus the browser toolbar, safe-area insets, momentum scrolling, and iOS Safari's own CSS behavior. A narrow Chrome window reproduces none of them. It also shares the host's network, so the dev server is reachable at `localhost` with no extra setup.
 
-**What the Simulator cannot show us is the memory ceiling.** It runs on the Mac's RAM, so canvas usage that would get a real iPhone's tab discarded simply works there. That is the risk the text-layer/canvas separation exists to avoid, so the windowing is built conservatively and treated as *reasoned*, not *proven*. Verifying it needs a physical device, and that limitation is named in the production-readiness writeup.
+**What the Simulator cannot show us is the memory ceiling.** It runs on the Mac's RAM, so canvas usage that would get a real iPhone's tab discarded simply works there. That is the risk the text-layer/canvas separation exists to avoid, so the windowing is built conservatively and treated as *reasoned*, not *proven*. Verifying it needs a physical device, so the windowing is stated as reasoned rather than proven.
 
 ---
 
@@ -598,7 +615,7 @@ user who knows why something is missing is not a user filing a bug about it.
 
 **A rendered PDF is not accessible, and we say so rather than imply otherwise.** pdf.js paints a canvas and overlays absolutely-positioned text spans; the reading order that produces is unreliable, and none of the document's structure (headings, tables, reading order) survives. Whole-document `CMD+F` works because the text is in the DOM, which is not the same as the document being navigable by a screen reader.
 
-We are not going to fix that client-side. The real answer is server-side: tagged/structured PDF, or an accessible HTML rendering of the extracted content served alongside the visual one. That goes in the production-readiness writeup as a known gap with a named fix.
+We are not going to fix that client-side. The real answer is server-side: tagged/structured PDF, or an accessible HTML rendering of the extracted content served alongside the visual one. It is a known gap with a named fix, carried into [`PRODUCTION.md`](PRODUCTION.md) rather than glossed.
 
 ---
 
@@ -613,11 +630,10 @@ We are not going to fix that client-side. The real answer is server-side: tagged
 
 ## 8. Bonus artifacts to deliver
 
-1. Development approach + what most required expertise.
-2. **UX sketches — ✅ [`wireframes/VERA_wireframes.svg`](wireframes/VERA_wireframes.svg)**, drawn in Google Drawings *before* the build. [Live source](https://docs.google.com/drawings/d/1P1lXCZPaLolqYNq0aOk2XJNdWGl8UmqJt4W83rlUnVE/edit?usp=sharing). Kept as-is even where the final implementation differs — they record intent, not a spec.
-3. What's required for a production deployment.
+1. **UX sketches — ✅ [`wireframes/VERA_wireframes.svg`](wireframes/VERA_wireframes.svg)**, drawn in Google Drawings *before* the build. [Live source](https://docs.google.com/drawings/d/1P1lXCZPaLolqYNq0aOk2XJNdWGl8UmqJt4W83rlUnVE/edit?usp=sharing). Kept as-is even where the final implementation differs — they record intent, not a spec.
+2. **What's required for a production deployment — ✅ [`PRODUCTION.md`](PRODUCTION.md)**, split into the seams this build was shaped around and the work it does not touch at all.
 
-All three are written against a build with **32 unit tests and 204 browser tests across seven spec files**, which is worth stating in the writeups rather than claiming "well tested".
+Both are against a build with **32 unit tests and 204 browser tests across seven spec files**, which is worth stating rather than claiming "well tested".
 
 ### The README is a deliverable too
 
