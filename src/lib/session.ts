@@ -1,16 +1,13 @@
 import type { ReviewUser } from '@/types/review'
 
 /**
- * Who is signed in.
+ * Who is signed in. Not read from the review: a review carries the user it is
+ * *assigned to*, the session carries the person holding the keyboard. They are
+ * the same person in this fixture, and treating that coincidence as structure is
+ * how an app ends up unable to show you someone else's review.
  *
- * Deliberately not read from the review. A review carries the user it is
- * *assigned to*; the session carries the person holding the keyboard. They
- * happen to be the same person in this fixture, and treating that coincidence
- * as structure is how an app ends up unable to show you someone else's review.
- *
- * In production this comes from auth — the seam is this constant and nothing
- * else. The documents list needs it before any review has loaded, which is what
- * made the distinction obvious.
+ * In production this comes from auth, and this constant is the only seam. The
+ * documents list needs it before any review has loaded.
  */
 export const CURRENT_USER: ReviewUser = {
   id: 'user_42',

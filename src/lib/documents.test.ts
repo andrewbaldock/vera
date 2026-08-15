@@ -6,15 +6,11 @@ import v2 from '../../public/review_mock.json'
 import v3 from '../../public/review_mock_clean.json'
 
 /**
- * The catalog and the fixtures have to agree.
- *
- * They drifted once already, silently: the v3 fixture was built as a separate
- * document before the design settled on it being the *same* document
- * re-uploaded, and nothing noticed that its id, name and version number all
- * disagreed with the catalog. The visible symptoms were a document that renamed
- * itself when you switched version, and a reset that cleared the wrong storage
- * key — neither of which any type could have caught, because both files were
- * individually valid.
+ * The catalog and the fixtures have to agree. Nothing else catches a drift
+ * between them: each file is individually valid, so a v3 whose id, name or
+ * version disagrees with the catalog type-checks fine and shows up as a document
+ * that renames itself when you switch version, and a reset that clears the wrong
+ * storage key.
  */
 
 const FIXTURES = [
@@ -35,7 +31,7 @@ describe('the demo catalog', () => {
     expect(isReview(payload)).toBe(true)
     if (!isReview(payload)) return
 
-    // Same document, later version — not a different document that happens to
+    // Same document, later version, not a different document that happens to
     // share a PDF. The id is what submission is stored against, so a mismatch
     // here silently breaks submitting and resetting.
     expect(payload.id).toBe(REVIEW_DOCUMENT.id)
@@ -47,14 +43,12 @@ describe('the demo catalog', () => {
     const [blocked, resolved] = FIXTURES.map((f) => f.payload)
     if (!isReview(blocked) || !isReview(resolved)) throw new Error('fixtures are not reviews')
 
-    // The whole reason there are two: one shows the gate closed, one shows it
-    // open. If they ever agree, the build can only demonstrate half its own
-    // most important rule.
+    // The reason there are two: one shows the gate closed, one shows it open. If
+    // they ever agree, the build can only demonstrate half the rule.
     expect(canSubmit(blocked)).toBe(false)
     expect(canSubmit(resolved)).toBe(true)
 
-    // And the resolved one keeps minors, so submitting stays a judgment call
-    // rather than a formality.
+    // The resolved one keeps minors, so submitting stays a judgment call.
     expect(resolved.issues.length).toBeGreaterThan(0)
   })
 

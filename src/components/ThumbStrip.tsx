@@ -5,35 +5,31 @@ import type { NumberedIssue } from '@/lib/review'
 import type { DocumentPage } from '@/types/review'
 
 /**
- * A miniature of the whole document down the edge of the viewer.
- *
- * It is one control you scrub, not thirty-four you click. That distinction is
- * the reason it survives on touch at all: thirty-four targets at the 44px
- * minimum would need ~1,500px of column, whereas a single press-and-drag
- * control needs the minimum once. Same interaction as the iOS index scrubber.
- *
- * Being one control also means it is a slider, so it gets slider semantics for
- * free — which is how a thing designed for a thumb ends up giving keyboard
- * users navigation of the entire document.
+ * A miniature of the whole document down the edge of the viewer. One control you
+ * scrub, not thirty-four you click, which is what makes it work on touch:
+ * thirty-four targets at the 44px minimum would need ~1,500px of column, while a
+ * single press-and-drag control needs the minimum once. Same interaction as the
+ * iOS index scrubber. Being one control also makes it a slider, so keyboard
+ * users get navigation of the whole document from slider semantics.
  *
  * Sizing: **one scale factor, computed once, multiplied into every page's real
- * width and height.** Nothing is normalized — a Legal page among Letter pages
- * renders visibly taller, which is the most common real anomaly and the whole
- * point of the rule.
+ * width and height.** Nothing is normalized, so a Legal page among Letter pages
+ * renders visibly taller, which is the most common real anomaly.
  *
- * It is arithmetic rather than CSS because the CSS versions all cheat. A
- * percentage height plus `aspect-ratio` looks equivalent and is, right up until
- * a clamp engages on one segment — then that segment gets its own scale factor
- * and renders a short page *wider* than the full page beside it. And a
- * percentage of the column ignores the width entirely, so a four-page document
- * computes segments 180px wide inside a 44px strip. Both failures are invisible
- * against a uniform 34-page Letter fixture, which is exactly why they are worth
- * measuring instead of trusting.
+ * Arithmetic rather than CSS, because both CSS equivalents fail on documents
+ * this fixture does not contain. A percentage height plus `aspect-ratio` gives a
+ * clamped segment its own scale factor, rendering a short page *wider* than the
+ * full page beside it; a percentage of the column ignores width, so a four-page
+ * document computes segments 180px wide inside a 44px strip. Fitting to the
+ * shorter of the two constraints keeps the strip inside its column in both
+ * directions, so it never scrolls: a scroll container inside a
+ * `touch-action: none` scrub surface is unscrollable by the finger it exists for.
  *
- * So: fit to the shorter constraint of the two, and the strip always fits its
- * column in both directions. It never scrolls, which matters more than it
- * sounds — a scroll container inside a `touch-action: none` scrub surface is
- * unscrollable by the very finger it exists for.
+ * That fit has a ceiling, and it is documented rather than hidden: the factor
+ * shrinks width along with height, so past roughly 45 pages the numbers no
+ * longer fit and by 100 the miniature is a ~5px thread in a 44px column. Correct
+ * for this document, wrong for a long one. `PRODUCTION.md` carries the numbers
+ * and what fixing it actually costs.
  */
 
 /** Gap between segments, in px. Comes out of the budget, never added on top. */
@@ -58,8 +54,8 @@ export function ThumbStrip({
   const [scrubbing, setScrubbing] = useState(false)
   const [column, setColumn] = useState({ width: 0, height: 0 })
 
-  // Measured rather than assumed, and before paint so there is no frame at the
-  // wrong size. The strip re-scales when the splitter moves or the window does.
+  // Measured before paint, so there is no frame at the wrong size. The strip
+  // re-scales when the splitter moves or the window does.
   useLayoutEffect(() => {
     const list = listRef.current
     if (!list) return
@@ -74,9 +70,8 @@ export function ThumbStrip({
   }, [])
 
   const focusedIssues = issuesByPage.get(focusedPage) ?? []
-  // The slider's range is the document's own page numbers, not the array
-  // length. They coincide in this fixture; they are not the same fact, and a
-  // slider that lies about its own range is worse than one with no range.
+  // The slider's range is the document's own page numbers, not the array length.
+  // They coincide in this fixture but are not the same fact.
   const firstPage = pages[0]?.page_num ?? 1
   const lastPage = pages[pages.length - 1]?.page_num ?? firstPage
 
@@ -88,12 +83,15 @@ export function ThumbStrip({
     column.height > 0
       ? Math.min((column.height - gaps) / totalHeight, column.width / widestPage)
       : 0
+  // Every page in a document is usually the same height, so one sample decides
+  // whether numbers fit at all.
+  const segmentHeight = (pages[0]?.height ?? 0) * scale
 
   /**
    * The readout tracks the focused segment rather than sitting at the middle of
-   * the strip — otherwise scrubbing to page 30 shows the label beside page 17,
-   * which is worse than no label. Measured off the segment itself so it stays
-   * correct for pages of different heights.
+   * the strip, where scrubbing to page 30 would show the label beside page 17.
+   * Measured off the segment itself, so it stays correct for pages of different
+   * heights.
    */
   const focusedIndex = pages.findIndex((page) => page.page_num === focusedPage)
   const focusedSegment = listRef.current?.children[focusedIndex] as HTMLElement | undefined
@@ -102,11 +100,9 @@ export function ThumbStrip({
     : null
 
   /**
-   * Which page is under the pointer.
-   *
-   * Measured against the segments themselves rather than interpolated over the
-   * column, because segments are not all the same height — interpolation would
-   * drift the moment the document contains a page of a different size.
+   * Which page is under the pointer. Measured against the segments themselves,
+   * not interpolated over the column: segments are not all the same height, so
+   * interpolation drifts the moment a page is a different size.
    */
   function pageAt(clientY: number): number | null {
     const items = listRef.current?.children
@@ -117,7 +113,7 @@ export function ThumbStrip({
     }
     // Dragging past the bottom edge means the last page, not nothing. A finger
     // cannot travel below the screen, so without this the final pages are
-    // unreachable on any viewport shorter than the strip.
+    // unreachable on a viewport shorter than the strip.
     return pages[pages.length - 1].page_num
   }
 
@@ -139,8 +135,7 @@ export function ThumbStrip({
 
   function handlePointerUp(event: React.PointerEvent<HTMLDivElement>) {
     // A browser-initiated pointercancel has already released capture, so
-    // releasing it again throws NotFoundError. That path is the normal one on
-    // touch, not an exotic one.
+    // releasing it again throws NotFoundError. That is the normal path on touch.
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId)
     }
@@ -206,6 +201,17 @@ export function ThumbStrip({
                 isFocused ? 'border-focus-edge bg-focus-tint ring-1 ring-focus-edge' : 'bg-background',
               )}
             >
+              {/*
+                The page number, which makes the strip a map rather than a
+                gradient. Smallest legible size, hidden when a segment is too
+                short to hold it: an unlabeled block beats a clipped digit.
+                `tabular-nums` keeps the column aligned as digits change width.
+              */}
+              {segmentHeight >= 16 && (
+                <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-[8px] leading-none font-medium text-muted-foreground tabular-nums">
+                  {page.page_num}
+                </span>
+              )}
               {issues.map((issue) => (
                 <SeverityMark key={issue.id} severity={issue.severity} />
               ))}

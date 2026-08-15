@@ -4,20 +4,18 @@ import { DocumentsPage } from '@/components/DocumentsPage'
 import { ReviewPage } from '@/components/ReviewPage'
 
 /**
- * Two real routes, and the spike.
+ * Three routes: the queue, a review, and the spike.
  *
  * A router rather than a hand-rolled `pushState`, for the same reason the build
- * uses shadcn instead of hand-rolled components and react-pdf instead of raw
- * pdf.js: use the library when one exists, and build it yourself only when
- * nothing covers it. Writing a router for two routes is the same mistake as
- * writing a pdf.js binding — and this page is one screen of four in the spec's
- * own flow, so the second and third routes are not hypothetical.
+ * uses shadcn over hand-rolled components and react-pdf over raw pdf.js: use the
+ * library when one exists. This page is one screen of four in the spec's flow,
+ * so more routes are coming.
  *
  * `/documents` is the canonical list. `/` redirects rather than duplicating it,
  * so there is one URL per thing.
  *
- * The `?demo` spike is lazily loaded: react-pdf and pdf.js are ~420 KB, and a
- * view nobody opens should not be on anybody's critical path.
+ * `/demo` is lazily loaded: react-pdf and pdf.js are ~420 KB, and a view nobody
+ * opens should not sit on everybody's critical path.
  */
 const ReactPdfDemo = lazy(async () => ({
   default: (await import('@/demo/ReactPdfDemo')).ReactPdfDemo,

@@ -1,19 +1,16 @@
 import type { Review } from '@/types/review'
 
 /**
- * Submission, persisted on the device.
- *
- * There is no backend to accept a submission, so it is recorded locally and
- * layered over the fixture when the review loads. That is deliberately more
- * than a boolean in component state: `status: 'submitted'` is a value the API
- * can already return, so the page has to render a submitted review on a cold
- * load with no click involved. Persisting it here means the demo exercises the
- * real path — reload the page and it is still submitted, because that is what
- * would happen with a real endpoint.
+ * Submission, persisted on the device. There is no backend to accept one, so it
+ * is recorded locally and layered over the fixture when the review loads. Not a
+ * boolean in component state: `status: 'submitted'` is a value the API can
+ * already return, so the page has to render a submitted review on a cold load
+ * with no click involved. Reload and it is still submitted, as it would be with
+ * a real endpoint.
  *
  * Keyed by review id and version. A new version is a new review to look at, and
- * inheriting the previous version's submission would be wrong in the one
- * direction that matters: it would show a gate as closed when it isn't.
+ * inheriting the previous version's submission would show a gate as closed when
+ * it isn't.
  */
 
 export interface Submission {
@@ -43,7 +40,7 @@ export function readSubmission(review: Pick<Review, 'id' | 'version'>): Submissi
   } catch {
     // Safari in private browsing throws on localStorage, and a corrupt value
     // should not take the page down. An unsubmitted review is the safe default:
-    // it shows the gate, which is the state that asks for a decision.
+    // it shows the gate, the state that asks for a decision.
     return null
   }
 }
@@ -52,8 +49,8 @@ export function writeSubmission(review: Review, submission: Submission): void {
   try {
     localStorage.setItem(key(review), JSON.stringify(submission))
   } catch {
-    // Nothing to do. The in-memory state still updates, so the flow completes;
-    // it just won't survive a reload.
+    // The in-memory state still updates, so the flow completes. It just won't
+    // survive a reload.
   }
 }
 

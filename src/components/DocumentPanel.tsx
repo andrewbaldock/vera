@@ -3,12 +3,10 @@ import { ChevronDown } from 'lucide-react'
 import type { SeekTarget } from '@/components/DocumentViewer'
 
 /**
- * The viewer is split out of the entry chunk.
- *
- * pdf.js is ~420 KB, and the verdict — the answer to acceptance criterion #3 —
- * needs none of it. Loading it eagerly means a phone on cellular waits for a
- * rendering engine before it can be told what is blocking submission. Split, the
- * shell and the issue list paint immediately and the document arrives after.
+ * The viewer is split out of the entry chunk. pdf.js is ~420 KB and the verdict,
+ * the answer to acceptance criterion #3, needs none of it. Loaded eagerly, a
+ * phone on cellular waits for a rendering engine before it can be told what is
+ * blocking submission.
  */
 const DocumentViewer = lazy(async () => ({
   default: (await import('@/components/DocumentViewer')).DocumentViewer,
@@ -20,28 +18,24 @@ import type { DocumentPage } from '@/types/review'
 import { cn } from '@/lib/utils'
 
 /**
- * Status bar, then the document.
+ * Status bar, then the document. The status bar stands in for drawing on the
+ * page: the API gives a page number and no coordinates, so anything positioned
+ * inside a page would be a claim we cannot support, and roughly half these
+ * issues are absences ("Missing Summary of Findings") with nothing to point at.
  *
- * The status bar is what we have instead of drawing on the page. The API gives
- * a page number and no coordinates, so anything positioned inside a page would
- * be a claim we cannot support — and roughly half these issues are absences
- * ("Missing Summary of Findings") with nothing to point at in the first place.
- * Naming the issues on the page you are looking at is the honest version.
- *
- * It expands rather than truncating. Three issues on one page needs ~580px and
- * a phone has under 300, so collapsed it says how many and expanded it says
- * which — with severity carried by a label as well as a color, because a
- * truncated string with a colored dot is two ways of saying nothing.
+ * It expands rather than truncating. Three issues on one page needs ~580px and a
+ * phone has under 300, so collapsed it says how many and expanded it says which,
+ * with severity carried by a label as well as a color.
  *
  * `z-10` is not arbitrary: react-pdf ships pdf.js's CSS, where `.textLayer` is
  * `z-index: 2` and `.annotationLayer` is `z-index: 3`. At equal z-index the
  * pages win on DOM order, so a scrolled-past page's invisible text layer sits
- * over the UI and silently eats every click.
+ * over the UI and eats every click.
  */
 
 interface DocumentPanelProps {
   focusedPage: number
-  /** The API's page dimensions — the viewer reserves heights from them. */
+  /** The API's page dimensions. The viewer reserves heights from them. */
   pages: DocumentPage[]
   pdfUrl: string
   issuesOnPage: NumberedIssue[]
@@ -116,11 +110,10 @@ export function DocumentPanel({
       </div>
 
       {/*
-        No aria-live here. Once the viewer lands, this text changes on every page
-        the reading line passes — a momentum scroll would queue thirty polite
-        announcements and leave a screen-reader user listening to pages they
-        left. The thumb strip's slider already reports the same fact through
-        aria-valuetext, on demand, when they ask for it.
+        No aria-live here. This text changes on every page the reading line
+        passes, so a momentum scroll would queue thirty polite announcements and
+        leave a screen-reader user listening to pages they left. The thumb
+        strip's slider reports the same fact through aria-valuetext, on demand.
       */}
       <Suspense
         fallback={

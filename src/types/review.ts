@@ -1,10 +1,9 @@
 /**
- * The shape of the review endpoint's response.
- *
- * Modeled from the supplied `review_mock.json` rather than from the prose in
- * the brief — where the two disagree, the payload wins. Two things the prose
- * doesn't tell you: `user` is an object rather than a string, and an issue
- * carries a `page` number and nothing else about its location.
+ * The shape of the review endpoint's response. Modeled from the supplied
+ * `review_mock.json` rather than the prose in the brief: where the two disagree,
+ * the payload wins. Two things the prose does not say are that `user` is an
+ * object rather than a string, and that an issue carries a `page` number and
+ * nothing else about its location.
  */
 
 export type Severity = 'critical' | 'major' | 'minor'
@@ -17,9 +16,9 @@ export interface Issue {
   description: string
   severity: Severity
   /**
-   * The page this issue appears on. There are no coordinates, no bounding
-   * boxes and no text offsets — a page number is the finest location the API
-   * gives us, which is why nothing is drawn inside a page.
+   * The page this issue appears on. No coordinates, no bounding boxes, no text
+   * offsets: a page number is the finest location the API gives, which is why
+   * nothing is drawn inside a page.
    */
   page: number
 }

@@ -5,11 +5,10 @@
 @import "@fontsource-variable/ubuntu-sans-mono";
 
 /*
-  One trigger: the `.dark` class on <html>. The theme preference has three
-  values (system / light / dark) but only two palettes, so the resolving is
-  done in JS (useTheme) and CSS never has to know about the media query.
-  That keeps this file a single definition of dark rather than two that can
-  drift, and it is what lets a toggle exist at all.
+  One trigger: the `.dark` class on <html>. The preference has three values
+  (system / light / dark) but only two palettes, so useTheme resolves it in JS
+  and CSS never sees the media query. One definition of dark here rather than
+  two that can drift, and it is what lets a toggle exist at all.
 */
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -19,11 +18,10 @@
        without the interface moving with it. Point this at HomeVision's own
        display face (Montserrat) and only the wordmark changes. */
     --font-wordmark: var(--font-sans);
-    /* Notes are handwriting on the file, not product copy — a different face is
-       what separates "the reviewer wrote this" from "the system says this".
-       Mono rather than serif: this is working text, closer to a margin
-       annotation than to prose, and it sits beside a document without
-       pretending to be part of it. */
+    /* Notes are handwriting on the file, not product copy, and a different face
+       separates "the reviewer wrote this" from "the system says this". Mono
+       rather than serif: this is working text, closer to a margin annotation
+       than to prose. */
     --font-note: 'Ubuntu Sans Mono Variable', ui-monospace, monospace;
     /* Severity is product vocabulary, so it lives in the token layer with
        everything else. A component never names a color. */
@@ -31,13 +29,16 @@
     --color-severity-major: var(--severity-major);
     --color-severity-minor: var(--severity-minor);
     /* Fills and text are different roles. The dot colors are tuned to read as
-       marks at 8px; the same values as 12px type would fail contrast — amber
-       badly. These are the darkened text-safe pair. */
+       marks at 8px; the same values at 12px type fail contrast, amber badly.
+       These are the darkened text-safe pair. */
     --color-severity-critical-text: var(--severity-critical-text);
     --color-severity-major-text: var(--severity-major-text);
     --color-severity-minor-text: var(--severity-minor-text);
-    /* The focused page tints three separate regions — the issue rows, the
-       status bar and the thumb strip segment. One token keeps them identical. */
+    --color-ready: var(--ready);
+    --color-ready-text: var(--ready-text);
+    --color-ready-surface: var(--ready-surface);
+    /* The focused page tints three separate regions: the issue rows, the status
+       bar and the thumb strip segment. One token keeps them identical. */
     --color-focus-tint: var(--focus-tint);
     --color-focus-edge: var(--focus-edge);
     --color-sidebar-ring: var(--sidebar-ring);
@@ -124,13 +125,20 @@
     --severity-minor-text: oklch(0.505 0.018 260);
     --focus-tint: #eef0fe;
     --focus-edge: #5865f3;
+
+    /* The cleared state, and the only green in the product: severity owns red,
+       amber and slate, so green means "nothing here is blocking you" and cannot
+       be confused with a finding. Three roles, for the same reason severity has
+       two. The surface is opaque rather than a tint over the panel, because the
+       severity words sit on it and a translucent background has no single value
+       to measure their contrast against. */
+    --ready: oklch(0.55 0.13 156);
+    --ready-text: oklch(0.43 0.11 156);
+    --ready-surface: oklch(0.968 0.026 156);
 }
 
-/*
-  Applied by useTheme, which resolves the three-value preference
-  (system / light / dark) down to this one class. CSS never sees the media
-  query, so there is exactly one definition of dark rather than two.
-*/
+/* Applied by useTheme, which resolves the three-value preference down to this
+   one class. */
 .dark {
     color-scheme: dark;
     --background: oklch(0.145 0 0);
@@ -173,15 +181,17 @@
     --severity-minor-text: oklch(0.75 0.018 260);
     --focus-tint: #232848;
     --focus-edge: #7c86f7;
+
+    --ready: oklch(0.7 0.15 156);
+    --ready-text: oklch(0.82 0.13 156);
+    --ready-surface: oklch(0.26 0.035 156);
 }
 
 /*
-  The row you just finished, settling.
-
-  Slow on purpose — three and a half seconds, easing out. A quick flash reads as
-  an error state; this should read as something completing. It starts as a solid
-  indigo ring and tint and releases gradually, so the eye is drawn to the right
-  row without anything demanding to be dismissed.
+  The row you just finished, settling. Three and a half seconds, easing out: a
+  quick flash reads as an error state, this should read as something completing.
+  It starts as a solid indigo ring and tint and releases gradually, so the eye is
+  drawn to the right row without anything demanding to be dismissed.
 */
 @keyframes vera-settle {
   0% {
@@ -212,10 +222,8 @@
 }
 
 /*
-  Submitting.
-
-  A sweep that runs while the work is happening, then a mark that lands. The
-  ring is deliberately unhurried — this is the one irreversible action in the
+  Submitting. A sweep that runs while the work is happening, then a mark that
+  lands. The ring is unhurried because this is the one irreversible action in the
   app, and a spinner that blurs past suggests something trivial just happened.
 */
 @keyframes vera-sweep {
@@ -276,7 +284,7 @@
   /*
     The shell is a fixed-height app frame, so the page itself never scrolls.
     Without this, iOS still rubber-bands the whole thing when a drag starts on
-    the header, the view switcher or the bottom bar — which reads as the app
+    the header, the view switcher or the bottom bar, which reads as the app
     coming loose from the screen.
   */
   html,
@@ -288,9 +296,9 @@
     @apply font-sans;
     /*
       Tailwind's preflight zeroes -webkit-tap-highlight-color, so without an
-      explicit :active state a tap produces literally no feedback until the
-      state changes. Controls carry their own :active; this restores a faint
-      system-level fallback for anything that doesn't.
+      explicit :active state a tap produces no feedback until the state changes.
+      Controls carry their own :active; this is a faint system-level fallback for
+      anything that doesn't.
     */
     -webkit-tap-highlight-color: color-mix(in oklab, var(--foreground) 8%, transparent);
   }

@@ -3,10 +3,8 @@ import { readNotes, writeNotes, type Notes } from '@/lib/notes'
 import type { Review } from '@/types/review'
 
 /**
- * Notes, scoped to the document rather than the version.
- *
- * See `lib/notes` for why that differs from the Done marks — briefly, a tick
- * expires when the findings change and a reason does not.
+ * Notes, scoped to the document rather than the version. A tick expires when the
+ * findings change and a reason does not; see `lib/notes`.
  */
 export function useIssueNotes(review: Pick<Review, 'id'>) {
   const { id } = review

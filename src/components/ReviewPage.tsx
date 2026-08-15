@@ -10,6 +10,7 @@ import { ThumbStrip } from '@/components/ThumbStrip'
 import { useReview } from '@/hooks/useReview'
 import { useDoneIssues } from '@/hooks/useDoneIssues'
 import { useIssueNotes } from '@/hooks/useIssueNotes'
+import { useScrollTracking } from '@/hooks/useScrollTracking'
 import { DEFAULT_VERSION, REVIEW_DOCUMENT, versionOf } from '@/lib/documents'
 import {
   canSubmit,
@@ -25,20 +26,17 @@ import type { Submission } from '@/lib/submission'
 import { ReviewAction } from '@/components/ReviewAction'
 
 /**
- * The shell.
- *
- * There are two layouts and one component tree. Which shape you get is decided
- * entirely in CSS at `lg` (1024px) — no media-query hook, no branch, no second
- * subtree to drift out of sync with the first. The tree also means the
- * Playwright suite can prove the shapes by resizing a single page.
+ * The shell. Two layouts, one component tree: which shape you get is decided in
+ * CSS at `lg` (1024px), with no media-query hook, no branch and no second
+ * subtree to drift out of sync. One tree also lets the Playwright suite prove
+ * both shapes by resizing a single page.
  *
  * The boundary is 1024 rather than 768 because the full shape carries two
  * controls the compact shape does without, and both need room. It is a rule
- * about the window and not about the device, which is what makes an iPad in
- * Split View come out right without a special case.
- *
- * The full shape is not "desktop": a 13" iPad is 1024px wide in portrait, so
- * it is a touch layout that also happens to have a cursor sometimes.
+ * about the window, not the device, which is what makes an iPad in Split View
+ * come out right without a special case. The full shape is not "desktop": a 13"
+ * iPad is 1024px wide in portrait, so it is a touch layout that sometimes has a
+ * cursor.
  */
 
 type Tab = 'issues' | 'document'
@@ -54,11 +52,10 @@ const ISSUES_PANEL_ID = 'issues-panel'
 
 export function ReviewPage() {
   /**
-   * The version lives in the URL, not in component state.
-   *
-   * It is a different thing to look at, so it deserves an address: a link to
-   * "this document at v2" is a link someone can paste, reload and bookmark.
-   * Component state would make the back button lie about where you are.
+   * The version lives in the URL, not in component state. It is a different
+   * thing to look at, so it deserves an address someone can paste, reload and
+   * bookmark. Component state would make the back button lie about where you
+   * are.
    */
   const [params, setParams] = useSearchParams()
   const version = Number(params.get('v')) || DEFAULT_VERSION
@@ -73,13 +70,10 @@ export function ReviewPage() {
   const { state, submit } = useReview(selected.url)
 
   /**
-   * Submitting returns you to the queue.
-   *
-   * The review page's own submitted state still exists and still matters — a
-   * review can arrive already submitted, with no click involved. But having
-   * *just* submitted one, the useful next screen is the list you came from, and
-   * the confirmation is seeing that row land as finished rather than reading a
-   * banner about it.
+   * Submitting returns you to the queue. The review page's own submitted state
+   * still matters, since a review can arrive already submitted with no click
+   * involved. Having just submitted one, though, the useful next screen is the
+   * list you came from, where the row landing as finished is the confirmation.
    */
   const submitAndReturn = useCallback(() => {
     submit()
@@ -139,16 +133,14 @@ function ReviewShell({
   const [issuesWidth, setIssuesWidth] = useState(DEFAULT_ISSUES_WIDTH)
   /**
    * One value, three views of it: the thumb strip marks it, the issues on it
-   * tint in the list, and the status bar names them. Everything on screen is
-   * answering the same question, so it is one piece of state rather than three
-   * that can disagree.
+   * tint in the list, and the status bar names them. One piece of state rather
+   * than three that can disagree.
    */
   const [focusedPage, setFocusedPage] = useState(1)
   /**
-   * A request to move the document, not a statement about where it is.
-   *
-   * The nonce is what makes "take me to page 13" work when you are already on
-   * page 13 — without it the effect never re-runs and the click does nothing.
+   * A request to move the document, not a statement about where it is. The nonce
+   * is what makes "take me to page 13" work when you are already on page 13:
+   * without it the effect never re-runs and the click does nothing.
    */
   const [seek, setSeek] = useState<SeekTarget>({ page: 1, nonce: 0, behavior: 'instant' })
   const splitRef = useRef<HTMLDivElement>(null)
@@ -156,11 +148,12 @@ function ReviewShell({
   const [sort, setSort] = useState<SortMode>('page')
   /**
    * View state, not review state. It changes what the list shows and never what
-   * the verdict says — the counts stay derived from the whole review, which is
-   * why the same lozenges can both report and filter without lying.
+   * the verdict says: the counts stay derived from the whole review, so the same
+   * lozenges can both report and filter without lying.
    */
   const [hiddenSeverities, setHiddenSeverities] = useState<ReadonlySet<Severity>>(new Set())
   const [hideDone, setHideDone] = useState(false)
+  const [scrollTracking, setScrollTracking] = useScrollTracking()
   const { done, toggle: toggleDone, clearAll: clearDone } = useDoneIssues(review)
   const { notes, setNote } = useIssueNotes(review)
 
@@ -174,8 +167,8 @@ function ReviewShell({
   }, [])
 
   const issues = useMemo(() => numberByPage(review.issues), [review.issues])
-  // Grouping is deliberately off the *unfiltered* list: the status bar and the
-  // thumb strip describe the document, not the current view of the list.
+  // Grouping is off the *unfiltered* list: the status bar and the thumb strip
+  // describe the document, not the current view of the list.
   const issuesByPage = useMemo(() => groupByPage(issues), [issues])
   const listed = useMemo(
     () => sortIssues(visibleIssues(issues, hiddenSeverities, { done, hideDone }), sort, done),
@@ -185,16 +178,14 @@ function ReviewShell({
   const submitted = review.status === 'submitted'
 
   /**
-   * The seam. Seeking *scrolls* — it never sets the focused page.
-   *
-   * Scroll position is the single writer of `focusedPage`, via the viewer's
-   * reading line. That is what keeps the highlight honest: it always means
-   * "this is what you are looking at" rather than "this is what you asked for",
-   * and the two are different for the whole length of a smooth scroll.
+   * The seam. Seeking *scrolls*; it never sets the focused page. Scroll position
+   * is the single writer of `focusedPage`, via the viewer's reading line, so the
+   * highlight always means "this is what you are looking at" rather than "this
+   * is what you asked for". The two differ for the whole length of a smooth
+   * scroll.
    *
    * Every control that means "take me to this page" comes through here, the
-   * thumb strip included — a scrubber that moved a highlight without moving the
-   * document would be a decoration.
+   * thumb strip included.
    */
   const seekToPage = useCallback((page: number, behavior: ScrollBehavior = 'smooth') => {
     setSeek((previous) => ({ page, nonce: previous.nonce + 1, behavior }))
@@ -221,7 +212,7 @@ function ReviewShell({
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-background">
-      {/* First thing in the tab order. A keyboard user shouldn't have to walk
+      {/* First thing in the tab order, so a keyboard user does not walk
           twenty-five issues to reach the document they're being asked about. */}
       <a
         href={`#${DOCUMENT_PANEL_ID}`}
@@ -274,9 +265,9 @@ function ReviewShell({
             tab !== 'issues' && 'max-lg:hidden',
           )}
         >
-          {/* Outside the scroller on purpose. Inside it, the answer to
-              acceptance criterion #3 scrolls off the top of the panel — and in
-              the full shape nothing else on screen carries the blocking count. */}
+          {/* Outside the scroller. Inside it, the answer to acceptance criterion
+              #3 scrolls off the top of the panel, and in the full shape nothing
+              else on screen carries the blocking count. */}
           <ReviewVerdict
             review={review}
             submission={submission}
@@ -287,7 +278,9 @@ function ReviewShell({
             onToggleDone={() => setHideDone((previous) => !previous)}
             className="shrink-0"
           />
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          {/* The panel owns its own scroller, one level down: the sort toolbar
+              has to sit above it so the scrollbar does not run past the header. */}
+          <div className="flex min-h-0 flex-1 flex-col">
             <IssuesPanel
               issues={listed}
               totalCount={issues.length}
@@ -300,6 +293,8 @@ function ReviewShell({
               onClearDone={clearDone}
               notes={notes}
               onNoteChange={setNote}
+              scrollTracking={scrollTracking}
+              onScrollTrackingChange={setScrollTracking}
             />
           </div>
         </section>
@@ -340,8 +335,8 @@ function ReviewShell({
       </div>
 
       {/* Compact only. The blocking count sits directly against the button it is
-          blocking, which is the plainest statement of the rule — and the bottom
-          of the screen is both thumb reach and where iOS puts primary actions. */}
+          blocking, and the bottom of the screen is both thumb reach and where
+          iOS puts primary actions. */}
       <div className="flex shrink-0 items-center gap-3 border-t bg-card px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] lg:hidden">
         <ReviewVerdict review={review} submission={submission} compact />
         {primaryAction}

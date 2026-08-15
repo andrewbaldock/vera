@@ -10,16 +10,13 @@ import {
 import type { Issue, Review, Severity } from '@/types/review'
 
 /**
- * The rules, tested on their own.
+ * The rules, tested on their own. They are pure functions over data, with no
+ * DOM, component or browser, which is why they live in `lib/` and why the tests
+ * are cheapest here. The layout suite covers the other half in a real browser.
  *
- * These are the product, and they are pure functions over data — no DOM, no
- * component, no browser. That is the whole reason they live in `lib/`, so this
- * is where the tests are cheapest and mean the most. The layout suite covers
- * the other half, in a real browser, because layout can't be tested here.
- *
- * The cases that matter are the ones the supplied mock cannot show us: the
- * clean document, the document with only minors, and numbering that has to
- * survive being re-sorted.
+ * The cases that matter are the ones the supplied mock cannot show: the clean
+ * document, the document with only minors, and numbering that has to survive
+ * being re-sorted.
  */
 
 function issue(id: string, severity: Severity, page: number): Issue {
@@ -64,7 +61,6 @@ describe('the gate', () => {
   it('never consults anything but the review data', () => {
     // The signature is the guarantee: canSubmit takes a Review, so there is no
     // argument through which a checkbox, a filter or a UI flag could reach it.
-    // A user asserting "I fixed it" must not be able to open the gate.
     const blocked = review([issue('a', 'critical', 2), issue('b', 'minor', 3)])
     expect(canSubmit(blocked)).toBe(false)
     expect(canSubmit({ ...blocked, status: 'submitted' })).toBe(false)
@@ -100,9 +96,8 @@ describe('numbering', () => {
   })
 
   it('keeps a number attached to its issue when the list is re-sorted', () => {
-    // The number appears beside the row AND on the document. If it were the row
-    // index, sorting by severity would renumber the list and the two would
-    // disagree in front of the user.
+    // The number appears beside the row AND on the document. As a row index,
+    // sorting by severity would renumber the list and the two would disagree.
     const numbered = numberByPage([
       issue('a', 'minor', 1),
       issue('b', 'critical', 9),

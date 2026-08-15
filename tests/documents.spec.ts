@@ -1,13 +1,10 @@
 import { test, expect, type Page } from '@playwright/test'
 
 /**
- * The documents list and the version switch.
- *
- * The list exists so the gate can be exercised more than once — opened from
- * somewhere, returned to, and run again. That makes it demo infrastructure
- * rather than product, and the tests here are mostly about it being honest:
- * the placeholders must not pretend to be interactive, and the reset must
- * actually reset.
+ * The documents list and the version switch. The list exists so the gate can be
+ * opened from somewhere, returned to, and run again, which makes it demo
+ * infrastructure rather than product. These tests are about it being honest: the
+ * placeholders must not pretend to be interactive, and the reset must reset.
  */
 
 const REVIEW = '/reviews/souj5sd12c8a3f'
@@ -31,9 +28,8 @@ test('exactly one row is a link, and the placeholders are not', async ({ page })
   const rows = page.getByRole('list', { name: 'Documents' }).getByRole('listitem')
   await expect(rows).toHaveCount(4)
 
-  // The whole point of the placeholders: nothing focusable that goes nowhere.
-  // A div cannot be tabbed to or pressed, which is stronger than styling it to
-  // look inert and hoping.
+  // Nothing focusable that goes nowhere. A div cannot be tabbed to or pressed,
+  // which is stronger than styling it to look inert.
   await expect(page.getByRole('list', { name: 'Documents' }).getByRole('link')).toHaveCount(1)
   await expect(page.getByRole('list', { name: 'Documents' }).getByRole('button')).toHaveCount(0)
 })
@@ -64,7 +60,7 @@ test.describe('versions', () => {
     await page.getByRole('menuitem', { name: /v3/ }).click()
 
     // The version is in the URL because it is a different thing to look at, so
-    // it deserves an address — this link can be pasted and reloaded.
+    // the link can be pasted and reloaded.
     await expect(page).toHaveURL(/v=3/)
     await expect(page.getByRole('region', { name: 'Issues found' })).toContainText(
       'Ready to submit',
@@ -97,7 +93,7 @@ test('the demo reset puts a submitted review back', async ({ page }) => {
 
   await page.getByRole('button', { name: /Reset demo data/ }).click()
 
-  // Without this, whoever is evaluating the build gets one shot at the most
+  // Without the reset, whoever is evaluating the build gets one shot at the most
   // important interaction in it.
   await page.goto(`${REVIEW}?v=3`)
   await expect(page.getByRole('region', { name: 'Issues found' })).toContainText('Ready to submit')
@@ -105,8 +101,7 @@ test('the demo reset puts a submitted review back', async ({ page }) => {
 
 test('issue descriptions are rendered, not just titles', async ({ page }) => {
   await page.goto(REVIEW)
-  // The title names the problem; only the description says what is wrong. It
-  // was in the type and in the fixture and on screen nowhere.
+  // The title names the problem; only the description says what is wrong.
   await expect(
     page.getByText(/match the inspection date on the cover page/).first(),
   ).toBeVisible()

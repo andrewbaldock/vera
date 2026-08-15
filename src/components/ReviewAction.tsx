@@ -21,28 +21,22 @@ import type { Review } from '@/types/review'
 /**
  * The one thing to do next, whichever state the review is in.
  *
- * **Blocked, the action is not "submit".** A button labelled with something it
- * refuses to perform is a small lie told on every render, and disabling it only
- * makes the lie quieter. What is actually available while critical or major
- * issues remain is a new version of the document — so that is what the control
- * says, and it is a real link rather than a dead button.
+ * **Blocked, the action is not "submit".** A button labeled with something it
+ * refuses to perform is a lie told on every render, and disabling it only makes
+ * the lie quieter. What is available while critical or major issues remain is a
+ * new version of the document, so that is what the control says, as a real link
+ * rather than a dead button. Not an `aria-disabled` submit: not having an
+ * unavailable control beats explaining one, and `aria-describedby` still points
+ * at the blocking summary either way.
  *
- * That supersedes the earlier `aria-disabled` treatment, and it is a better
- * answer to the same problem. `aria-disabled` existed so a keyboard user could
- * still reach the control and hear why it was unavailable; not having an
- * unavailable control at all beats explaining one. `aria-describedby` still
- * points at the blocking summary, so the reason is one keystroke away either
- * way.
- *
- * VERA does not upload — the upload flow is another screen in the spec's flow
- * diagram and someone else's ticket. The control opens that conversation and
- * stops at the boundary, deliberately inert. See UploadDialog.
+ * VERA does not upload. That flow is another screen in the spec's diagram and
+ * someone else's ticket, so the control opens the conversation and stops at the
+ * boundary, inert. See UploadDialog.
  *
  * **Open, the action is submit**, and it asks first. Accepting minor findings is
- * a judgment on a mortgage file, submission is a one-way door with no un-submit
- * anywhere in the flow, and the dialog is the one moment to say both out loud.
- * It names the count rather than saying "some issues" — a number is something
- * you can decide against.
+ * a judgment on a mortgage file and submission is a one-way door with no
+ * un-submit anywhere in the flow. The dialog names the count rather than saying
+ * "some issues", because a number is something you can decide against.
  */
 
 interface ReviewActionProps {
@@ -52,13 +46,10 @@ interface ReviewActionProps {
 }
 
 /**
- * How long the submission is shown taking.
- *
- * There is no backend, so this is theatre — but it is the honest kind. A real
+ * How long the submission is shown taking. There is no backend, but a real
  * submission of a mortgage file is a network round trip, and collapsing the one
  * irreversible action in the app into an instant nothing makes it feel like it
- * did not happen. The sequence is deliberately unhurried for the same reason
- * the confirmation exists: this is the moment worth marking.
+ * did not happen. Unhurried for the same reason the confirmation exists.
  */
 const SUBMITTING_MS = 1500
 const LANDED_MS = 1200
@@ -81,15 +72,15 @@ export function ReviewAction({ review, submittable, onConfirm }: ReviewActionPro
     <UploadDialog
       review={review}
       trigger={
-        // Outlined, not filled — but still in the brand color. Submitting is
-        // the goal of this page and keeps the solid weight; uploading steps
-        // back without becoming grey furniture. A neutral outline would read
-        // as a cancel.
+        // Outlined, not filled, but still in the brand color. Submitting is the
+        // goal of this page and keeps the solid weight; uploading steps back
+        // without becoming gray furniture. A neutral outline would read as a
+        // cancel.
         //
-        // Icon-only in the compact layout: at 320px the bottom bar is carrying
-        // the verdict and the primary action already, and a second labelled
+        // Icon-only in the compact layout: at 320px the bottom bar already
+        // carries the verdict and the primary action, and a second labeled
         // button would push one of them off. The label stays in the accessible
-        // name, so nothing is lost to a screen reader.
+        // name.
         <Button
           variant="outline"
           className="min-h-11 border-2 border-primary/55 text-primary hover:border-primary/75 hover:bg-accent hover:text-primary active:bg-accent max-lg:size-11 max-lg:px-0"
@@ -104,9 +95,9 @@ export function ReviewAction({ review, submittable, onConfirm }: ReviewActionPro
 
   /**
    * Uploading a new version is available for as long as the review is open, not
-   * only while it is blocked. Spotting something after the gate opens is a
-   * perfectly ordinary thing to do, and hiding the escape hatch the moment the
-   * document passes would make the clean state feel like a trap.
+   * only while it is blocked. Spotting something after the gate opens is
+   * ordinary, and hiding the escape hatch the moment the document passes would
+   * make the clean state feel like a trap.
    */
   if (!submittable) return uploadAction
 
@@ -117,8 +108,8 @@ export function ReviewAction({ review, submittable, onConfirm }: ReviewActionPro
       {uploadAction}
       <AlertDialog open={open} onOpenChange={(next) => !busy && setOpen(next)}>
       <AlertDialogTrigger asChild>
-        {/* 44px, because shadcn's default is 32 — under the touch minimum, on
-            the one control this whole page exists to gate. */}
+        {/* 44px, because shadcn's default is 32: under the touch minimum, on the
+            one control this whole page exists to gate. */}
         <Button className={cn('min-h-11')}>Submit review</Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
@@ -176,13 +167,12 @@ export function ReviewAction({ review, submittable, onConfirm }: ReviewActionPro
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel className="min-h-11">Keep reviewing</AlertDialogCancel>
-          {/* The action names what happens, and matches the button that opened
-              it — an interface people learn their way around says the same word
-              at every step. */}
+          {/* The action names what happens and matches the button that opened
+              it: the same word at every step. */}
           <AlertDialogAction
             className="min-h-11"
             onClick={(event) => {
-              // Hold the dialog open — it becomes the progress surface rather
+              // Hold the dialog open: it becomes the progress surface rather
               // than vanishing and leaving the page to explain itself.
               event.preventDefault()
               run()

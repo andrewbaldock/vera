@@ -3,12 +3,10 @@ import { isReview } from './useReview'
 import mock from '../../public/review_mock.json'
 
 /**
- * The boundary guard.
- *
- * The point of validating at all is that the app claims not to be overfitted to
- * the supplied fixture — so the first test is that the real fixture passes, and
- * the rest are the malformed payloads that used to sail past the error state
- * and die inside a render instead.
+ * The boundary guard. The app is not overfitted to the supplied fixture, so the
+ * first test is that the real fixture passes and the rest are the malformed
+ * payloads that would otherwise sail past the error state and die inside a
+ * render.
  */
 
 function withoutKey<T extends object>(object: T, key: keyof T) {
@@ -28,7 +26,7 @@ describe('isReview', () => {
 
   it('rejects anything that is not an object', () => {
     // A plain loop rather than `it.each`, which the two test runners disagree
-    // about — and this file has to pass under both.
+    // about. This file has to pass under both.
     for (const value of [null, undefined, 'a string', 42, [], true]) {
       expect(isReview(value)).toBe(false)
     }
@@ -40,7 +38,7 @@ describe('isReview', () => {
   })
 
   it('rejects a severity outside the three we render', () => {
-    // Silently, this produced an uncoloured dot and a NaN in the summary.
+    // Unguarded, this produces an uncolored dot and a NaN in the summary.
     const issues = [{ ...mock.issues[0], severity: 'catastrophic' }]
     expect(isReview({ ...mock, issues })).toBe(false)
   })

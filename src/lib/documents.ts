@@ -1,16 +1,14 @@
 import type { ReviewStatus } from '@/types/review'
 
 /**
- * The demo catalog.
+ * The demo catalog. There is no documents endpoint: this page belongs to a
+ * teammate's ticket and VERA owns the Review Page. This is the smallest list
+ * that gives the review page somewhere to be opened from and returned to, so the
+ * gate is demonstrable rather than a one-way trip.
  *
- * There is no documents endpoint — this page belongs to a teammate's ticket, and
- * VERA owns the Review Page. What exists here is the smallest list that gives
- * the review page somewhere to be opened *from* and somewhere to return *to*,
- * which is what makes the gate demonstrable rather than a one-way trip.
- *
- * One document is real, with two versions behind it. The rest are inert and
- * look it: no link, no hover, muted. A placeholder that looks clickable and
- * isn't is worse than one that plainly isn't.
+ * One document is real, with two versions behind it. The rest are inert and look
+ * it: no link, no hover, muted. Not placeholders that look clickable, which
+ * invite a click that goes nowhere.
  */
 
 export interface DocumentVersion {
@@ -27,15 +25,15 @@ export interface CatalogDocument {
 }
 
 /**
- * Two versions of one document, sharing one PDF — which is honest rather than
- * convenient. They are the same document, so identical pages is what you would
- * expect; what differs is what the review found in it.
+ * Two versions of one document, sharing one PDF. They are the same document, so
+ * identical pages is what you would expect; what differs is what the review
+ * found in it.
  *
  * v2 is the supplied fixture, untouched. v3 is the same report after the
- * critical and major issues were resolved and it was uploaded again — the loop
- * the spec describes, which happens outside this app entirely. It still carries
- * minor issues, so the open gate is a real judgment call rather than a
- * formality: submitting means choosing to ignore them.
+ * critical and major issues were resolved and it was uploaded again, the loop
+ * the spec describes, which happens outside this app. v3 still carries minor
+ * issues, so the open gate is a judgment call rather than a formality:
+ * submitting means choosing to ignore them.
  */
 export const REVIEW_DOCUMENT: CatalogDocument = {
   id: 'souj5sd12c8a3f',
@@ -54,9 +52,8 @@ export function versionOf(document: CatalogDocument, version: number): DocumentV
 }
 
 /**
- * Enough neighbors to make the list read as a list. Deliberately not
- * interactive, and deliberately not pretending to be: no href, no hover, no
- * cursor change, muted text.
+ * Enough neighbors to make the list read as a list. Not interactive and not
+ * pretending to be: no href, no hover, no cursor change, muted text.
  */
 export interface PlaceholderDocument {
   name: string

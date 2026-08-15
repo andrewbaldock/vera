@@ -1,12 +1,10 @@
 import { test, expect, type Page } from '@playwright/test'
 
 /**
- * The gate — acceptance criteria #2 and #3.
- *
- * Both halves are tested, because a build that can only demonstrate the blocked
- * branch of its own most important rule is proving very little. `?fixture=clean`
- * loads a second payload with no critical or major issues; the gate itself is
- * unchanged, it just has different issues to read.
+ * The gate: acceptance criteria #2 and #3. Both halves are tested, because a
+ * build that can only demonstrate the blocked branch proves half the rule.
+ * `?v=3` loads the same document re-uploaded with the blockers resolved; the
+ * gate itself is unchanged, it just has different issues to read.
  */
 
 const BLOCKED = '/reviews/souj5sd12c8a3f'
@@ -14,10 +12,9 @@ const BLOCKED = '/reviews/souj5sd12c8a3f'
 const CLEAN = '/reviews/souj5sd12c8a3f?v=3'
 
 /**
- * No localStorage clearing here on purpose. Every test gets a fresh browser
- * context, so it starts empty — and an `addInitScript` that clears it would
- * re-run on *every* navigation, wiping the submission the reload test exists to
- * check.
+ * No localStorage clearing here. Every test gets a fresh browser context, so it
+ * starts empty, and an `addInitScript` that cleared it would re-run on *every*
+ * navigation, wiping the submission the reload test exists to check.
  */
 async function open(page: Page, url: string) {
   await page.goto(url)
@@ -28,9 +25,9 @@ const submitButton = (page: Page) =>
   page.getByRole('button', { name: 'Submit review' }).filter({ visible: true })
 
 /**
- * The verdict renders in two places on purpose — the panel in the full layout,
- * the bottom bar in the compact one — and the inactive one stays in the DOM.
- * Scoping to the region keeps these assertions about one of them.
+ * The verdict renders in two places, the panel in the full layout and the bottom
+ * bar in the compact one, and the inactive one stays in the DOM. Scoping to the
+ * region keeps these assertions about one of them.
  */
 const verdict = (page: Page) => page.getByRole('region', { name: 'Issues found' })
 
@@ -51,9 +48,9 @@ test.describe('while something is blocking', () => {
   }) => {
     await open(page, BLOCKED)
 
-    // A control labelled with something it refuses to perform is a small lie
-    // told on every render, and disabling it only makes the lie quieter. While
-    // blockers remain, the available action is a new version of the document.
+    // A control labeled with something it refuses to perform is a lie told on
+    // every render, and disabling it only makes the lie quieter. While blockers
+    // remain, the available action is a new version of the document.
     await expect(submitButton(page)).toHaveCount(0)
 
     const action = page.getByRole('button', { name: 'Upload new version' }).first()
@@ -62,7 +59,7 @@ test.describe('while something is blocking', () => {
     await expect(action).toHaveAttribute('aria-describedby', 'submit-blocked')
     await expect(page.locator('#submit-blocked')).toBeVisible()
 
-    // Enabled and focusable — no dead control anywhere on the page.
+    // Enabled and focusable: no dead control anywhere on the page.
     await expect(action).toBeEnabled()
     await action.focus()
     await expect(action).toBeFocused()
@@ -115,7 +112,7 @@ test.describe('once nothing is blocking', () => {
     await page.getByRole('alertdialog').getByRole('button', { name: 'Submit review' }).click()
 
     // Having just finished one, the useful next screen is the list you came
-    // from — and the confirmation is seeing that row land as finished.
+    // from, where the row landing as finished is the confirmation.
     await expect(page).toHaveURL(/\/documents\?submitted=/)
     await expect(
       page.getByRole('list', { name: 'Documents' }).getByText('Submitted').first(),

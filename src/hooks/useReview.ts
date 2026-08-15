@@ -9,29 +9,25 @@ import {
 } from '@/lib/submission'
 
 /**
- * The mock stands in for an endpoint that doesn't exist yet.
+ * The mock stands in for an endpoint that doesn't exist yet. Fetched over HTTP
+ * rather than imported, so the async boundary is real and the loading and error
+ * states are not theater.
  *
- * It's fetched over HTTP rather than imported, so the async boundary is real
- * and the loading and error states are honest instead of theatre.
- */
-/**
- * Which fixture to load is now a *version*, not a query string.
+ * Which fixture to load is a *version*, not a query string. Not `?fixture=clean`:
+ * the supplied mock can only demonstrate the blocked half of the gate, and two
+ * versions of one document show the other half without a demo-only param. v2 is
+ * the supplied review, v3 the same report re-uploaded with the blockers
+ * resolved.
  *
- * It started as `?fixture=clean` — a demo affordance for showing the open gate,
- * since the supplied mock can only ever demonstrate the blocked half of the
- * most important rule in the app. Two versions of one document says the same
- * thing without the apologetic query param: v2 is the supplied review, v3 is
- * the same report re-uploaded with the blockers resolved.
- *
- * The gate never consults any of this. `canSubmit` reads the review's issues
- * and nothing else; a different version just gives it different issues.
+ * The gate never consults any of this. `canSubmit` reads the review's issues and
+ * nothing else; a different version just gives it different issues.
  */
 
 /**
- * The supplied mock points `pdf_url` at example.com. We substitute the local
- * file here, at the boundary, rather than editing the fixture — the fixture
- * stays a faithful copy of what we were given, and the substitution stays
- * visible in code where it can be explained.
+ * The supplied mock points `pdf_url` at example.com. The local file is
+ * substituted here at the boundary rather than in the fixture, so the fixture
+ * stays a faithful copy of what was supplied and the substitution stays visible
+ * in code.
  */
 const LOCAL_PDF_URL = '/docs/example_document.pdf'
 
@@ -45,26 +41,21 @@ export interface UseReview {
   /** Records the submission and flips the review's status. One-way. */
   submit: () => void
   /**
-   * Undoes it — for the documents list, so the gate can be demonstrated more
-   * than once. Not a product feature: there is no reopened status in the enum
-   * and no un-submit in the spec's flow. It exists so a reviewer clicking
-   * through this build isn't left with a one-shot demo.
+   * Undoes it, for the documents list, so the gate can be demonstrated more than
+   * once. Not a product feature: there is no reopened status in the enum and no
+   * un-submit in the spec's flow.
    */
   clear: () => void
 }
 
 /**
- * A cast is a promise, not a check.
+ * A cast is a promise, not a check. This app is not overfitted to the mock, so
+ * the boundary has to look at what arrives. Without it, `issues: null` sails
+ * past the error state that exists for exactly this and dies later inside a
+ * render, and an unrecognized severity degrades silently into an uncolored dot
+ * and a count that reads NaN.
  *
- * The whole argument for this app is that it isn't overfitted to the mock —
- * hand it a different payload and it behaves correctly. That argument needs a
- * boundary that actually looks. Without one, `issues: null` sails past the
- * error state that exists for exactly this and dies later inside a render,
- * and an unrecognised severity degrades *silently* into an uncoloured dot and
- * a count that reads NaN.
- *
- * Hand-written rather than a schema library: it is twenty lines, it needs no
- * dependency, and every line of it is explainable.
+ * Hand-written rather than a schema library: twenty lines and no dependency.
  */
 const SEVERITIES = ['critical', 'major', 'minor']
 const STATUSES = ['created', 'processing', 'on_review', 'submitted']
@@ -143,8 +134,8 @@ export function useReview(url: string): UseReview {
           throw new Error('The review data was not in the expected shape.')
         }
         // The stored submission is layered over the fixture, so a submitted
-        // review renders as submitted on a cold load — which is exactly what a
-        // real endpoint returning status: 'submitted' would produce.
+        // review renders as submitted on a cold load, as a real endpoint
+        // returning status: 'submitted' would.
         const review = withLocalPdf(payload)
         const submission = readSubmission(review)
         setState({
@@ -155,13 +146,13 @@ export function useReview(url: string): UseReview {
       } catch (error) {
         if (controller.signal.aborted) return
         // Raw parser output ("Unexpected token '<'…") tells a reviewer nothing
-        // and looks like a crash. The real message goes to the console for us.
+        // and looks like a crash. The real message goes to the console.
         if (error instanceof Error) console.error('Failed to load review:', error)
         setState({ status: 'error', message: 'The review could not be loaded.' })
       }
     }
 
-    // Re-runs when the version changes, which is the whole point of the prop.
+    // Re-runs when the version changes.
     setState({ status: 'loading' })
     load()
     return () => controller.abort()

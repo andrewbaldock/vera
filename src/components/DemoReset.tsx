@@ -4,21 +4,14 @@ import { clearSubmission } from '@/lib/submission'
 import type { CatalogDocument } from '@/lib/documents'
 
 /**
- * Puts the demo back.
+ * Puts the demo back. Submission persists, because `status: 'submitted'` is a
+ * value the API can return and the page has to render it on a cold load, which
+ * leaves whoever is evaluating this build able to submit only once.
  *
- * Submission persists — deliberately, because `status: 'submitted'` is a value
- * the API can return and the page has to render it on a cold load. The cost is
- * that whoever is evaluating this build can only submit once, and then the most
- * important interaction in the app is spent.
- *
- * So there is a reset. It lives here, plainly labeled as a demo control, rather
- * than in the row's overflow menu — a "clear submission" item sitting inside
- * product chrome would read as an un-submit feature, and un-submitting is
- * exactly what the spec's flow does not allow. There is no reopened status in
- * the enum and no arrow back. Corrections happen by uploading a new version.
- *
- * Looking like a demo control is the point. It is what stops it being mistaken
- * for a product claim.
+ * The reset lives here, labeled as a demo control, not in the row's overflow
+ * menu: a "clear submission" item inside product chrome would read as an
+ * un-submit feature, and the spec's flow has no reopened status and no arrow
+ * back. Corrections happen by uploading a new version.
  */
 export function DemoReset({ document }: { document: CatalogDocument }) {
   const [justReset, setJustReset] = useState(false)
@@ -32,10 +25,9 @@ export function DemoReset({ document }: { document: CatalogDocument }) {
   }
 
   return (
-    // Visibly not the product. Dashed, off to one side, and labelled as an
-    // aside to whoever is evaluating the build — a reset control styled like
-    // product chrome would read as a feature, and un-submitting is exactly what
-    // this app must not appear to offer.
+    // Visibly not the product: dashed, off to one side, and labeled as an aside
+    // to whoever is evaluating the build. A reset styled like product chrome
+    // would read as an un-submit feature.
     <div className="mt-6 mb-2 rounded-lg border border-dashed px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
       <p className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase">
         <FlaskConical className="size-3.5" aria-hidden />

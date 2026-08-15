@@ -1,19 +1,16 @@
 /**
- * The product name, in one place.
- *
- * Always capitals. HomeVision sets MIRA that way everywhere on their own site,
- * so a sibling product rendered as "Vera" reads as a different kind of thing —
+ * The product name, in one place. Always capitals: HomeVision sets MIRA that way
+ * everywhere on their own site, so a sibling product rendered as "Vera" reads as
  * a person's name rather than a system's.
  *
  * The name is Latin *verus*, true. MIRA finds the problems; VERA is where a
- * person decides. It is deliberately in the same family as their product rather
- * than competing with it, which is also why the mark borrows their faceted
+ * person decides. It sits in the same family as their product rather than
+ * competing with it, which is also why the mark borrows their faceted
  * construction instead of their shape.
  *
  * Two places necessarily duplicate this, because they are static files parsed
  * before any JavaScript runs: the `<title>` in `index.html` and the `name`
  * fields in `manifest.webmanifest`. Both carry a comment pointing here.
- * Everything the app renders reads this constant.
  */
 export const PRODUCT_NAME = 'VERA'
 

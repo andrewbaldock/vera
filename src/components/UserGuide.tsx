@@ -9,16 +9,13 @@ import {
 import { PRODUCT_NAME } from '@/lib/brand'
 
 /**
- * How to use it, from inside it.
+ * How to use it, from inside it. A compliance tool is used all day by people who
+ * never read documentation, so the help lives where the work happens rather than
+ * in a wiki nobody opens. It earns its place mostly for the keyboard grid, which
+ * is faster than a mouse here and undiscoverable unless something says so.
  *
- * A compliance tool is used all day by people who never read documentation, so
- * the help has to live where the work happens rather than in a wiki nobody
- * opens. It earns its place mostly for the keyboard grid: arrow-key navigation
- * is genuinely faster than a mouse here, and it is completely undiscoverable
- * unless something says so.
- *
- * It is also the honest place to state what the app deliberately does not do —
- * the reasons are good, and a user who knows why is not a user filing a bug.
+ * It is also where the app states what it does not do, so a user who knows why
+ * is not a user filing a bug.
  */
 
 function Key({ children }: { children: React.ReactNode }) {
@@ -109,8 +106,10 @@ export function UserGuide({ trigger }: { trigger: React.ReactNode }) {
               which comes back as a fresh review.
             </li>
             <li>
-              <span className="font-medium text-foreground">The list never scrolls itself.</span>{' '}
-              Moving through the document highlights issues but won’t move the list under you.
+              <span className="font-medium text-foreground">The list can follow the document.</span>{' '}
+              Scroll tracking, in the list’s ⋮ menu, scrolls the issues along with the page you’re
+              on. Turn it off and the list stays exactly where you put it — the issues on the page
+              are still highlighted either way.
             </li>
             <li>
               <span className="font-medium text-foreground">Your Done ticks are per version.</span>{' '}

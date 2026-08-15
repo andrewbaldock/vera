@@ -1,26 +1,23 @@
 import { test, expect, type Page } from '@playwright/test'
 
 /**
- * The layout tests.
- *
- * These assert *structure*, not pixels. No screenshot baselines: WebKit and
- * Chromium rasterize type differently, so a baseline suite would need one set
- * per engine and would churn on every UI change. What is actually worth
- * asserting is invariant across both engines — the page never scrolls
+ * The layout tests. These assert *structure*, not pixels. Not screenshot
+ * baselines: WebKit and Chromium rasterize type differently, so a baseline suite
+ * would need one set per engine and would churn on every UI change. What is
+ * worth asserting is invariant across both engines: the page never scrolls
  * sideways, the shell owns the height, the correct shape renders, and every
  * touch target clears 44px.
  *
- * The presence/absence table below IS the specification. Two layouts is a
- * design decision, and the way you prove a layout isn't just the other one
- * stretched is that each renders things the other doesn't.
+ * The presence/absence table below IS the specification. What proves a layout
+ * isn't the other one stretched is that each renders things the other doesn't.
  */
 
 /** The only breakpoint that changes the shape. */
 const BREAKPOINT = 1024
 
 /**
- * Real widths, chosen because something actually is this wide — plus the two
- * either side of the breakpoint, which is where layouts break in practice.
+ * Real widths, chosen because something is this wide, plus the two either side
+ * of the breakpoint, which is where layouts break in practice.
  */
 const VIEWPORTS = [
   { name: 'iPhone SE', width: 320, height: 568 },
@@ -60,11 +57,9 @@ async function gotoReview(page: Page) {
 }
 
 /**
- * The one thing to do next, whichever form it takes.
- *
- * Blocked it is a link to upload a new version; open it is the submit button.
- * These assertions are about the *action* being present and reachable, not
- * about which of the two it currently is.
+ * The one thing to do next, whichever form it takes. Blocked it is a link to
+ * upload a new version, open it is the submit button. These assertions are about
+ * the *action* being present and reachable, not about which of the two it is.
  */
 const primaryAction = (page: Page) =>
   page
@@ -131,8 +126,8 @@ for (const viewport of VIEWPORTS) {
       await gotoReview(page)
 
       // One in the header for the full shape, one in the bottom bar for the
-      // compact one. Never both, never neither — this is the control the whole
-      // page exists to gate, and it must never be a tab away.
+      // compact one. Never both, never neither: this is the control the whole
+      // page exists to gate.
       const visible = await primaryAction(page).filter({ visible: true }).all()
       expect(visible).toHaveLength(1)
 
@@ -177,8 +172,8 @@ test.describe('touch targets', () => {
 
 test.describe('touch targets in the full shape', () => {
   // A 13in iPad is this wide in portrait, so the full shape is a touch layout.
-  // hasTouch is what makes `(pointer: coarse)` match — without it the browser
-  // reports a mouse and the splitter deliberately stays a hairline.
+  // hasTouch is what makes `(pointer: coarse)` match: without it the browser
+  // reports a mouse and the splitter stays a hairline.
   test.use({ viewport: { width: BREAKPOINT, height: 1366 }, hasTouch: true, isMobile: true })
 
   test('the thumb strip is one target 44px wide, not 34 small ones', async ({ page }) => {
@@ -195,13 +190,11 @@ test.describe('touch targets in the full shape', () => {
 })
 
 /**
- * The other half of that decision, and the reason it isn't just "44px always".
- *
- * A 46px grab zone under a mouse sits 20px over each panel — stealing clicks
- * from the issue rows on one side and, once the viewer mounts, from the left
- * edge of every rendered page on the other. Wide for a finger, narrow for a
- * cursor: this asserts the narrow half, which is the half that regresses
- * silently.
+ * The other half of that decision, and the reason it is not "44px always". A
+ * 46px grab zone under a mouse sits 20px over each panel, stealing clicks from
+ * the issue rows on one side and, once the viewer mounts, from the left edge of
+ * every rendered page on the other. Wide for a finger, narrow for a cursor; this
+ * asserts the narrow half, which is the half that regresses silently.
  */
 test.describe('the splitter under a mouse', () => {
   test.use({ viewport: { width: 1440, height: 900 } })
@@ -215,10 +208,9 @@ test.describe('the splitter under a mouse', () => {
 
 /**
  * The named viewports catch the devices. This catches the widths in between,
- * which is where layouts actually break — a fixed matrix sails straight past
- * the 1007px disaster because nothing in the list happens to be 1007px.
- *
- * One assertion, so it stays cheap enough to run over the whole range.
+ * where layouts break: a fixed matrix sails past the 1007px disaster because
+ * nothing in the list happens to be 1007px. One assertion, so it stays cheap
+ * enough to run over the whole range.
  */
 test.describe('every width in between', () => {
   test('nothing overflows and the shape is right, from 320 to 1920', async ({ page }) => {

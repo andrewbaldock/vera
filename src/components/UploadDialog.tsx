@@ -12,18 +12,15 @@ import { Button } from '@/components/ui/button'
 import type { Review } from '@/types/review'
 
 /**
- * What happens next, shown rather than described — and deliberately inert.
+ * What happens next, shown rather than described, and inert. VERA does not
+ * upload: the spec's flow gives that to a separate screen, and building it would
+ * mean owning file handling, virus scanning, format validation and the version
+ * bump.
  *
- * VERA does not upload. The spec's flow gives that to a separate screen, and
- * building it would mean owning file handling, virus scanning, format
- * validation and the version bump — someone else's ticket, and a lot of it.
- *
- * But leaving the blocked state with no visible next step is its own kind of
- * dishonesty, because it makes the gate look like a dead end when it is
- * actually a loop. So the control opens the real conversation and then stops
- * at the boundary: the drop zone is disabled, and the dialog says whose screen
- * this is. A disabled control that explains itself is more honest than a
- * working one that quietly pretends this app owns the flow.
+ * A blocked state with no visible next step makes the gate look like a dead end
+ * when it is a loop, so the control opens the real conversation and stops at the
+ * boundary. The drop zone is disabled and the dialog says whose screen this is,
+ * rather than pretending this app owns the flow.
  */
 export function UploadDialog({ review, trigger }: { review: Review; trigger: React.ReactNode }) {
   return (
@@ -41,7 +38,7 @@ export function UploadDialog({ review, trigger }: { review: Review; trigger: Rea
           </DialogDescription>
         </DialogHeader>
 
-        {/* Inert on purpose — see the note above. */}
+        {/* Inert. See the note above. */}
         <div
           aria-disabled
           className="flex flex-col items-center gap-2 rounded-lg border border-dashed px-6 py-10 text-center opacity-60"

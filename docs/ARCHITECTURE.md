@@ -36,9 +36,9 @@ types/          review.ts
 ```
 
 **The direction is the guarantee, not a convention.** `canSubmit` lives in `lib/review.ts`,
-which imports nothing but types. There is no path — not even an accidental one — from a
-checkbox, a filter or any piece of UI state into the gate, because the file that computes the
-gate cannot see them. That is stronger than a code review promising the same thing.
+which imports nothing but types. There is no path from a checkbox, a filter or any piece of UI
+state into the gate, because the file that computes the gate cannot see them. That is stronger
+than a code review promising the same thing.
 
 The signature says it twice:
 
@@ -52,7 +52,7 @@ mistake you can make; it is a type error.
 ## 2. Routing
 
 Three routes and a spike, using React Router rather than a hand-rolled
-`pushState` — the same rule that picked shadcn over hand-rolled components and
+`pushState`. Same rule that picked shadcn over hand-rolled components and
 react-pdf over raw pdf.js: reach for the library when one exists.
 
 | Route | What |
@@ -67,12 +67,12 @@ link that survives a paste and a reload, and the back button stops lying about
 where you are.
 
 **`/documents` is a stub, not the Documents Page** from the spec's flow. It has
-one live row, three inert placeholders and a reset control — the smallest
-surface that gives the review somewhere to be opened from and returned to.
-Without it, submitting is a one-way trip and an evaluator gets one attempt at
-the most important interaction in the build.
+one live row, three inert placeholders and a reset control: the smallest surface
+that gives the review somewhere to be opened from and returned to. Without it,
+submitting is a one-way trip and an evaluator gets one attempt at the most
+important interaction in the build.
 
-Deployed as a static build on Vercel, where `vercel.json` carries the rewrite —
+Deployed as a static build on Vercel, where `vercel.json` carries the rewrite,
 matching **only extensionless paths**, so a missing asset still 404s instead of
 receiving `index.html` with a 200 and being parsed as JavaScript.
 
@@ -105,11 +105,11 @@ useDoneIssues(review)        the reviewer's private worklist, from localStorage
                              keyed by review id AND version
 ```
 
-**Two hooks, on purpose.** `useReview` is what the API says about the document;
+**Two hooks.** `useReview` is what the API says about the document;
 `useDoneIssues` is what the person at the keyboard has ticked off. Keeping them
-apart is the same instinct that keeps `canSubmit` in a file that cannot see a
-checkbox — and it is why hiding every severity, ticking every issue and sorting
-the list cannot move the gate by so much as a pixel.
+apart is what keeps `canSubmit` in a file that cannot see a checkbox, and it is
+why hiding every severity, ticking every issue and sorting the list cannot move
+the gate.
 
 **Validation is at the boundary and nowhere else.** `isReview()` is ~20 hand-written lines
 rather than a schema dependency. Once past it, every component downstream can trust its props
@@ -117,7 +117,7 @@ completely, and none of them carry defensive checks.
 
 ## 4. `focusedPage` — one writer, three readers
 
-The single most important piece of state in the app, and the one most worth understanding.
+The single most important piece of state in the app.
 
 ```
 seekToPage(n)         issue click · thumb strip drag · keyboard
@@ -134,19 +134,19 @@ focusedPage  ─────────┬─── thumb strip   marks the seg
                       └─── status bar    names the issues on that page
 ```
 
-**Seeking never sets the page.** It scrolls, and the measurement decides. That is what keeps
-the highlight honest: it always means *"this is what you are looking at"*, never *"this is
-what you asked for"* — and those two are different for the entire length of a smooth scroll.
+**Seeking never sets the page.** It scrolls, and the measurement decides. That keeps the
+highlight honest: it always means *"this is what you are looking at"*, never *"this is what
+you asked for"*, and those two are different for the entire length of a smooth scroll.
 
-Two consequences worth knowing before touching it:
+Two consequences:
 
 - **Measurement is suppressed during a programmatic scroll**, released on `scrollend` with a
   timeout fallback. Without it, a scroll to page 17 reports every page it passes and the list
   strobes on the way.
 - **The reading line is a measurement, not an `IntersectionObserver`.** Observer callbacks
   fire only when a threshold is *crossed*, so distant pages keep reporting stale ratios and a
-  page taller than the viewport never reaches the higher thresholds at all. The first version
-  froze after one scroll.
+  page taller than the viewport never reaches the higher thresholds at all, which freezes the
+  reading after one scroll.
 
 ## 5. Two layouts, one component tree
 
@@ -164,8 +164,8 @@ There is no `useMediaQuery`, no `isMobile` branch and no second subtree. Three t
 - **Nothing can drift.** Most codebases claiming "mobile-first" have two trees that diverge
   quietly over months.
 - **No layout flash**, because there is no JS deciding anything at mount.
-- **The layout suite can prove the shapes by resizing a single page** — which is exactly what
-  it does, across twelve viewports and a 320→1920px sweep.
+- **The layout suite can prove the shapes by resizing a single page**, which it does across
+  twelve viewports and a 320→1920px sweep.
 
 The mechanism is `max-lg:hidden` on the inactive view and `lg:w-[var(--issues-width)]` for
 the splitter's width, with `--issues-width` set as an inline custom property so a JS number
@@ -186,28 +186,28 @@ The riskiest component, and the one that carries acceptance criterion #1.
 | Concern | How |
 |---|---|
 | **Whole-document find** | Every page's text layer is mounted, always. Browser find only searches the DOM, so this is the price of using the platform's find rather than reimplementing it. |
-| **Memory** | Canvases render only within `CANVAS_WINDOW` pages of the one being read. ~5 canvases instead of 34 — roughly 50 MB instead of 350 MB, and iOS Safari discards tabs for less. |
+| **Memory** | Canvases render only within `CANVAS_WINDOW` pages of the one being read. ~5 canvases instead of 34: roughly 50 MB instead of 350 MB, and iOS Safari discards tabs for less. |
 | **Correct navigation** | Page wrapper heights are reserved from the API's `width`/`height` before pdf.js paints. Unreserved, the document is nearly zero pixels tall while loading and every scroll target lands in the wrong place. |
 | **Which page** | The reading line, measured against the scroll container. |
 
-**The text layer and the canvas are separable, and that is the whole insight.** The text layer
-is what find needs and it is only DOM spans. The canvas is what costs memory. Taking the phone
-seriously is what surfaced it — and it made the desktop build better too, since mounting 34
-canvases was never a good idea, merely survivable.
+**The text layer and the canvas are separable.** The text layer is what find needs and it is
+only DOM spans. The canvas is what costs memory. Taking the phone seriously surfaced it, and it
+made the desktop build better too, since mounting 34 canvases was never a good idea, merely
+survivable.
 
 **Everything measures against the scroll container, never the window.** The app has no window
-scroll at all: the shell is `h-dvh overflow-hidden` and the layout suite asserts the document
-never scrolls. Geometry taken from the viewport would be wrong by the height of the header
-plus the status bar — and would look almost right, which is worse.
+scroll: the shell is `h-dvh overflow-hidden` and the layout suite asserts the document never
+scrolls. Geometry taken from the viewport would be wrong by the height of the header plus the
+status bar, and would look almost right.
 
-The annotation layer is disabled. It exists to make PDF hyperlinks clickable, which this
-document does not need, and it is the layer that ships `z-index: 3` and swallows clicks meant
-for the UI above it.
+The annotation layer is disabled. It makes PDF hyperlinks clickable, which this document does
+not need, and it is the layer that ships `z-index: 3` and swallows clicks meant for the UI
+above it.
 
 ## 7. The token layer
 
-`src/index.css` holds the entire theme as CSS custom properties — including product
-vocabulary, not just chrome:
+`src/index.css` holds the entire theme as CSS custom properties, including product
+vocabulary rather than just chrome:
 
 ```css
 --severity-critical  --severity-major  --severity-minor
@@ -215,10 +215,8 @@ vocabulary, not just chrome:
 ```
 
 **No component ever names a color.** `SeverityDot` maps a severity to a token class and
-nothing else. The payoff is a claim that can be demonstrated rather than asserted: a brand
-pass should be *this one file changing and the whole app re-skinning*. If it ever requires
-touching a component, the token layer was wrong — and that is worth finding out before someone
-asks.
+nothing else. A brand pass should be *this one file changing and the whole app re-skinning*.
+If it ever requires touching a component, the token layer was wrong.
 
 Dark is one class, `.dark`, applied by `useTheme`. The preference has three values
 (system / light / dark) but there are only two palettes, so the resolving happens in JS and
@@ -235,14 +233,14 @@ Two suites, two runners, because they answer different questions.
 | **Where** | no DOM at all | real Chromium and WebKit |
 | **Speed** | ~0.2s | ~25s |
 
-**jsdom has no layout engine.** It will happily report that a 900px panel fits in a 320px
-window, so the entire class of bug the layout suite exists to catch is the class jsdom cannot
-see. That is the argument for a browser here, not a preference.
+**jsdom has no layout engine.** It will report that a 900px panel fits in a 320px window, so
+the class of bug the layout suite exists to catch is the class jsdom cannot see. That is the
+argument for a browser here, not a preference.
 
 **No screenshot baselines.** WebKit and Chromium rasterize type differently, so baselines
-would need a set per engine and would churn on every UI change. Structure is what is actually
-invariant across both — no horizontal overflow, the right shape, exactly one visible submit
-button, 44px targets.
+would need a set per engine and would churn on every UI change. Structure is what is invariant
+across both: no horizontal overflow, the right shape, exactly one visible submit button, 44px
+targets.
 
 The suite earned itself on first run by catching a 32px submit button, under the 44px minimum,
 on the one control the whole page exists to gate.
@@ -271,4 +269,4 @@ than at good intentions. Fuller treatment in the production-readiness writeup.
 - **A new control** → check the touch requirements in [`DESIGN.md` §6d](DESIGN.md) before the
   visual design. The full layout is a touch layout.
 - **Anything that moves the document** → route it through `seekToPage`. Never set
-  `focusedPage` directly; that is the invariant the whole page rests on.
+  `focusedPage` directly. That is the invariant the whole page rests on.

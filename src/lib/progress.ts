@@ -1,18 +1,16 @@
 import type { Review } from '@/types/review'
 
 /**
- * The reviewer's own "I've handled this" marks.
- *
- * A private worklist and nothing more. It is worth being explicit about what
- * this is *not*: it never reaches `canSubmit`, and it cannot, because the gate
- * takes a whole `Review` and this is not part of one. If a checkbox could open
- * the gate, someone could submit a defective mortgage file by lying to a
- * checkbox. Resolution is proven by a new version arriving clean, never by an
- * assertion in the UI.
+ * The reviewer's own "I've handled this" marks. A private worklist and nothing
+ * more: it never reaches `canSubmit`, and it cannot, because the gate takes a
+ * whole `Review` and this is not part of one. If a checkbox could open the gate,
+ * someone could submit a defective mortgage file by lying to a checkbox.
+ * Resolution is proven by a new version arriving clean, never by an assertion in
+ * the UI.
  *
  * Keyed by review id **and version**. When v3 arrives with a fresh issue list,
- * v2's ticks are meaningless — and worse than meaningless, since a stale tick
- * would tell someone a defect was handled when it wasn't.
+ * v2's ticks are meaningless, and a stale tick would claim a defect was handled
+ * when it wasn't.
  */
 
 function key(review: Pick<Review, 'id' | 'version'>): string {
@@ -26,8 +24,8 @@ export function readDone(review: Pick<Review, 'id' | 'version'>): Set<string> {
     const parsed: unknown = JSON.parse(raw)
     return Array.isArray(parsed) ? new Set(parsed.filter((v) => typeof v === 'string')) : new Set()
   } catch {
-    // Private browsing, or a corrupt value. An empty worklist is the safe
-    // default: it under-claims progress rather than over-claiming it.
+    // Private browsing, or a corrupt value. An empty worklist under-claims
+    // progress rather than over-claiming it.
     return new Set()
   }
 }

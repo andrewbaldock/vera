@@ -1,14 +1,10 @@
 import { test, expect, type Page } from '@playwright/test'
 
 /**
- * Severity text has to be readable, not just colored.
- *
- * Accessibility is a stated strength of this build, which makes it exactly the
- * claim worth measuring rather than asserting. The severity fills are tuned to
- * read as 8px dots; reusing them for 12px type would have shipped Major at
- * 2.56:1 — well under the 4.5:1 AA floor — so the words use their own darkened
- * tokens. This is the test that keeps the two roles from being collapsed back
- * together by someone tidying up.
+ * Severity text has to be readable, not just colored. The severity fills are
+ * tuned to read as 8px dots; reusing them for 12px type ships Major at 2.56:1,
+ * well under the 4.5:1 AA floor, so the words use their own darkened tokens.
+ * This test keeps the two roles from being collapsed back together.
  */
 
 const AA_NORMAL_TEXT = 4.5
@@ -43,6 +39,10 @@ async function contrastReport(page: Page) {
     const surfaces = {
       panel: getComputedStyle(document.querySelector('#issues-panel')!).backgroundColor,
       focused: token('--focus-tint'),
+      // The cleared verdict tints its whole block, and the severity breakdown
+      // sits inside it, so those words have a third background on any document
+      // that is ready to submit.
+      ready: token('--ready-surface'),
     }
 
     const result: Record<string, Record<string, number>> = {}
@@ -52,6 +52,8 @@ async function contrastReport(page: Page) {
         result[severity][where] = ratio(token(`--severity-${severity}-text`), surface)
       }
     }
+    // The verdict's own headline, which is the only text using this pair.
+    result.ready = { onReadySurface: ratio(token('--ready-text'), token('--ready-surface')) }
     return result
   })
 }
@@ -68,12 +70,17 @@ for (const scheme of ['light', 'dark'] as const) {
     for (const severity of SEVERITIES) {
       // Rows on the focused page are tinted, so the same text sits on two
       // different backgrounds and both have to hold.
-      for (const surface of ['panel', 'focused'] as const) {
+      for (const surface of ['panel', 'focused', 'ready'] as const) {
         expect(
           report[severity][surface],
           `${severity} on the ${surface} surface in ${scheme} mode`,
         ).toBeGreaterThanOrEqual(AA_NORMAL_TEXT)
       }
     }
+
+    expect(
+      report.ready.onReadySurface,
+      `the cleared verdict's headline on its own surface in ${scheme} mode`,
+    ).toBeGreaterThanOrEqual(AA_NORMAL_TEXT)
   })
 }

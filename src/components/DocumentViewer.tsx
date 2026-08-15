@@ -6,32 +6,26 @@ import { cn } from '@/lib/utils'
 import type { DocumentPage } from '@/types/review'
 
 /**
- * The document, continuously scrolled, every page mounted.
- *
- * That architecture follows from acceptance criterion #1 rather than from
- * preference: browser find only searches the DOM, so a viewer that mounts one
- * page at a time cannot support whole-document search no matter how good its
- * own search box is. Mounting everything is the price of using the platform's
- * find instead of reimplementing it.
+ * The document, continuously scrolled, every page mounted. That follows from
+ * acceptance criterion #1: browser find only searches the DOM, so a viewer that
+ * mounts one page at a time cannot support whole-document search. Mounting
+ * everything is the price of using the platform's find rather than
+ * reimplementing it.
  *
  * **Heights are reserved before anything paints.** Pages render asynchronously,
- * so an unreserved document is nearly zero pixels tall while it loads — scroll
- * to page 30 in that state and you land near the top, then watch the content
- * grow underneath you. The API's per-page `width`/`height` are what prevent
- * that. They look like data for drawing the thumb strip; they are actually what
- * makes navigation correct.
+ * so an unreserved document is nearly zero pixels tall while it loads: scroll to
+ * page 30 in that state and you land near the top, then watch the content grow
+ * underneath you. The API's per-page `width`/`height` are what prevent that, so
+ * they are navigation data rather than only thumb-strip data.
  *
  * **Everything here measures against the scroll container, never the window.**
- * The spike proved these behaviors against `window.scrollY`, which was correct
- * for a page that scrolls — and this app has no window scroll at all. The shell
- * is a fixed-height frame with scrolling inside panels, and the layout suite
- * asserts the document never scrolls. Geometry taken from the viewport would be
- * silently wrong by the height of the header and the status bar.
+ * The shell is a fixed-height frame with scrolling inside panels, and the layout
+ * suite asserts the document never scrolls. Geometry taken from the viewport
+ * would be wrong by the height of the header and the status bar.
  *
- * The annotation layer is off. It exists to make PDF hyperlinks clickable,
- * which this document does not need — and it is the layer that ships
- * `z-index: 3` and swallows clicks meant for the UI above it. Fewer moving
- * parts, one less hazard.
+ * The annotation layer is off. It makes PDF hyperlinks clickable, which this
+ * document does not need, and it is the layer that ships `z-index: 3` and
+ * swallows clicks meant for the UI above it.
  */
 
 /** Wide enough to read, narrow enough that a line of body text isn't a marathon. */
@@ -39,28 +33,25 @@ const MAX_PAGE_WIDTH = 900
 const PAGE_GUTTER = 24
 
 /**
- * A programmatic scroll passes over every page between here and there, and the
- * reading line dutifully reports each one — so the list strobes through five
- * pages on the way to page 17. Measurement is suppressed until the scroll
- * settles. `scrollend` is the right signal; the timeout is the fallback for
- * browsers that don't fire it, and for a scroll that never actually moves.
+ * A programmatic scroll passes over every page between here and there and the
+ * reading line reports each one, so the list strobes through five pages on the
+ * way to page 17. Measurement is suppressed until the scroll settles.
+ * `scrollend` is the right signal; the timeout covers browsers that don't fire
+ * it, and a scroll that never moves.
  */
 const SCROLL_SETTLE_MS = 700
 
 /**
- * How many pages either side of the one you are reading get a canvas.
- *
- * This is the whole mobile-memory argument in one constant. A full-width page
- * canvas is roughly 10 MB at devicePixelRatio 2, so painting all 34 approaches
- * 350 MB — and iOS Safari discards tabs for less. The text layer is what find
- * needs and it is only DOM spans, so the two are separable: mount every text
- * layer always, paint canvases only near the viewport.
+ * How many pages either side of the one you are reading get a canvas. A
+ * full-width page canvas is roughly 10 MB at devicePixelRatio 2, so painting all
+ * 34 approaches 350 MB, and iOS Safari discards tabs for less. The text layer is
+ * what find needs and it is only DOM spans, so the two separate: mount every
+ * text layer always, paint canvases only near the viewport.
  *
  * ponytail: a fixed page count, not a measured viewport-height window. Three
- * either side covers the tallest panel the split view can produce at our
- * maximum page width. If pages ever get much shorter than the panel — a
- * landscape exhibit, or a much wider window — this should become a geometry
- * calculation rather than a count.
+ * either side covers the tallest panel the split view can produce at our maximum
+ * page width. If pages ever get much shorter than the panel (a landscape
+ * exhibit, or a much wider window) this should become a geometry calculation.
  */
 const CANVAS_WINDOW = 3
 
@@ -94,13 +85,30 @@ export function DocumentViewer({
   const scrollRef = useRef<HTMLDivElement>(null)
   const pageRefs = useRef<(HTMLDivElement | null)[]>([])
   const suppressUntilSettled = useRef(false)
+  /**
+   * The last seek actually carried out. A seek arriving before the pages have
+   * laid out has nothing to scroll to, so the effect runs again when layout
+   * arrives rather than dropping the request. This is what stops it re-scrolling
+   * on every later resize.
+   */
+  const appliedSeek = useRef(-1)
   const [available, setAvailable] = useState(0)
+  /**
+   * Whether `<Document>` has swapped its loading message for the pages. Until it
+   * does there are no page elements to scroll to, and nothing else re-renders
+   * when they appear — so without this a seek made during the load has no target
+   * and is never retried. Not a ref: the seek effect has to run again when it
+   * flips, which is exactly what state is for.
+   */
+  const [pagesMounted, setPagesMounted] = useState(false)
   // Kept here rather than lifted: this is the viewer's own rendering concern,
   // and the parent's focusedPage is about what the *rest of the app* highlights.
   const [nearPage, setNearPage] = useState(pages[0]?.page_num ?? 1)
 
-  // Measured, because the panel is resizable — the splitter changes this width
-  // at will, and every reserved height depends on it.
+  const pageWidth = Math.max(0, Math.min(available - PAGE_GUTTER * 2, MAX_PAGE_WIDTH))
+
+  // Measured because the panel is resizable: the splitter changes this width at
+  // will, and every reserved height depends on it.
   useLayoutEffect(() => {
     const element = scrollRef.current
     if (!element) return
@@ -113,16 +121,13 @@ export function DocumentViewer({
   }, [])
 
   /**
-   * Which page am I looking at?
+   * Which page am I looking at? The last page whose top has passed a line near
+   * the top of the container. Deterministic, and correct for a page taller than
+   * the viewport.
    *
-   * The last page whose top has passed a line near the top of the container.
-   * Deterministic, and it stays correct for a page taller than the viewport.
-   *
-   * An `IntersectionObserver` was the obvious first answer and is wrong here:
-   * its callbacks fire only when a threshold is *crossed*, so distant pages keep
-   * reporting whatever ratio they last had, and a page taller than the viewport
-   * never reaches the higher thresholds at all. The reading froze after one
-   * scroll.
+   * Not an `IntersectionObserver`: its callbacks fire only when a threshold is
+   * *crossed*, so distant pages keep reporting whatever ratio they last had, and
+   * a page taller than the viewport never reaches the higher thresholds at all.
    */
   useEffect(() => {
     const scroller = scrollRef.current
@@ -136,11 +141,9 @@ export function DocumentViewer({
 
       const bounds = scroller.getBoundingClientRect()
       // In the compact layout the inactive tab is `display: none`, and a hidden
-      // element has no layout box — every page then reports a top of 0, so the
-      // reading line concludes "the last page whose top passed the line" and
-      // pins focusedPage to the final page. Switching back left the viewer
-      // showing page 34 with the canvas window around it, which reads as a
-      // blank document. Measuring something with no geometry is never right.
+      // element has no layout box: every page reports a top of 0, so the reading
+      // line pins focusedPage to the final page and switching back shows page 34
+      // with the canvas window around it, which reads as a blank document.
       if (bounds.height === 0 || bounds.width === 0) return
 
       const readingLine = bounds.top + Math.min(160, bounds.height * 0.25)
@@ -154,6 +157,24 @@ export function DocumentViewer({
         if (element.getBoundingClientRect().top > readingLine) break
         current = pages[index].page_num
       }
+      // The reading line cannot reach the last page. Its top has to pass a line
+      // a quarter of the way down the panel, and once the document is scrolled
+      // to the end there is nothing below it left to scroll, so on a short final
+      // page the line never gets there and the strip sits on page 33 while the
+      // reader is plainly looking at 34.
+      //
+      // Not a lower reading line: that would misreport every *other* page, and
+      // the line's position is what makes the measurement right in the general
+      // case. The end of the scroll is its own answer — you can see the last
+      // page, so that is the page you are on.
+      //
+      // Guarded on the content actually overflowing, or a document short enough
+      // to fit in the panel reports its last page while you look at its first.
+      const scrollable = scroller.scrollHeight - scroller.clientHeight
+      if (scrollable > 1 && scrollable - scroller.scrollTop <= 2) {
+        current = pages[pages.length - 1]?.page_num ?? current
+      }
+
       onPageInView(current)
       setNearPage((previous) => (previous === current ? previous : current))
     }
@@ -175,11 +196,21 @@ export function DocumentViewer({
 
   /** Seeking scrolls. The reading line then decides what the focused page is. */
   useEffect(() => {
+    if (appliedSeek.current === seek.nonce) return
+
     const scroller = scrollRef.current
     const target = pageRefs.current[pages.findIndex((page) => page.page_num === seek.page)]
-    // In the compact layout the panel may be behind the other tab. Nothing to
-    // scroll while it has no layout box; the tab switch re-runs this.
+    // In the compact layout the panel may be behind the other tab, and early on
+    // the pages may not exist yet. Either way there is nothing to scroll to, so
+    // the request is kept and this effect runs again when the tab switches or
+    // layout arrives.
     if (!scroller || !target || target.offsetParent === null) return
+    // Before the pages have width they have no reserved height either, so every
+    // scroll target computes to roughly zero. Scrolling then "succeeds" while
+    // going nowhere, and marking it applied would strand the request for good.
+    if (pageWidth <= 0) return
+
+    appliedSeek.current = seek.nonce
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const behavior: ScrollBehavior =
@@ -190,9 +221,9 @@ export function DocumentViewer({
       (target.getBoundingClientRect().top - scroller.getBoundingClientRect().top) -
       PAGE_GUTTER
 
-    // Measurement is suppressed for the length of the scroll, so the window has
-    // to be moved by hand — otherwise we arrive at page 33 in front of a page
-    // that has not been told to paint yet.
+    // Measurement is suppressed for the length of the scroll, so the canvas
+    // window is moved by hand. Otherwise we arrive at page 33 in front of a page
+    // that has not been told to paint.
     setNearPage(seek.page)
 
     suppressUntilSettled.current = true
@@ -208,9 +239,10 @@ export function DocumentViewer({
       scroller.removeEventListener('scrollend', release)
       suppressUntilSettled.current = false
     }
-  }, [seek, pages])
-
-  const pageWidth = Math.max(0, Math.min(available - PAGE_GUTTER * 2, MAX_PAGE_WIDTH))
+    // The last three are the conditions the guards above bail on: a seek that
+    // arrived before the panel had width, or before `<Document>` mounted its
+    // pages, is carried out when that changes rather than lost.
+  }, [seek, pages, available, pageWidth, pagesMounted])
 
   return (
     <div
@@ -219,6 +251,7 @@ export function DocumentViewer({
     >
       <Document
         file={url}
+        onLoadSuccess={() => setPagesMounted(true)}
         loading={<ViewerMessage>Loading the document…</ViewerMessage>}
         error={<ViewerMessage>The document could not be displayed.</ViewerMessage>}
         noData={<ViewerMessage>No document to display.</ViewerMessage>}
@@ -247,7 +280,8 @@ export function DocumentViewer({
                 renderAnnotationLayer={false}
                 renderTextLayer
                 // The text layer mounts either way; only the canvas is windowed.
-                // That is the separation the whole memory argument rests on.
+                // Find needs the text layer everywhere; memory needs the canvas
+                // only near the viewport.
                 renderMode={
                   Math.abs(page.page_num - nearPage) <= CANVAS_WINDOW ? 'canvas' : 'none'
                 }

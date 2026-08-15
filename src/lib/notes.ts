@@ -1,25 +1,21 @@
 import type { Review } from '@/types/review'
 
 /**
- * The reviewer's notes, one per issue.
+ * The reviewer's notes, one per issue. Why something is being accepted, what
+ * still needs doing, who to ask: the reasoning that otherwise lives in someone's
+ * head or a separate email thread, and on a compliance file it is what has to be
+ * defended months later.
  *
- * Why something is being accepted, what still needs doing, who to ask — the
- * reasoning that otherwise lives in someone's head or a separate email thread.
- * On a compliance file that reasoning is the most valuable thing in the room,
- * because it is what has to be defended months later.
+ * **Keyed by review and issue, NOT by version.** The opposite scoping from the
+ * Done ticks. A tick says "I have handled this", which stops being true the
+ * moment a new version arrives with a fresh set of findings. A note says "here
+ * is why this is acceptable", and if the same issue is raised again on v4 that
+ * reasoning should come back in front of you rather than be retyped.
  *
- * **Keyed by review and issue, deliberately NOT by version.** This is the
- * opposite scoping from the Done ticks, and the difference is the point. A tick
- * says "I have handled this", which stops being true the moment a new version
- * arrives with a fresh set of findings. A note says "here is why this is
- * acceptable" — and if the same issue is raised again on v4, that reasoning is
- * exactly what you want back in front of you rather than retyped.
- *
- * It rests on issue ids being stable across re-parses, which the spec does not
- * promise. That is written down as a question for the backend rather than
- * assumed away: if ids turn out to be per-parse, notes want a content hash
- * instead. The failure mode is mild in the meantime — a note attached to
- * nothing simply never reappears.
+ * This rests on issue ids being stable across re-parses, which the spec does not
+ * promise. It stands as a question for the backend: if ids turn out to be
+ * per-parse, notes want a content hash instead. Until then the failure mode is
+ * mild, since a note attached to nothing simply never reappears.
  */
 
 function key(review: Pick<Review, 'id'>): string {

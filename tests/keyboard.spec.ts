@@ -1,16 +1,14 @@
 import { test, expect, type Page } from '@playwright/test'
 
 /**
- * The issues list is a grid, and moves like one.
+ * The issues list is a grid and moves like one. Twenty-five rows with three
+ * focusable controls each is otherwise seventy-five tab stops. As a grid it is
+ * one tab stop and the arrows move inside it: up and down through the issues,
+ * Enter to open the page, right or Tab across to the note and then the Done box,
+ * left or Shift+Tab back.
  *
- * Twenty-five rows with two focusable controls each is fifty tab stops if you
- * do nothing — a keyboard user's afternoon. As a grid it is one tab stop, and
- * the arrows move inside it: up and down through the issues, Enter to open the
- * page, right or Tab across to the Done box, left or Shift+Tab back.
- *
- * The property that matters most is the last one: focus stays put after Enter.
- * Read an issue, open its page, arrow to the next, open that — without ever
- * reaching for the mouse or losing your place in the list.
+ * The property that matters most is that focus stays put after Enter: read an
+ * issue, open its page, arrow to the next, open that, without losing your place.
  */
 
 const REVIEW = '/reviews/souj5sd12c8a3f'
@@ -24,6 +22,11 @@ const cell = (page: Page, row: number, col: number) =>
 async function open(page: Page) {
   await page.goto(REVIEW)
   await expect(grid(page)).toBeVisible()
+  // Wait for the document to paint before driving the keyboard. Seeking before
+  // the pages have laid out is handled (the request is held until layout
+  // arrives, covered in viewer.spec), but racing it here would make every
+  // assertion in this file depend on that timing rather than the keyboard.
+  await expect(page.locator('.react-pdf__Page__canvas').first()).toBeVisible({ timeout: 20_000 })
   await cell(page, 0, 0).focus()
 }
 
@@ -83,7 +86,7 @@ test('Enter opens the page and leaves you where you were', async ({ page }) => {
 
   // Smooth scroll, plus measurement suppressed until it settles.
   await expect(slider).toHaveAttribute('aria-valuenow', '7', { timeout: 15_000 })
-  // The point of the whole pattern: read, open, arrow on, open the next.
+  // Read, open, arrow on, open the next.
   await expect(cell(page, 4, 0)).toBeFocused()
 
   await page.keyboard.press('ArrowDown')

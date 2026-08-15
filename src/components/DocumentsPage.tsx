@@ -14,18 +14,14 @@ import { readSubmission } from '@/lib/submission'
 import type { ReviewStatus } from '@/types/review'
 
 /**
- * The documents list.
+ * The documents list. **Not** the Documents Page from the spec's flow diagram,
+ * which belongs to a teammate's ticket and would mean owning upload, filtering,
+ * pagination and assignment. This is the smallest surface that gives the Review
+ * Page somewhere to be opened from and returned to, so the gate is something a
+ * reviewer can exercise rather than a one-way trip.
  *
- * Explicitly **not** the Documents Page from the spec's flow diagram — that
- * belongs to a teammate's ticket, and building it properly would mean owning
- * upload, filtering, pagination and assignment. This is the smallest surface
- * that gives the Review Page somewhere to be opened from and somewhere to
- * return to, which is what turns the gate from a one-way trip into something a
- * reviewer can actually exercise.
- *
- * One row is live. The rest are inert, and look inert: no link, no hover, no
- * cursor change. A placeholder that looks clickable and isn't is worse than one
- * that plainly isn't.
+ * One row is live. The rest are inert and look inert: no link, no hover, no
+ * cursor change.
  */
 
 const STATUS_LABEL: Record<ReviewStatus, string> = {
@@ -52,11 +48,9 @@ export function DocumentsPage() {
   const [params] = useSearchParams()
 
   /**
-   * The row that was just finished.
-   *
-   * Read once on mount rather than kept in the URL — the reward is for the
-   * arrival, and a reload should not replay it. The parameter stays in the
-   * address bar, which is harmless and makes the flow inspectable.
+   * The row that was just finished. Read once on mount rather than tracked from
+   * the URL: the reward is for the arrival, and a reload should not replay it.
+   * The parameter stays in the address bar, which makes the flow inspectable.
    */
   const [justSubmitted] = useState(() => params.get('submitted'))
 
@@ -81,12 +75,10 @@ export function DocumentsPage() {
       </header>
 
       {/*
-        A width, not a wall.
-        Full-bleed rows are right on a phone and wrong on a 1440px monitor —
-        a name and a status pill separated by three feet of nothing reads as a
-        page that was never designed for the screen it is on. The list gets a
-        measure and becomes a card, so the desktop layout is a shape rather
-        than the phone one stretched. Same principle as the review page.
+        A width, not a wall. Full-bleed rows are right on a phone and wrong on a
+        1440px monitor, where a name and a status pill sit either side of three
+        feet of nothing. The list gets a measure and becomes a card, so the wide
+        layout is a shape rather than the phone one stretched.
       */}
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         <div className="mx-auto w-full max-w-3xl px-4 py-4 sm:px-6 lg:py-8">
@@ -139,10 +131,10 @@ export function DocumentsPage() {
 }
 
 /**
- * Inert by construction — a `<div>`, not a link or a button, so there is
- * nothing to focus, nothing to press, and no keyboard user is offered a control
- * that goes nowhere. `aria-disabled` on the row says the same thing to a screen
- * reader that the muted treatment says to everyone else.
+ * Inert by construction: a `<div>`, not a link or a button, so there is nothing
+ * to focus and no keyboard user is offered a control that goes nowhere.
+ * `aria-disabled` says to a screen reader what the muted treatment says to
+ * everyone else.
  */
 function PlaceholderRow({ document }: { document: PlaceholderDocument }) {
   return (

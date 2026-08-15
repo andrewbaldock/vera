@@ -3,20 +3,15 @@ import { VeraMark } from '@/components/VeraMark'
 import { cn } from '@/lib/utils'
 
 /**
- * The wordmark.
- *
- * HomeVision has no MIRA logo file — their only brand asset is the HomeVision
- * mark itself, and MIRA appears everywhere as live text, always in capitals, in
- * their own typeface. So their convention for naming a product inside the
- * platform is typographic rather than a logotype, and Vera follows it: capitals,
+ * The wordmark. HomeVision has no MIRA logo file: their only brand asset is the
+ * HomeVision mark, and MIRA appears everywhere as live text, always in capitals,
+ * in their own typeface. Their convention for naming a product inside the
+ * platform is typographic rather than a logotype, and VERA follows it: capitals,
  * letterspaced, set in the display face.
  *
  * The typeface comes from `--font-wordmark`, which defaults to the app's sans.
- * Pointing it at Montserrat — HomeVision's display face — is a one-line change
- * in `index.css` and nothing here moves.
- *
- * The symbol defaults to the Vera mark and stays overridable, so swapping in a
- * different one never touches this file.
+ * Pointing it at Montserrat, HomeVision's display face, is a one-line change in
+ * `index.css`. The symbol defaults to the VERA mark and stays overridable.
  */
 
 interface WordmarkProps {
@@ -30,7 +25,7 @@ export function Wordmark({ symbol = <VeraMark />, className }: WordmarkProps) {
       {symbol}
       <span
         // Letterspacing is what makes short capitals read as a mark rather than
-        // as a shouted word — at four characters, tracking is most of the design.
+        // a shouted word. At four characters, tracking is most of the design.
         className="font-[family-name:var(--font-wordmark)] text-[15px] font-semibold tracking-[0.18em] uppercase"
       >
         {PRODUCT_NAME}

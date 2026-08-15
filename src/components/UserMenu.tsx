@@ -15,12 +15,10 @@ import { CURRENT_USER } from '@/lib/session'
 import type { ReviewUser } from '@/types/review'
 
 /**
- * The signed-in user, and their settings.
- *
- * An avatar is a better trigger than a gear here: it says whose session this is
- * — which matters on a screen that records who signed off on a document — and
- * settings are the thing you reach for *through* your account, not a separate
- * concern sitting beside it.
+ * The signed-in user, and their settings. An avatar rather than a gear: it says
+ * whose session this is, which matters on a screen that records who signed off
+ * on a document, and settings are reached *through* your account rather than
+ * beside it.
  */
 
 const THEMES: { value: ThemePreference; label: string; icon: typeof Sun }[] = [
@@ -57,9 +55,7 @@ export function UserMenu({ user = CURRENT_USER }: { user?: ReviewUser } = {}) {
         <DropdownMenuSeparator />
 
         {/* Present but inert. Account management and sessions belong to the
-            platform this screen sits inside, not to a review page — showing
-            where they live is honest, building them would be someone else's
-            ticket. */}
+            platform this screen sits inside, not to a review page. */}
         <DropdownMenuItem disabled className="gap-2">
           <UserRound className="size-4" aria-hidden />
           Profile
@@ -71,7 +67,7 @@ export function UserMenu({ user = CURRENT_USER }: { user?: ReviewUser } = {}) {
 
         <DropdownMenuSeparator />
 
-        {/* asChild so the dialog trigger is the menu item itself — a nested
+        {/* asChild so the dialog trigger is the menu item itself. A nested
             button inside a menuitem would be two things to focus. */}
         <UserGuide
           trigger={
@@ -95,7 +91,7 @@ export function UserMenu({ user = CURRENT_USER }: { user?: ReviewUser } = {}) {
             <DropdownMenuRadioItem
               key={value}
               value={value}
-              // The library's indicator is a dot in the left gutter; the icon
+              // The library's indicator is a dot in the left gutter. The icon
               // reads faster and the check states the choice a second way, so
               // selection is never carried by position alone.
               className="gap-2 ps-2 [&>span:first-child]:hidden"

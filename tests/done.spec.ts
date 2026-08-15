@@ -1,13 +1,10 @@
 import { test, expect, type Page } from '@playwright/test'
 
 /**
- * The reviewer's private worklist.
- *
- * The load-bearing property is what it *cannot* do: ticking issues off never
- * moves the gate. `canSubmit` takes a whole `Review`, and a checkbox is not part
- * of one, so the separation is structural rather than a rule someone remembers.
- * If a checkbox could open the gate, a defective mortgage file could be
- * submitted by lying to a checkbox.
+ * The reviewer's private worklist. The load-bearing property is what it *cannot*
+ * do: ticking issues off never moves the gate. `canSubmit` takes a whole
+ * `Review` and a checkbox is not part of one, so the separation is structural
+ * rather than a rule someone remembers.
  */
 
 const REVIEW = '/reviews/souj5sd12c8a3f'
@@ -15,7 +12,7 @@ const REVIEW = '/reviews/souj5sd12c8a3f'
 test.use({ viewport: { width: 1440, height: 900 } })
 
 const list = (page: Page) => page.getByRole('grid', { name: 'Issues' })
-const rows = (page: Page) => list(page).getByRole('listitem')
+const rows = (page: Page) => list(page).getByRole('row')
 const verdict = (page: Page) => page.getByRole('region', { name: 'Issues found' })
 const doneLozenge = (page: Page) =>
   verdict(page).getByRole('list', { name: 'Severity breakdown' }).getByRole('button', {
@@ -46,7 +43,7 @@ test('marking issues done reports progress without moving the gate', async ({ pa
   await expect(verdict(page).getByText('4 marked done')).toBeVisible()
   // And the verdict is untouched: four ticks changed nothing about what blocks.
   await expect(verdict(page).getByText('12 issues must be fixed')).toBeVisible()
-  // Still blocked, so the available action is still a new version — ticking
+  // Still blocked, so the available action is still a new version. Ticking
   // things off is a worklist, not a key.
   await expect(page.getByRole('button', { name: 'Upload new version' }).first()).toBeVisible()
   await expect(page.getByRole('button', { name: 'Submit review' })).toHaveCount(0)

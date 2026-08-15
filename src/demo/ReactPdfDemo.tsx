@@ -5,20 +5,18 @@ import 'react-pdf/dist/Page/AnnotationLayer.css'
 import { useReview } from '@/hooks/useReview'
 
 /**
- * A standalone harness for react-pdf. Not product code — deliberately
- * unstyled, self-contained, and kept.
+ * A standalone harness for react-pdf. Not product code: unstyled,
+ * self-contained, and kept.
  *
- * It was written before the viewer to prove the four behaviors the real one
- * depends on, while none of them were load-bearing yet:
+ * It proves the four behaviors the real viewer depends on, away from any layout:
  *
  *   1. Every page renders, with a text layer, all mounted at once.
  *   2. Native CMD+F finds text on pages that are far off screen.
  *   3. We can jump to an arbitrary page (issue click -> that issue's page).
  *   4. We can tell which page is currently in view (status bar + strip).
  *
- * All four work. Getting there surfaced three problems that would have been
- * far more expensive to meet inside a finished layout — see "Three things the
- * viewer spike taught us" in docs/DESIGN.md:
+ * Three constraints come out of it, written up as "Three things the viewer spike
+ * taught us" in docs/DESIGN.md:
  *
  *   - Overlays must clear react-pdf's z-index 2/3, or invisible text layers
  *     silently swallow every click.
@@ -26,14 +24,13 @@ import { useReview } from '@/hooks/useReview'
  *     canvases paint, or scroll targets land in the wrong place.
  *   - "Which page am I on" is a measurement, not an IntersectionObserver.
  *
- * Kept rather than deleted: it's the cheapest way to isolate a viewer problem
- * from the rest of the app, and it's the evidence that the riskiest part of
- * the build was tested rather than assumed.
+ * Kept rather than deleted: it is the cheapest way to isolate a viewer problem
+ * from the rest of the app.
  */
 
 // The worker must be the exact version react-pdf pins (pdfjs-dist 5.4.296).
-// Resolving it through import.meta.url lets Vite bundle the file it actually
-// installed, rather than trusting a CDN copy to match.
+// Resolving it through import.meta.url lets Vite bundle the installed file
+// rather than trusting a CDN copy to match.
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
   import.meta.url,
@@ -58,10 +55,10 @@ export function ReactPdfDemo() {
   const [firstPageSize, setFirstPageSize] = useState<string>('—')
   const [jumpTo, setJumpTo] = useState('30')
 
-  // The API's per-page dimensions, used to reserve each page's height before
-  // its canvas paints. Without this the document has almost no height while it
-  // renders, so scrolling to page 30 lands near the top and then everything
-  // grows underneath you. This is what those height/width fields are *for*.
+  // The API's per-page dimensions, used to reserve each page's height before its
+  // canvas paints. Without this the document has almost no height while it
+  // renders, so scrolling to page 30 lands near the top and everything grows
+  // underneath you.
   const { state: review } = useReview('/review_mock.json')
   const apiPages = review.status === 'ready' ? review.review.document.pages : []
 
@@ -72,11 +69,9 @@ export function ReactPdfDemo() {
 
   /**
    * Absolute scroll rather than scrollIntoView, so the sticky-toolbar offset is
-   * explicit rather than relying on scroll-margin.
-   *
-   * Smooth by default — moving the page under someone tells them *where* they
-   * went, which a hard jump doesn't. But honor prefers-reduced-motion: for
-   * some people a long smooth scroll is nauseating, not helpful.
+   * explicit rather than relying on scroll-margin. Smooth by default, because
+   * moving the page under someone tells them *where* they went, but honoring
+   * prefers-reduced-motion: a long smooth scroll is nauseating for some people.
    */
   const scrollToPage = useCallback((page: number) => {
     const element = pageRefs.current[page - 1]
@@ -93,17 +88,13 @@ export function ReactPdfDemo() {
   }, [])
 
   /**
-   * Which page am I looking at?
+   * Which page am I looking at? Measured against a "reading line" just below the
+   * toolbar: the current page is the last one whose top has scrolled past it.
+   * Deterministic, and it holds for a page taller than the viewport.
    *
-   * Measured against a "reading line" just below the toolbar: the current page
-   * is the last one whose top has scrolled past it. Deterministic, and it holds
-   * for a page taller than the viewport.
-   *
-   * An IntersectionObserver was the first attempt and was wrong here. Its
-   * entries only fire when a threshold is *crossed*, so pages that are far away
-   * keep whatever ratio they last reported, and a page taller than the viewport
-   * can never reach the higher thresholds at all — the answer got stuck after
-   * the first scroll.
+   * Not an IntersectionObserver: its entries fire only when a threshold is
+   * *crossed*, so distant pages keep whatever ratio they last reported, and a
+   * page taller than the viewport never reaches the higher thresholds at all.
    */
   useEffect(() => {
     if (pageCount === 0) return
@@ -118,7 +109,7 @@ export function ReactPdfDemo() {
         const element = pageRefs.current[index]
         if (!element) continue
         // Pages are in document order, so the first one still below the line
-        // means every later page is too.
+        // means every later one is too.
         if (element.getBoundingClientRect().top > READING_LINE) break
         current = index + 1
       }
@@ -150,7 +141,7 @@ export function ReactPdfDemo() {
           //   .textLayer       { z-index: 2 }
           //   .annotationLayer { z-index: 3 }
           // At an equal z-index the pages win on DOM order and their invisible
-          // text spans cover this bar — it still *looks* fine, but every click
+          // text spans cover this bar. It still looks fine, but every click
           // lands on the text layer instead of the buttons.
           zIndex: 10,
           background: '#fff',
@@ -216,8 +207,8 @@ export function ReactPdfDemo() {
         {Array.from({ length: pageCount }, (_, index) => {
           const pageNumber = index + 1
           const apiPage = apiPages[index]
-          // Reserve the right height up front. Falls back to US Letter if the
-          // API hasn't answered yet.
+          // Reserve the right height up front. Falls back to US Letter until the
+          // API answers.
           const ratio = apiPage ? apiPage.height / apiPage.width : 792 / 612
 
           return (

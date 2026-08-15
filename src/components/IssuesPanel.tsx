@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ArrowDownWideNarrow, Check, MoreVertical, StickyNote } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { SeverityDot } from '@/components/severity'
@@ -7,29 +7,37 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import type { NumberedIssue, SortMode } from '@/lib/review'
 
 /**
- * The list, and only the list.
+ * The list, and only the list. The verdict is not in here: it is derived from
+ * the whole review, while this component renders a sorted and filtered *view* of
+ * the issues, and a verdict computed from the view would under-report the moment
+ * anything is hidden.
  *
- * The verdict deliberately isn't in here. It has to be derived from the whole
- * review while this component renders a *view* of the issues — sorted, and
- * shortly filtered — and a verdict computed from the view would under-report
- * the moment anything is hidden. Keeping them apart makes that mistake
- * impossible rather than merely unlikely.
- *
- * The list never scrolls itself. Rows on the focused page are tinted, but if
- * they are out of view they stay out of view: this panel belongs to the user,
- * who scrolled it where they wanted it. Moving it under them because the
- * document moved is the thing that makes a panel feel possessed. The status
- * bar above the document still names the issues on the page, so nothing is
- * actually lost.
+ * Whether the list follows the document is the user's choice, because both
+ * answers are defensible and neither is obviously right. Following keeps the
+ * issue next to the page it is about, which matters most on a document you do
+ * not know. Not following leaves a panel you scrolled somewhere on purpose
+ * exactly where you left it, which is the difference between a tool and one
+ * that feels possessed. The tint marks the rows either way, and the status bar
+ * above the document names them, so nothing is lost with it off.
  */
+
+/**
+ * The grid's columns: the issue, its note, its Done box. Named once and derived
+ * everywhere. Not a hardcoded bound: a stale `Math.min(1, col)` clamp snaps every
+ * rightward move back one cell as soon as a column is added.
+ */
+const COLUMNS = ['issue', 'note', 'done'] as const
+const LAST_COLUMN = COLUMNS.length - 1
 
 const SORT_LABEL: Record<SortMode, string> = {
   page: 'Page order',
@@ -49,6 +57,8 @@ interface IssuesPanelProps {
   onClearDone: () => void
   notes: Readonly<Record<string, string>>
   onNoteChange: (issueId: string, text: string) => void
+  scrollTracking: boolean
+  onScrollTrackingChange: (tracking: boolean) => void
 }
 
 export function IssuesPanel({
@@ -63,22 +73,45 @@ export function IssuesPanel({
   onClearDone,
   notes,
   onNoteChange,
+  scrollTracking,
+  onScrollTrackingChange,
 }: IssuesPanelProps) {
   const [editing, setEditing] = useState<string | null>(null)
   const gridRef = useRef<HTMLUListElement>(null)
   /**
-   * Which cell owns the tab stop.
-   *
-   * Tracked rather than derived from `document.activeElement` so the list keeps
-   * its place when focus leaves and comes back — returning to a list and
-   * landing on row one again is its own small insult.
+   * Which cell owns the tab stop. Tracked rather than derived from
+   * `document.activeElement`, so the list keeps its place when focus leaves and
+   * comes back instead of landing on row one again.
    */
   const [active, setActive] = useState({ row: 0, col: 0 })
+
+  /**
+   * Follow the document, when the user has asked for it. `block: 'nearest'` and
+   * not `'center'` or `'start'`: nearest does nothing at all when the row is
+   * already visible, so reading down the list does not jerk it around, and
+   * clicking an issue — which sets the focused page to one already on screen —
+   * leaves the list alone. The other two re-center on every page change.
+   *
+   * Scrolling only, never focus. Moving focus here would take the keyboard away
+   * from whatever the user was doing, and the roving tabindex already owns where
+   * focus lives.
+   */
+  useEffect(() => {
+    if (!scrollTracking) return
+    const row = gridRef.current?.querySelector<HTMLElement>(`[data-page="${focusedPage}"]`)
+    if (!row) return
+    row.scrollIntoView({
+      block: 'nearest',
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ? 'instant'
+        : 'smooth',
+    })
+  }, [focusedPage, scrollTracking])
 
   const moveTo = useCallback(
     (row: number, col: number) => {
       const clampedRow = Math.max(0, Math.min(issues.length - 1, row))
-      const clampedCol = Math.max(0, Math.min(1, col))
+      const clampedCol = Math.max(0, Math.min(LAST_COLUMN, col))
       const cell = gridRef.current?.querySelector<HTMLElement>(
         `[data-cell="${clampedRow}-${clampedCol}"]`,
       )
@@ -95,10 +128,8 @@ export function IssuesPanel({
   const onGridKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
       // Read the current cell from the DOM rather than from state. Focus is the
-      // truth here, and it can move without going through `moveTo` — a click,
-      // a browser restoring focus, a re-render between two fast keystrokes.
-      // Deriving it removes a whole class of "the handler was one render
-      // behind" bug rather than trying to keep two sources agreeing.
+      // truth here, and it moves without going through `moveTo`: a click, a
+      // browser restoring focus, a re-render between two fast keystrokes.
       const source = (event.target as HTMLElement).closest<HTMLElement>('[data-cell]')
       const [row, col] = source
         ? source.dataset.cell!.split('-').map(Number)
@@ -126,15 +157,13 @@ export function IssuesPanel({
           return
         case 'End':
           event.preventDefault()
-          moveTo(event.ctrlKey || event.metaKey ? issues.length - 1 : row, 2)
+          moveTo(event.ctrlKey || event.metaKey ? issues.length - 1 : row, LAST_COLUMN)
           return
         case 'Tab': {
-          // Tab crosses the row rather than leaving immediately, which is what
-          // a two-column list feels like it should do. At the far edge it is
-          // left alone, so Tab still escapes the grid in both directions and
-          // nobody is trapped.
+          // Tab crosses the row rather than leaving immediately. At the far edge
+          // it is left alone, so Tab still escapes the grid in both directions.
           const next = event.shiftKey ? col - 1 : col + 1
-          if (next < 0 || next > 2) return
+          if (next < 0 || next > LAST_COLUMN) return
           event.preventDefault()
           moveTo(row, next)
           return
@@ -147,9 +176,14 @@ export function IssuesPanel({
 
   return (
     <>
-      {/* Three slots so the sort control sits centred regardless of how long
-          the count text on the left happens to be. */}
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 border-b px-3 py-1.5">
+      {/* Three slots, so the sort control stays centered whatever the length of
+          the count text on the left.
+
+          Above the scroller rather than sticky inside it: it says how many
+          issues are shown and how they are ordered, which you want while
+          reading the list. Sticky would keep it in view but leaves it inside
+          the scrolling box, so the scrollbar runs up the side of it. */}
+      <div className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 border-b px-3 py-1.5">
         <p className="text-xs text-muted-foreground tabular-nums">
           {issues.length === totalCount
             ? `${totalCount} ${totalCount === 1 ? 'issue' : 'issues'}`
@@ -182,7 +216,17 @@ export function IssuesPanel({
                 <span className="sr-only">List options</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="min-w-52">
+              {/* A checkbox item, not an item that toggles: the role is
+                  `menuitemcheckbox`, so a screen reader is told the state
+                  rather than only the label. */}
+              <DropdownMenuCheckboxItem
+                checked={scrollTracking}
+                onCheckedChange={onScrollTrackingChange}
+              >
+                Scroll tracking
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem disabled={done.size === 0} onSelect={onClearDone}>
                 Clear all done
               </DropdownMenuItem>
@@ -191,28 +235,30 @@ export function IssuesPanel({
         </div>
       </div>
 
-      {issues.length === 0 && (
-        <p className="px-4 py-8 text-center text-sm text-muted-foreground">
-          {totalCount === 0
-            ? 'No issues were found in this document.'
-            : 'Every severity is hidden. Turn one back on above.'}
-        </p>
-      )}
+      {/* The panel scrolls from here down, so the scrollbar starts below the
+          toolbar instead of running alongside it. */}
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        {issues.length === 0 && (
+          <p className="px-4 py-8 text-center text-sm text-muted-foreground">
+            {totalCount === 0
+              ? 'No issues were found in this document.'
+              : 'Every severity is hidden. Turn one back on above.'}
+          </p>
+        )}
 
       {/*
-        The list is a grid, and moves like one.
-        Two columns — the issue and its Done box — with a roving tabindex, so
-        the whole list is one tab stop and the arrow keys move inside it. Up and
-        down walk the issues, Enter opens the page, right or Tab crosses to the
-        checkbox, left or Shift+Tab comes back. Twenty-five rows with two
-        focusable controls each is fifty tab stops otherwise, which is a
-        keyboard user's afternoon.
+        The list is a grid and moves like one. Three columns (the issue, its note
+        and its Done box) with a roving tabindex, so the whole list is one tab
+        stop and the arrow keys move inside it: up and down walk the issues,
+        Enter opens the page, right or Tab crosses to the checkbox, left or
+        Shift+Tab comes back. Otherwise twenty-five rows with two focusable
+        controls each is fifty tab stops.
       */}
       <ul
         ref={gridRef}
         role="grid"
         aria-label="Issues"
-        aria-colcount={3}
+        aria-colcount={COLUMNS.length}
         aria-rowcount={issues.length}
         onKeyDown={onGridKeyDown}
         className="divide-y"
@@ -221,12 +267,16 @@ export function IssuesPanel({
         const onFocusedPage = issue.page === focusedPage
         const isDone = done.has(issue.id)
         return (
-          // The checkbox is a sibling of the row button, never inside it —
-          // nesting one interactive control in another is invalid, and it would
-          // mean ticking something off also navigated you away from it.
+          // The checkbox is a sibling of the row button, never inside it:
+          // nesting one interactive control in another is invalid, and ticking
+          // something off would also navigate away from it.
           <li
             key={issue.id}
             role="row"
+            // What scroll tracking scrolls to. First match wins, which under
+            // severity sort is the worst issue on the page rather than the
+            // topmost — the right one to be taken to.
+            data-page={issue.page}
             aria-rowindex={rowIndex + 1}
             className={cn(
               'relative flex flex-wrap items-start transition-colors',
@@ -259,13 +309,11 @@ export function IssuesPanel({
                   {issue.title}
                 </span>
                 {/*
-                  The description is the actual finding — "Effective Date
+                  The description is the finding itself: "Effective Date
                   Mismatch" names the problem, but only this says the cover page
-                  reads 03/10/2025 while page 3 reads 01/15/2024.
-                  Shown in full, not truncated: these run two or three lines and
-                  the decisive detail is usually the last clause, so clamping
-                  would hide precisely the part worth reading. Twenty-five rows
-                  is a scroll, not a problem.
+                  reads 03/10/2025 while page 3 reads 01/15/2024. Shown in full,
+                  not clamped, because these run two or three lines and the
+                  decisive detail is usually the last clause.
                 */}
                 <span className="mt-1 block text-xs text-muted-foreground">
                   {issue.description}
@@ -326,9 +374,9 @@ export function IssuesPanel({
             </div>
 
             {(editing === issue.id || notes[issue.id]) && (
-              // Full width under the row rather than squeezed into the column.
-              // A note is prose — a reason someone will read months from now —
-              // and prose in a 90px column is a reason nobody writes one.
+              // Full width under the row rather than squeezed into the column. A
+              // note is prose someone will read months from now, and prose in a
+              // 90px column is a reason nobody writes one.
               <div className="basis-full px-4 pb-3">
                 {editing === issue.id ? (
                   <textarea
@@ -355,9 +403,9 @@ export function IssuesPanel({
                         event.currentTarget.blur()
                       }
                       // Arrows move the cursor inside a text field, so the grid
-                      // must not see them. Tab is deliberately NOT swallowed —
-                      // it is the way out, and a textarea you cannot leave by
-                      // keyboard is a trap.
+                      // must not see them. Tab is NOT swallowed: it is the way
+                      // out, and a textarea you cannot leave by keyboard is a
+                      // trap.
                       if (event.key.startsWith('Arrow')) event.stopPropagation()
                     }}
                     rows={2}
@@ -375,6 +423,7 @@ export function IssuesPanel({
         )
       })}
       </ul>
+      </div>
     </>
   )
 }

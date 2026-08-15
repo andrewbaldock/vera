@@ -3,15 +3,15 @@ import { useCallback, useEffect, useState } from 'react'
 /**
  * Theme preference: three values, two palettes.
  *
- * "System" is a *preference*, not a palette — so the resolving happens here and
- * the stylesheet only ever sees the `.dark` class. That keeps one definition of
- * dark in CSS instead of two (a class rule and a media query) that can drift
- * apart, and it means the toggle and the OS switch drive the same single path.
+ * "System" is a preference, not a palette, so it resolves here and the
+ * stylesheet only ever sees the `.dark` class. One definition of dark in CSS
+ * rather than two that can drift apart (a class rule and a media query), and the
+ * toggle and the OS switch drive the same path.
  *
- * Device-scoped rather than account-scoped, deliberately: which theme suits you
- * depends on the screen you are looking at and the light you are sitting in,
- * not on who you are. Signing in on a different machine should not drag your
- * laptop's dark mode onto a bright office monitor.
+ * Device-scoped rather than account-scoped: which theme suits you depends on the
+ * screen and the light you are sitting in, not on who you are. Signing in on a
+ * different machine should not drag your laptop's dark mode onto a bright office
+ * monitor.
  */
 
 export type ThemePreference = 'system' | 'light' | 'dark'
@@ -53,7 +53,7 @@ export function useTheme() {
   }, [preference])
 
   // Following the system means following it while the app is open, not only at
-  // load — macOS and iOS both switch on a schedule.
+  // load: macOS and iOS both switch on a schedule.
   useEffect(() => {
     if (preference !== 'system') return
     const query = window.matchMedia('(prefers-color-scheme: dark)')

@@ -17,8 +17,8 @@ export function SeverityDot({ severity, className }: { severity: Severity; class
 
 /**
  * The thumb strip's per-issue mark: color *and* thickness, because a 29px-wide
- * segment has no room for a label. It stays out of the accessibility tree
- * because the slider announces the same fact through `aria-valuetext`.
+ * segment has no room for a label. Out of the accessibility tree, since the
+ * slider announces the same fact through `aria-valuetext`.
  */
 export function SeverityMark({ severity }: { severity: Severity }) {
   return (
