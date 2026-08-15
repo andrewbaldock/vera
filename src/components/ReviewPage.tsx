@@ -1,0 +1,221 @@
+import { useMemo, useRef, useState, type CSSProperties } from 'react'
+import { AppHeader } from '@/components/AppHeader'
+import { DocumentPanel } from '@/components/DocumentPanel'
+import { IssuesPanel } from '@/components/IssuesPanel'
+import { ReviewVerdict, SUBMIT_BLOCKED_ID } from '@/components/ReviewVerdict'
+import { Splitter } from '@/components/Splitter'
+import { ThumbStrip } from '@/components/ThumbStrip'
+import { Button } from '@/components/ui/button'
+import { useReview } from '@/hooks/useReview'
+import { canSubmit, groupByPage, numberByPage } from '@/lib/review'
+import { cn } from '@/lib/utils'
+import type { Review } from '@/types/review'
+
+/**
+ * The shell.
+ *
+ * There are two layouts and one component tree. Which shape you get is decided
+ * entirely in CSS at `lg` (1024px) — no media-query hook, no branch, no second
+ * subtree to drift out of sync with the first. The tree also means the
+ * Playwright suite can prove the shapes by resizing a single page.
+ *
+ * The boundary is 1024 rather than 768 because the full shape carries two
+ * controls the compact shape does without, and both need room. It is a rule
+ * about the window and not about the device, which is what makes an iPad in
+ * Split View come out right without a special case.
+ *
+ * The full shape is not "desktop": a 13" iPad is 1024px wide in portrait, so
+ * it is a touch layout that also happens to have a cursor sometimes.
+ */
+
+type Tab = 'issues' | 'document'
+
+const TAB_LABEL: Record<Tab, string> = {
+  issues: 'Issues',
+  document: 'Document',
+}
+
+const DEFAULT_ISSUES_WIDTH = 32
+const DOCUMENT_PANEL_ID = 'document-panel'
+const ISSUES_PANEL_ID = 'issues-panel'
+
+export function ReviewPage() {
+  const state = useReview()
+
+  if (state.status === 'loading') {
+    return (
+      <Shell>
+        <p className="text-sm text-muted-foreground">Loading review…</p>
+      </Shell>
+    )
+  }
+
+  if (state.status === 'error') {
+    return (
+      <Shell>
+        <div className="max-w-sm text-center">
+          <p className="text-sm font-medium">This review didn’t load.</p>
+          <p className="mt-1 text-sm text-muted-foreground">{state.message}</p>
+        </div>
+      </Shell>
+    )
+  }
+
+  return <ReviewShell review={state.review} />
+}
+
+function Shell({ children }: { children: React.ReactNode }) {
+  return <div className="flex h-dvh items-center justify-center bg-background p-6">{children}</div>
+}
+
+function ReviewShell({ review }: { review: Review }) {
+  const [tab, setTab] = useState<Tab>('issues')
+  const [issuesWidth, setIssuesWidth] = useState(DEFAULT_ISSUES_WIDTH)
+  /**
+   * One value, three views of it: the thumb strip marks it, the issues on it
+   * tint in the list, and the status bar names them. Everything on screen is
+   * answering the same question, so it is one piece of state rather than three
+   * that can disagree.
+   */
+  const [focusedPage, setFocusedPage] = useState(1)
+  const splitRef = useRef<HTMLDivElement>(null)
+
+  const issues = useMemo(() => numberByPage(review.issues), [review.issues])
+  const issuesByPage = useMemo(() => groupByPage(issues), [issues])
+  const submittable = canSubmit(review)
+
+  /**
+   * The seam — and the *only* writer.
+   *
+   * Today it sets the focused page directly, because there is no document to
+   * scroll yet. Once the viewer lands, seeking will scroll the viewer and the
+   * reading-line measurement will set `focusedPage`, making scroll position the
+   * single source. Every control that means "take me to this page" has to come
+   * through here, or the thumb strip — the one control whose entire job is
+   * moving the document — would move a highlight and scroll nothing.
+   */
+  function seekToPage(page: number) {
+    setFocusedPage(page)
+  }
+
+  /** Tapping an issue is a seek *plus* a navigation, but only where tabs exist. */
+  function openIssue(page: number) {
+    seekToPage(page)
+    setTab('document')
+  }
+
+  const submitButton = (
+    <Button
+      aria-disabled={!submittable}
+      aria-describedby={submittable ? undefined : SUBMIT_BLOCKED_ID}
+      // shadcn's default button is 32px tall, which is under the 44px touch
+      // minimum — on the one control this whole page exists to gate. The layout
+      // suite caught it; it stays 44px in both shapes because it is the primary
+      // action either way.
+      className={cn('min-h-11', !submittable && 'opacity-50')}
+    >
+      Submit review
+    </Button>
+  )
+
+  return (
+    <div className="flex h-dvh flex-col overflow-hidden bg-background">
+      {/* First thing in the tab order. A keyboard user shouldn't have to walk
+          twenty-five issues to reach the document they're being asked about. */}
+      <a
+        href={`#${DOCUMENT_PANEL_ID}`}
+        className="sr-only rounded-md bg-primary px-4 py-2 text-primary-foreground focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50"
+      >
+        Skip to document
+      </a>
+
+      <AppHeader review={review} actions={submitButton} />
+
+      {/* Compact only. Two views is not a tab bar's job, and the bottom edge is
+          already carrying the verdict and the submit button. */}
+      <div role="tablist" aria-label="View" className="flex shrink-0 gap-1 border-b bg-card p-1.5 lg:hidden">
+        {(Object.keys(TAB_LABEL) as Tab[]).map((value) => (
+          <button
+            key={value}
+            type="button"
+            role="tab"
+            aria-selected={tab === value}
+            aria-controls={value === 'issues' ? ISSUES_PANEL_ID : DOCUMENT_PANEL_ID}
+            onClick={() => setTab(value)}
+            className={cn(
+              'min-h-11 flex-1 rounded-md text-sm font-medium transition-colors',
+              'focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none',
+              tab === value
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-accent active:bg-accent',
+            )}
+          >
+            {TAB_LABEL[value]}
+          </button>
+        ))}
+      </div>
+
+      <div
+        ref={splitRef}
+        style={{ '--issues-width': `${issuesWidth}%` } as CSSProperties}
+        className="flex min-h-0 flex-1 overflow-hidden"
+      >
+        <section
+          id={ISSUES_PANEL_ID}
+          aria-label="Issues found"
+          className={cn(
+            'flex min-h-0 w-full flex-col bg-card lg:w-[var(--issues-width)]',
+            tab !== 'issues' && 'max-lg:hidden',
+          )}
+        >
+          {/* Outside the scroller on purpose. Inside it, the answer to
+              acceptance criterion #3 scrolls off the top of the panel — and in
+              the full shape nothing else on screen carries the blocking count. */}
+          <ReviewVerdict review={review} className="shrink-0" />
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+            <IssuesPanel issues={issues} focusedPage={focusedPage} onSeek={openIssue} />
+          </div>
+        </section>
+
+        <Splitter
+          className="hidden lg:block"
+          value={issuesWidth}
+          onChange={setIssuesWidth}
+          containerRef={splitRef}
+          controls={ISSUES_PANEL_ID}
+        />
+
+        <main
+          id={DOCUMENT_PANEL_ID}
+          tabIndex={-1}
+          className={cn(
+            'flex min-h-0 w-full flex-col lg:w-auto lg:flex-1',
+            tab !== 'document' && 'max-lg:hidden',
+          )}
+        >
+          <DocumentPanel
+            focusedPage={focusedPage}
+            pageCount={review.document.pages.length}
+            issuesOnPage={issuesByPage.get(focusedPage) ?? []}
+          />
+        </main>
+
+        <ThumbStrip
+          className="hidden lg:flex"
+          pages={review.document.pages}
+          issuesByPage={issuesByPage}
+          focusedPage={focusedPage}
+          onSeek={seekToPage}
+        />
+      </div>
+
+      {/* Compact only. The blocking count sits directly against the button it is
+          blocking, which is the plainest statement of the rule — and the bottom
+          of the screen is both thumb reach and where iOS puts primary actions. */}
+      <div className="flex shrink-0 items-center gap-3 border-t bg-card px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] lg:hidden">
+        <ReviewVerdict review={review} compact />
+        {submitButton}
+      </div>
+    </div>
+  )
+}

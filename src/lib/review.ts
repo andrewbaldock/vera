@@ -48,21 +48,22 @@ export interface NumberedIssue extends Issue {
 }
 
 /**
- * Numbers every issue by page order, once.
+ * Numbers every issue by page order, and returns them in it.
  *
  * The number has to be stable, because it appears in two places at the same
  * time — beside the row in the list and on the marker over the document. If it
  * were the row's index it would change when the list is re-sorted by severity,
  * and the two would disagree in front of the user.
+ *
+ * Returning page order too is not a separate favour: it is what every caller
+ * wants, it is the list's documented default, and computing the order here and
+ * then throwing it away only invites the caller to re-sort — which is one more
+ * place for the order to quietly diverge from the numbering.
  */
 export function numberByPage(issues: Issue[]): NumberedIssue[] {
-  const inPageOrder = [...issues].sort((a, b) => a.page - b.page)
-  const numbers = new Map(inPageOrder.map((issue, index) => [issue.id, index + 1]))
-
-  return issues.map((issue) => ({
-    ...issue,
-    number: numbers.get(issue.id) ?? 0,
-  }))
+  return [...issues]
+    .sort((a, b) => a.page - b.page)
+    .map((issue, index) => ({ ...issue, number: index + 1 }))
 }
 
 /** Issues keyed by the page they appear on, for the status bar and the strip. */

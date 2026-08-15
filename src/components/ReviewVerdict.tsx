@@ -1,0 +1,76 @@
+import { blockingIssues, countBySeverity } from '@/lib/review'
+import { SeverityDot } from '@/components/severity'
+import { SEVERITY_LABEL } from '@/lib/severity'
+import { cn } from '@/lib/utils'
+import type { Review, Severity } from '@/types/review'
+
+/**
+ * The answer to acceptance criterion #3, in one place.
+ *
+ * It takes the whole `review` and never a list of issues. That is the point of
+ * the signature: the panel beside it renders a *view* of the issues — sorted,
+ * and shortly filtered — and a verdict derived from that view would quietly
+ * report "0 minor" the moment someone hides the minors. The summary has to
+ * account for issues the list isn't showing.
+ *
+ * It also has to read correctly when the gate is open. A build that can only
+ * say "12 issues must be fixed" is overfitted to the mock it was handed; give
+ * this one a clean document and it says so.
+ */
+
+const SUBMIT_BLOCKED_ID = 'submit-blocked'
+
+interface ReviewVerdictProps {
+  review: Review
+  /** The compact bottom bar has one line to work with, not four. */
+  compact?: boolean
+  className?: string
+}
+
+export function ReviewVerdict({ review, compact = false, className }: ReviewVerdictProps) {
+  const blocking = blockingIssues(review.issues)
+  const counts = countBySeverity(review.issues)
+  const blocked = blocking.length > 0
+
+  const headline = blocked
+    ? `${blocking.length} ${blocking.length === 1 ? 'issue' : 'issues'} must be fixed`
+    : 'Ready to submit'
+
+  const detail = blocked
+    ? 'before you can submit'
+    : counts.minor > 0
+      ? `${counts.minor} minor ${counts.minor === 1 ? 'issue' : 'issues'} may be ignored`
+      : 'No issues found'
+
+  if (compact) {
+    return (
+      <p
+        id={SUBMIT_BLOCKED_ID}
+        aria-live="polite"
+        className={cn('min-w-0 flex-1 text-sm', className)}
+      >
+        <span className="font-semibold">{headline}</span>{' '}
+        <span className="text-muted-foreground">{detail}</span>
+      </p>
+    )
+  }
+
+  return (
+    <div id={SUBMIT_BLOCKED_ID} aria-live="polite" className={cn('border-b px-4 py-4', className)}>
+      <p className="text-lg font-semibold tracking-tight text-balance">{headline}</p>
+      <p className="mt-0.5 text-sm text-muted-foreground">{detail}</p>
+
+      <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
+        {(Object.keys(counts) as Severity[]).map((severity) => (
+          <li key={severity} className="flex items-center gap-1.5 text-sm">
+            <SeverityDot severity={severity} />
+            <span className="font-medium tabular-nums">{counts[severity]}</span>
+            <span className="text-muted-foreground">{SEVERITY_LABEL[severity]}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+export { SUBMIT_BLOCKED_ID }

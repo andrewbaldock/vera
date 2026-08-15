@@ -22,6 +22,70 @@ export type ReviewState =
   | { status: 'error'; message: string }
   | { status: 'ready'; review: Review }
 
+/**
+ * A cast is a promise, not a check.
+ *
+ * The whole argument for this app is that it isn't overfitted to the mock —
+ * hand it a different payload and it behaves correctly. That argument needs a
+ * boundary that actually looks. Without one, `issues: null` sails past the
+ * error state that exists for exactly this and dies later inside a render,
+ * and an unrecognised severity degrades *silently* into an uncoloured dot and
+ * a count that reads NaN.
+ *
+ * Hand-written rather than a schema library: it is twenty lines, it needs no
+ * dependency, and every line of it is explainable.
+ */
+const SEVERITIES = ['critical', 'major', 'minor']
+const STATUSES = ['created', 'processing', 'on_review', 'submitted']
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+export function isReview(value: unknown): value is Review {
+  if (!isRecord(value)) return false
+  const { id, name, uploaded_at, status, version, document, user, issues } = value
+
+  if (typeof id !== 'string' || typeof name !== 'string' || typeof uploaded_at !== 'string') {
+    return false
+  }
+  if (typeof version !== 'number' || typeof status !== 'string' || !STATUSES.includes(status)) {
+    return false
+  }
+  if (!isRecord(user) || typeof user.first_name !== 'string' || typeof user.last_name !== 'string') {
+    return false
+  }
+  if (!isRecord(document) || typeof document.pdf_url !== 'string') return false
+  if (!Array.isArray(document.pages) || document.pages.length === 0) return false
+  if (
+    !document.pages.every(
+      (page) =>
+        isRecord(page) &&
+        typeof page.page_num === 'number' &&
+        typeof page.width === 'number' &&
+        typeof page.height === 'number' &&
+        page.width > 0 &&
+        page.height > 0,
+    )
+  ) {
+    return false
+  }
+
+  return (
+    Array.isArray(issues) &&
+    issues.every(
+      (issue) =>
+        isRecord(issue) &&
+        typeof issue.id === 'string' &&
+        typeof issue.title === 'string' &&
+        typeof issue.description === 'string' &&
+        typeof issue.page === 'number' &&
+        typeof issue.severity === 'string' &&
+        SEVERITIES.includes(issue.severity),
+    )
+  )
+}
+
 function withLocalPdf(review: Review): Review {
   return {
     ...review,
@@ -43,13 +107,17 @@ export function useReview(): ReviewState {
         if (!response.ok) {
           throw new Error(`Request failed with ${response.status}`)
         }
-        const review = (await response.json()) as Review
-        setState({ status: 'ready', review: withLocalPdf(review) })
+        const payload: unknown = await response.json()
+        if (!isReview(payload)) {
+          throw new Error('The review data was not in the expected shape.')
+        }
+        setState({ status: 'ready', review: withLocalPdf(payload) })
       } catch (error) {
         if (controller.signal.aborted) return
-        const message =
-          error instanceof Error ? error.message : 'Could not load the review.'
-        setState({ status: 'error', message })
+        // Raw parser output ("Unexpected token '<'…") tells a reviewer nothing
+        // and looks like a crash. The real message goes to the console for us.
+        if (error instanceof Error) console.error('Failed to load review:', error)
+        setState({ status: 'error', message: 'The review could not be loaded.' })
       }
     }
 

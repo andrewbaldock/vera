@@ -3,11 +3,26 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
 
-@custom-variant dark (&:is(.dark *));
+/*
+  One trigger: the `.dark` class on <html>. The theme preference has three
+  values (system / light / dark) but only two palettes, so the resolving is
+  done in JS (useTheme) and CSS never has to know about the media query.
+  That keeps this file a single definition of dark rather than two that can
+  drift, and it is what lets a toggle exist at all.
+*/
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
-    --font-heading: var(--font-sans);
     --font-sans: 'Geist Variable', sans-serif;
+    /* Severity is product vocabulary, so it lives in the token layer with
+       everything else. A component never names a colour. */
+    --color-severity-critical: var(--severity-critical);
+    --color-severity-major: var(--severity-major);
+    --color-severity-minor: var(--severity-minor);
+    /* The focused page tints three separate regions — the issue rows, the
+       status bar and the thumb strip segment. One token keeps them identical. */
+    --color-focus-tint: var(--focus-tint);
+    --color-focus-edge: var(--focus-edge);
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -49,6 +64,8 @@
 }
 
 :root {
+    /* Native form controls, scrollbars and the browser UI follow this. */
+    color-scheme: light;
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
@@ -81,9 +98,21 @@
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.708 0 0);
+
+    --severity-critical: oklch(0.577 0.245 27.325);
+    --severity-major: oklch(0.72 0.15 68);
+    --severity-minor: oklch(0.62 0.02 260);
+    --focus-tint: oklch(0.955 0.012 260);
+    --focus-edge: oklch(0.55 0.16 260);
 }
 
+/*
+  Applied by useTheme, which resolves the three-value preference
+  (system / light / dark) down to this one class. CSS never sees the media
+  query, so there is exactly one definition of dark rather than two.
+*/
 .dark {
+    color-scheme: dark;
     --background: oklch(0.145 0 0);
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.205 0 0);
@@ -115,16 +144,38 @@
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
+
+    --severity-critical: oklch(0.704 0.191 22.216);
+    --severity-major: oklch(0.79 0.14 70);
+    --severity-minor: oklch(0.68 0.02 260);
+    --focus-tint: oklch(0.28 0.03 260);
+    --focus-edge: oklch(0.72 0.13 260);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    }
+  }
+
+  /*
+    The shell is a fixed-height app frame, so the page itself never scrolls.
+    Without this, iOS still rubber-bands the whole thing when a drag starts on
+    the header, the view switcher or the bottom bar — which reads as the app
+    coming loose from the screen.
+  */
+  html,
   body {
-    @apply bg-background text-foreground;
-    }
+    @apply overscroll-none bg-background text-foreground;
+  }
+
   html {
     @apply font-sans;
-    }
+    /*
+      Tailwind's preflight zeroes -webkit-tap-highlight-color, so without an
+      explicit :active state a tap produces literally no feedback until the
+      state changes. Controls carry their own :active; this restores a faint
+      system-level fallback for anything that doesn't.
+    */
+    -webkit-tap-highlight-color: color-mix(in oklab, var(--foreground) 8%, transparent);
+  }
 }

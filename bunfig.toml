@@ -1,0 +1,6 @@
+# `bun test` is a builtin that ignores package.json scripts, so someone typing it
+# out of habit would otherwise get Bun's runner loose in tests/ — which holds
+# Playwright specs it cannot run. Scoping it to src/ means both `bun test` and
+# `bun run test` do the sensible thing.
+[test]
+root = "src"
