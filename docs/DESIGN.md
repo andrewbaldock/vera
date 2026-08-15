@@ -49,7 +49,8 @@ Not our call. The assignment draws these lines itself.
 Wanted, and deliberately not built. Each satisfies **no acceptance criterion**, and each costs more than it first appears. Listed so the absence reads as a decision rather than an oversight — and so the reasoning survives the question.
 
 - **Restoring scroll position across a page reload.** Genuinely nice for a 34-page document worked through over a long session. But a continuous-scroll viewer has no page geometry at mount, so the restore has to hang off the viewer's render signal and fire exactly once — otherwise scrolling away snaps the user back every time. Worth having in a real product; not worth the build time here.
-- **Rendered page thumbnails in the severity strip.** 34 extra pdf.js renders producing images too small to read. The strip's job is showing where problems cluster, which coloured rectangles do better and for a fraction of the work (D6).
+- **Rendered page thumbnails in the thumb strip.** 34 extra pdf.js renders producing images too small to read. The strip's job is showing where problems cluster, which coloured rectangles do better and for a fraction of the work (D6).
+- **Pinch-to-zoom the document.** The expected gesture on an iPad, and the full layout is a touch layout (§6d) — so this is a real gap, named rather than hidden. Cut on cost, not on principle: doing it properly means re-rendering pages at a new scale, which reaches into the reserved page heights and the reading-line measurement that decides which page is in view. Both are load-bearing. Letting the browser zoom the whole page instead is a one-liner but breaks a fixed app shell. Deferred with its consequence understood: on a tablet, a page renders at the width we choose, and the user cannot magnify it.
 
 ### Where this page sits
 
@@ -162,7 +163,7 @@ The text layer is the invisible copy of the page's text laid over the canvas —
 
 The symptom is bizarre and specific — **controls work until the first scroll, then go dead** — which is a long way from the cause.
 
-This affects three things in the real build, not just the spike: the **status bar** sits above the viewer, the **severity strip** beside it, and the **confirmation dialog** over everything. Every one of them needs to clear `z-index: 3`, and the reason belongs in a comment where the value is set, because `zIndex: 10` on its own looks arbitrary.
+This affects three things in the real build, not just the spike: the **status bar** sits above the viewer, the **thumb strip** beside it, and the **confirmation dialog** over everything. Every one of them needs to clear `z-index: 3`, and the reason belongs in a comment where the value is set, because `zIndex: 10` on its own looks arbitrary.
 
 **2. Page heights must be reserved before the canvases paint, and the API's dimensions are what makes that possible.**
 
@@ -170,7 +171,7 @@ All 34 pages mount at once, but each renders asynchronously — until a canvas p
 
 Setting each wrapper's height from the API's per-page `height`/`width` fixes it: the document is its full length from the first paint, so scroll targets are stable.
 
-This reframes those fields. They looked like data for drawing the severity strip; they are actually **what makes scrolling correct**. A viewer that ignores them can't reliably navigate to a page — which is most of what this page does.
+This reframes those fields. They looked like data for drawing the thumb strip; they are actually **what makes scrolling correct**. A viewer that ignores them can't reliably navigate to a page — which is most of what this page does.
 
 **3. "Which page am I on" is a measurement, not an observation.**
 
@@ -247,7 +248,7 @@ The app must not be overfitted to the supplied mock. Hand it a JSON with no crit
 
 Implementation open: a second mock file plus a way to switch to it (query param, or a small dev control). Whichever we pick gets called out as a demo affordance, not a product feature.
 
-### D6 — Document severity strip (minimap) — **DECIDED: cheap version**
+### D6 — Document thumb strip (minimap) — **DECIDED: cheap version**
 
 A vertical strip down the edge of the viewer, one segment per page, mapping onto scroll position the way a scrollbar does:
 
@@ -255,8 +256,18 @@ A vertical strip down the edge of the viewer, one segment per page, mapping onto
 - Inside it, **one coloured bar per issue on that page**, in that issue's severity colour — so page 14 visibly has three marks and page 4 has none. Richer than a single worst-severity fill: you see both severity and volume at a glance.
 - Clean pages are empty rectangles.
 - The **current viewport position** is marked.
-- **Click a segment to jump** to that page.
 - Aspect ratio comes from the `height`/`width` the API already gives us per page — otherwise unused data.
+
+**It is one control you scrub, not 34 you click.** This is what the name is for, and it is the decision that lets the strip exist on touch at all.
+
+Press and drag anywhere on the strip and the document follows continuously; lift to land. A tap jumps to the page under your finger. Because it's a single control rather than 34 discrete targets, the 44px minimum applies once — 44px wide, as tall as the panel — instead of demanding 1,496px of column for 34 legal-size targets. The same reasoning as the iOS index scrubber or a Kindle page slider.
+
+That forces one addition and earns one for free:
+
+- **A readout follows the thumb** — `PAGE 17 · 2 issues` — because a finger on the strip covers the thing it is pointing at. On a pointer device the same readout appears on hover, where it reads as a tooltip rather than a workaround.
+- **It is a slider, so it gets slider semantics.** `role="slider"` with `aria-valuenow` on the page number, Arrow keys to step, Home/End to jump — keyboard navigation of the whole document for free, from a control built for a thumb.
+
+Driven by Pointer Events, not mouse events, with `touch-action: none` so the drag doesn't scroll the page underneath it.
 
 **Not rendered thumbnails.** Plain rectangles, no pdf.js involved.
 
@@ -332,17 +343,39 @@ One viewer, one architecture, a single tuning constant that differs by device �
 
 This is the mobile-first argument in its most honest form. Not *"it also works on phones."* Designing for the phone found a real defect in the desktop design.
 
-### Layout by form factor
+### Layout by form factor — **two shapes, and the boundary is 1024px**
 
-| Form factor | Shape |
-|---|---|
-| **Phone** (< `md`) | One thing at a time, with a segmented control: **Issues / Document**. Tapping an issue switches to the document at that page — the same intent as the desktop click, expressed as navigation. The resizer is meaningless here and isn't rendered. |
-| **iPad portrait** (`md`) | Split view, issues panel narrower. Resizer available. |
-| **iPad landscape / desktop** (`lg`+) | The split view as designed — roughly one-third / two-thirds. |
+There are exactly two layouts. Not three.
 
-The **verdict summary always stays visible**, at every size. It's the answer to acceptance criterion #3, and it is the one thing that must never be a tab away.
+| Shape | Applies | What it is |
+|---|---|---|
+| **Compact** (`< lg`) | Every phone, **every iPad in portrait up to 1024**, every Stage Manager and Split View window, and a narrow desktop browser | One thing at a time behind a segmented control — **Issues / Document**. Verdict and submit merge into one bottom bar. No thumb strip, no resizer. |
+| **Full** (`≥ lg`, 1024px) | Every iPad in landscape, the 13" iPad **in portrait**, and every desktop | The sketch: issues panel and viewer side by side with a draggable resizer, thumb strip down the viewer edge, full metadata in the header. |
 
-### The phone layout
+**Why 1024 rather than 768.** The full shape carries two controls the compact shape does without — the resizer and the thumb strip — and both need room to be operated. At 768 an issues panel wide enough to read leaves a document column too narrow to. The rule is about *the window*, not the device, which is what makes the Stage Manager case correct without special-casing it.
+
+**The consequence, accepted deliberately:** an 820pt iPad in portrait shows one panel where two would nearly fit. That is the honest trade — a 520pt document column is a bad way to read a document that wants the width.
+
+### Two shapes, both of them touch
+
+The full shape is not "the desktop layout." **iPad Air 13" and iPad Pro 13" are 1024 CSS px wide in portrait**, so the full shape appears on a touch screen held vertically, before anyone rotates anything. Landscape iPads are 1133–1366 and land there too.
+
+So the full shape is a touch layout that also has a pointer, and every control in it is built to that standard:
+
+- **The thumb strip is one scrub control, not 34 targets** (D6). This is the whole reason it survives on touch.
+- **The resizer** renders as a hairline with a ~44px padded grab zone, driven by Pointer Events with `touch-action: none`, and is `role="separator"` with arrow-key support.
+- **Nothing essential is behind `:hover`.** The status bar's issue descriptions are tap-to-expand at every size; hover is layered on top via `@media (hover: hover)` as an enhancement only.
+- **Both panels set `overscroll-behavior: contain`**, or scrolling the issues list to its end rubber-bands the whole app on iOS.
+
+The one gesture we do not support is **pinch-to-zoom** — cut on cost, with the reasoning and the consequence in §2.
+
+A useful side effect of drawing the line at 1024: **rotating an iPad switches between the two designs.** That is the clearest possible demonstration that the full shape is a design in its own right and not the compact one stretched.
+
+The **verdict summary always stays visible**, in both shapes. It's the answer to acceptance criterion #3, and it is the one thing that must never be a tab away.
+
+### The compact layout
+
+Drawn at phone width because that is where it is tightest, but this is the layout every iPad in portrait gets too — the same shape with more room in it.
 
 ```
    Issues tab                      Document tab
@@ -373,18 +406,16 @@ Five decisions are baked into that:
 
 **Tapping an issue switches to the Document tab at that page.** The same intent as the desktop click, expressed as navigation instead of as a scroll in an adjacent panel. Returning is one tap.
 
-**The severity strip is dropped on phone, not miniaturised.** It is the third of three redundant routes to a page — the list and the status bar both survive — and its ~24pt segments cannot be made touch-legal without consuming the viewport. A cramped horizontal version would be worse than its absence. This is a deliberate removal, not an oversight.
+**The thumb strip is dropped here, not miniaturised.** Not for want of touch targets — as a scrub control it works fine under a thumb (D6). It is dropped because it costs *width*, and it is the third of three redundant routes to a page: the list and the status bar both survive without it. A cramped horizontal version would be worse than its absence. A deliberate removal, not an oversight.
 
 **A segmented control, not a bottom tab bar.** Two views is not a tab bar's job, and the bottom edge is already carrying the verdict and the submit button.
-
-**iPad portrait** keeps the split: issues panel around 300pt, document taking the remainder, resizer available.
 
 ### iOS specifics that actually bite
 
 - **`100dvh`, never `100vh`.** iOS Safari's `vh` ignores the browser chrome, so a full-height layout gets clipped and the submit button ends up under the toolbar.
 - **Safe areas.** `viewport-fit=cover` plus `env(safe-area-inset-*)` padding, or the home indicator sits over the controls at the bottom of the screen.
 - **Nothing may depend on hover.** The status-bar labels reveal an issue's description on hover — on touch that has to be tap-to-expand. Any hover-only affordance is an unreachable feature on half our target devices.
-- **Touch targets are 44px minimum.** This is a real problem for the severity strip, whose segments are ~24px tall in order to fit 34 pages in a column. On a phone it becomes a horizontal scroller with wider targets, or it hides behind the segmented control — it is the least essential of the three navigation routes.
+- **Touch targets are 44px minimum**, and the thumb strip looks like it fails this — 34 segments at 44px would need 1,496px of column. It doesn't fail, because it is a **single scrub control rather than 34 buttons** (D6): one target, 44px wide, as tall as the panel. The rule that actually binds is on the issue rows, which take the full row as their target with the checkbox getting its own.
 - **Momentum scrolling and a rAF scroll handler.** The reading-line measurement runs on scroll; on iOS that fires during momentum and must stay cheap. It already exits its loop early and is rAF-throttled.
 - **`CMD+F` doesn't exist on a phone.** iOS Safari does have Find on Page — via the share sheet, and via the address-bar menu — and it searches rendered DOM text, so our text layers make it work. But it's a browser affordance we can't invoke or point at. This is stated plainly rather than glossed: the criterion is met with the platform's own find on every platform that has one.
 
@@ -512,7 +543,7 @@ We are not going to fix that client-side, and pretending otherwise would be wors
 | 2026-08-14 | Submit asks for **confirmation naming the unresolved minors** | Submitting straight through | "Minor may be ignored" is a choice the user makes. One-way door, no undo, mortgage file — she should acknowledge it once. |
 | 2026-08-14 | Render the **terminal submitted state in place**; label it "Submitted" | Navigate to a stub Submitted Page; label it "Reviewed" | `status: submitted` is a value the API can return, so this page must handle it regardless of the button. "Submitted" matches the data and carries the finality; "Reviewed" implies a state you could leave. |
 | 2026-08-14 | **No un-submit / mark-for-re-review** | A reopen control | Not a scope call — the transition doesn't exist. No reopened status in the enum, one-way arrow in the flow diagram, and submission is an external event. Corrections happen via a new version. |
-| 2026-08-14 | **Severity strip** down the viewer edge — one coloured segment per page, click to jump | Rendered page thumbnails | 34 extra pdf.js renders for images too small to read. The strip's job is showing *where the problems cluster*, which coloured rectangles do better and for ~30 lines. Uses the per-page `height`/`width` the API gives us. |
+| 2026-08-14 | **Thumb strip** down the viewer edge — one coloured segment per page | Rendered page thumbnails | 34 extra pdf.js renders for images too small to read. The strip's job is showing *where the problems cluster*, which coloured rectangles do better and for ~30 lines. Uses the per-page `height`/`width` the API gives us. |
 | 2026-08-14 | **Page-margin markers**, numbered in page order, labelled with the real issue title, severity by colour **and** icon | In-page highlighting via LLM lookup, via text-matching literals, or with a derived category taxonomy | The data gives `page` and no coordinates — anything drawn inside a page is an unsupported claim about position. Text-matching works for only ~half the issues with no way for a user to tell a correct miss from a bug. And absence-type issues ("Missing Summary of Findings") can never be highlighted by any technique. Bounding boxes from the backend are the production answer. |
 | 2026-08-14 | **Scroll restore across reloads — CUT** | Persisting a page number, restored on the viewer's render signal | Gold-plating. Satisfies no acceptance criterion, and correct restore is more work than it appears: no page geometry exists at mount, so it must hang off the render signal and fire exactly once or scrolling away snaps the user back. Documented in Out of Scope rather than deleted, so the reasoning survives the question. |
 | 2026-08-14 | **Accessibility is a deliberate strength**, not a checklist pass. Resizer keyboard support back **in scope** | Shipping it mouse-only as a documented gap | The cut was priced wrong: the WAI-ARIA separator pattern is a `role`, four ARIA attributes and an arrow-key handler on top of pointer logic we're writing anyway. "I skipped accessibility" is also the one gap in that list a frontend reviewer would actually poke at — and this is a compliance tool used all day by people doing careful work. |
@@ -524,6 +555,12 @@ We are not going to fix that client-side, and pretending otherwise would be wors
 | 2026-08-14 | Scroll is **smooth, but honours `prefers-reduced-motion`** | Always smooth; always instant | Animating the movement shows the user *where* they went; a hard jump doesn't. For people who have asked for reduced motion, a long smooth scroll is nauseating rather than informative. |
 | 2026-08-14 | The **splitter is authored by us**, to system conventions | A splitter library; leaving it mouse-only | Radix has no splitter primitive. Writing it is the demonstration rather than the gap: a new primitive added to the system following its conventions, with the full WAI-ARIA window-splitter pattern. Consuming a system is table stakes; extending one correctly is the job. |
 | 2026-08-14 | Submit uses **`aria-disabled`, not `disabled`** | A genuinely `disabled` button | `disabled` drops the button out of the tab order and announces nothing, so a keyboard user tabs past the most important control on the page and is never told why. Focusable + `aria-disabled` + `aria-describedby` on the blocking summary means reaching it explains itself. Click handler no-ops while blocked. |
+| 2026-08-14 | **Two layouts, not three. The boundary is 1024px** | A third shape for iPad portrait, splitting at 768 | The middle shape was the least-designed thing in the document and the most work to justify. Collapsing it answers four open iPad questions at once — thumb strip, resizer, bottom bar, header metadata all belong to the full shape and nothing has to be half-built for a middle case. 1024 rather than 768 because at 768 an issues panel wide enough to read leaves a document column too narrow to. The rule is about the *window*, so iPad Split View and Stage Manager come out right with no special case. Cost accepted: an 820pt iPad portrait shows one panel where two would nearly fit. |
+| 2026-08-14 | **The full layout is a touch layout**, not "the desktop layout" | Treating `lg`+ as pointer-only | The 13" iPad is 1024 CSS px wide *in portrait*, so the full shape appears on a touch screen before anyone rotates anything. Everything in it is therefore built to touch standards: Pointer Events over mouse events, 44px grab zones, `touch-action: none` on drag surfaces, `overscroll-behavior: contain` on the panels, and no essential affordance behind `:hover`. Rotating an iPad crossing 1024 flips between the two designs, which also happens to be the clearest demonstration that the full shape isn't the compact one stretched. |
+| 2026-08-14 | The thumb strip is **one scrub control, not 34 buttons** | 34 individually clickable segments | 34 targets at the 44px minimum need 1,496px of column, which is what appeared to kill the strip on touch. As a single press-and-drag control the minimum applies once — 44px wide, full panel height — and the strip survives everywhere. Same interaction as the iOS index scrubber. It also earns slider semantics for free: `role="slider"`, `aria-valuenow` on the page number, arrow keys and Home/End, so a control designed for a thumb delivers keyboard navigation of the whole document. Forces a readout that follows the thumb, since a finger covers what it points at. |
+| 2026-08-14 | **One `focusedPage`, three views of it.** The thumb strip marks it, the issues on it highlight in the list, the status bar names them | Independent state per region | Everything on screen answers the same question — *what am I looking at* — so it is one value, not three features that can disagree. Scroll position is its only writer: clicking an issue or dragging the strip *scrolls*, and the highlight follows arrival. Otherwise the reading line reports every page the smooth scroll passes through and the list strobes on the way to page 17. Not colour-only: `aria-current` on the strip segment and the highlighted rows, with the status bar as the text channel. |
+| 2026-08-14 | **The issues list never scrolls itself** | `scrollIntoView({ block: 'nearest' })` on the focused page's first issue | I proposed the auto-scroll and it was the wrong call. The list is the user's — they scrolled it somewhere on purpose, and having it move under them because the document scrolled is exactly the irritation that makes a panel feel possessed. The highlight is enough: if it's off-screen the status bar still names the issues on the page, which is the third of the three redundant routes doing its job. |
+| 2026-08-14 | **No pinch-to-zoom — CUT** | Handling the gesture and re-rendering pages at a new scale; letting the browser zoom the page | The expected gesture on an iPad and a real gap, so it is named rather than hidden. Doing it properly reaches into the reserved page heights and the reading-line measurement, both load-bearing. Letting the browser zoom is a one-liner that breaks a fixed app shell. Deferred with the consequence stated: on a tablet the page renders at the width we choose and cannot be magnified. |
 
 ---
 
