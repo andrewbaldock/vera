@@ -10,6 +10,10 @@ This doc is written *before* the code and updated *as* the code. It is the recor
 
 ---
 
+> **Looking for how it works rather than why?** [`ARCHITECTURE.md`](ARCHITECTURE.md) has the
+> layer map, the data flow, `focusedPage`'s single-writer rule, the viewer internals and the
+> production seams. This document is the reasoning; that one is the map.
+
 ## 1. What this app is
 
 **UNDIRT — Uploaded New Doc Issue Review Tool.**

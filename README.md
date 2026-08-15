@@ -72,7 +72,8 @@ Wi-Fi needs your machine's LAN address instead.
 was chosen, what was rejected, and why. It was written *before* the code and is updated *as*
 the code, and it ends in a decision log. If something here isn't explained there, that's a gap.
 
-- [`docs/DESIGN.md`](docs/DESIGN.md) — scope, flow, decisions, decision log
+- [`docs/DESIGN.md`](docs/DESIGN.md) — **why**: scope, flow, decisions, decision log
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — **how**: layers, data flow, the viewer, the token layer, testing, and the seams where this changes at scale
 - [`docs/wireframes/`](docs/wireframes/) — UX sketches and the two layout shapes, drawn before implementation
 - [`docs/assignment.pdf`](docs/assignment.pdf) — the original brief
 
