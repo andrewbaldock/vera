@@ -15,7 +15,7 @@ const DEEP_IN_THE_DOCUMENT = 'RECONCILIATION'
 test.use({ viewport: { width: 1440, height: 900 } })
 
 async function gotoViewer(page: Page) {
-  await page.goto('/')
+  await page.goto('/reviews/souj5sd12c8a3f')
   await expect(page.getByRole('list', { name: 'Issues' })).toBeVisible()
   // The first canvas appearing means pdf.js has parsed and started painting.
   await expect(page.locator('.react-pdf__Page__canvas').first()).toBeVisible({ timeout: 20_000 })

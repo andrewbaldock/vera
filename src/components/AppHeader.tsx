@@ -1,4 +1,4 @@
-import { ChevronLeft, MoreHorizontal } from 'lucide-react'
+import { Check, ChevronDown, ChevronLeft, MoreHorizontal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -7,7 +7,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { REVIEW_DOCUMENT } from '@/lib/documents'
 import { UserMenu } from '@/components/UserMenu'
+import { Wordmark } from '@/components/Wordmark'
+import { Link } from 'react-router'
 import type { Review } from '@/types/review'
 
 /**
@@ -46,10 +49,12 @@ interface AppHeaderProps {
   review: Review
   /** The submit button, in the full shape only — compact carries it below. */
   actions?: React.ReactNode
+  version: number
+  onVersionChange: (version: number) => void
 }
 
-export function AppHeader({ review, actions }: AppHeaderProps) {
-  const documentFacts = facts(review)
+export function AppHeader({ review, actions, version, onVersionChange }: AppHeaderProps) {
+  const documentFacts = facts(review).filter((fact) => fact.label !== 'Version')
 
   return (
     <header
@@ -69,13 +74,19 @@ export function AppHeader({ review, actions }: AppHeaderProps) {
         it belongs to the Documents page in the spec's flow — but the link is
         honest about where it means to go.
       */}
-      <a
-        href="/documents"
+      {/* Compact has no room for both the wordmark and a back affordance, and
+          the back affordance is the one you need on a screen you are working
+          inside. The wordmark is one tap away on the documents list. */}
+      <Wordmark className="hidden lg:flex" />
+      <span className="hidden h-5 w-px shrink-0 bg-border lg:block" aria-hidden />
+
+      <Link
+        to="/documents"
         className="flex min-h-11 shrink-0 items-center gap-0.5 rounded-md pr-2 text-sm text-muted-foreground transition-colors hover:text-foreground active:text-foreground focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none"
       >
         <ChevronLeft className="size-4" aria-hidden />
         <span className="max-sm:sr-only">Documents</span>
-      </a>
+      </Link>
 
       <h1 className="min-w-0 flex-1 truncate py-3 text-sm font-semibold lg:text-base">
         {review.name.replace(/\.pdf$/i, '')}
@@ -90,6 +101,41 @@ export function AppHeader({ review, actions }: AppHeaderProps) {
           </div>
         ))}
       </dl>
+
+      {/* The version is a control, not a fact — it changes what you are looking
+          at, so it sits in the title bar rather than behind the overflow with
+          the reference data. Same control in both shapes. */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            className="min-h-11 shrink-0 gap-1 px-2 text-xs font-medium tabular-nums"
+          >
+            v{version}
+            <ChevronDown className="size-3.5" aria-hidden />
+            <span className="sr-only">Change version</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Version</DropdownMenuLabel>
+          {REVIEW_DOCUMENT.versions.map((entry) => (
+            <DropdownMenuItem
+              key={entry.version}
+              onSelect={() => onVersionChange(entry.version)}
+              className="gap-4"
+            >
+              <span className="font-medium tabular-nums">v{entry.version}</span>
+              <span className="text-muted-foreground">
+                {new Date(entry.uploadedAt).toLocaleDateString(undefined, {
+                  month: 'short',
+                  day: 'numeric',
+                })}
+              </span>
+              {entry.version === version && <Check className="size-4" aria-hidden />}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -109,7 +155,7 @@ export function AppHeader({ review, actions }: AppHeaderProps) {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <UserMenu user={review.user} />
+      <UserMenu />
 
       {actions && <div className="hidden shrink-0 lg:block">{actions}</div>}
     </header>

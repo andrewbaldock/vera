@@ -23,8 +23,8 @@
     -->
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <meta name="apple-mobile-web-app-title" content="UNDIRT" />
-    <meta name="application-name" content="UNDIRT" />
+    <meta name="apple-mobile-web-app-title" content="VERA" />
+    <meta name="application-name" content="VERA" />
     <meta name="description" content="Review an automated document check and decide whether it can be submitted." />
     <!-- Two, so the browser chrome follows the theme instead of fighting it. -->
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
@@ -32,7 +32,8 @@
     <!-- viewport-fit=cover is what makes env(safe-area-inset-*) report real
          numbers on iOS. Without it the bottom bar sits under the home indicator. -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>UNDIRT — Document Review</title>
+    <!-- Public name. Codename UNDIRT stays in the code; see src/lib/brand.ts -->
+    <title>VERA — Document Review</title>
     <script>
       // Runs before first paint. Without it a dark-mode user gets a white flash
       // on every load, because React can't apply the class until it mounts.

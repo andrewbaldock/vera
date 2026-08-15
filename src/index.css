@@ -14,6 +14,10 @@
 
 @theme inline {
     --font-sans: 'Geist Variable', sans-serif;
+    /* The wordmark's face, kept separate from the UI's so the brand can move
+       without the interface moving with it. Point this at HomeVision's own
+       display face (Montserrat) and only the wordmark changes. */
+    --font-wordmark: var(--font-sans);
     /* Severity is product vocabulary, so it lives in the token layer with
        everything else. A component never names a color. */
     --color-severity-critical: var(--severity-critical);
@@ -72,24 +76,24 @@
     --card-foreground: oklch(0.145 0 0);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
+    --primary: #5865f3;
+    --primary-foreground: #ffffff;
+    --secondary: #f4f5fb;
+    --secondary-foreground: #3f4bd6;
+    --muted: #f5f6fa;
+    --muted-foreground: #6b7280;
+    --accent: #eef0fe;
+    --accent-foreground: #3f4bd6;
     --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
+    --border: #e6e8f0;
+    --input: #e6e8f0;
+    --ring: #5865f3;
     --chart-1: oklch(0.87 0 0);
     --chart-2: oklch(0.556 0 0);
     --chart-3: oklch(0.439 0 0);
     --chart-4: oklch(0.371 0 0);
     --chart-5: oklch(0.269 0 0);
-    --radius: 0.625rem;
+    --radius: 0.75rem;
     --sidebar: oklch(0.985 0 0);
     --sidebar-foreground: oklch(0.145 0 0);
     --sidebar-primary: oklch(0.205 0 0);
@@ -102,8 +106,8 @@
     --severity-critical: oklch(0.577 0.245 27.325);
     --severity-major: oklch(0.72 0.15 68);
     --severity-minor: oklch(0.62 0.02 260);
-    --focus-tint: oklch(0.955 0.012 260);
-    --focus-edge: oklch(0.55 0.16 260);
+    --focus-tint: #eef0fe;
+    --focus-edge: #5865f3;
 }
 
 /*
@@ -119,18 +123,18 @@
     --card-foreground: oklch(0.985 0 0);
     --popover: oklch(0.205 0 0);
     --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
+    --primary: #7c86f7;
+    --primary-foreground: #12142a;
+    --secondary: #1e2138;
+    --secondary-foreground: #c3c9fb;
     --muted: oklch(0.269 0 0);
     --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
+    --accent: #252a4d;
+    --accent-foreground: #c3c9fb;
     --destructive: oklch(0.704 0.191 22.216);
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
+    --ring: #7c86f7;
     --chart-1: oklch(0.87 0 0);
     --chart-2: oklch(0.556 0 0);
     --chart-3: oklch(0.439 0 0);
@@ -148,8 +152,8 @@
     --severity-critical: oklch(0.704 0.191 22.216);
     --severity-major: oklch(0.79 0.14 70);
     --severity-minor: oklch(0.68 0.02 260);
-    --focus-tint: oklch(0.28 0.03 260);
-    --focus-edge: oklch(0.72 0.13 260);
+    --focus-tint: #232848;
+    --focus-edge: #7c86f7;
 }
 
 @layer base {

@@ -2,7 +2,9 @@ import { blockingIssues, countBySeverity } from '@/lib/review'
 import { SeverityDot } from '@/components/severity'
 import { SEVERITY_LABEL } from '@/lib/severity'
 import { cn } from '@/lib/utils'
+import { CheckCircle2 } from 'lucide-react'
 import type { Review, Severity } from '@/types/review'
+import type { Submission } from '@/lib/submission'
 
 /**
  * The answer to acceptance criterion #3, in one place.
@@ -18,19 +20,85 @@ import type { Review, Severity } from '@/types/review'
  * this one a clean document and it says so.
  */
 
+/**
+ * The id `aria-describedby` on the submit button points at.
+ *
+ * Carried by the panel verdict only, never the compact bar — both render at
+ * once (CSS hides one), and two elements sharing an id is invalid HTML that
+ * makes the description resolve to whichever happens to come first in the
+ * document. The panel version is also the fuller statement, which is the one
+ * worth hearing.
+ */
 const SUBMIT_BLOCKED_ID = 'submit-blocked'
 
 interface ReviewVerdictProps {
   review: Review
+  submission?: Submission | null
   /** The compact bottom bar has one line to work with, not four. */
   compact?: boolean
   className?: string
 }
 
-export function ReviewVerdict({ review, compact = false, className }: ReviewVerdictProps) {
+function submittedOn(submission: Submission | null | undefined): string | null {
+  if (!submission) return null
+  return new Date(submission.at).toLocaleDateString(undefined, {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
+export function ReviewVerdict({
+  review,
+  submission,
+  compact = false,
+  className,
+}: ReviewVerdictProps) {
   const blocking = blockingIssues(review.issues)
   const counts = countBySeverity(review.issues)
   const blocked = blocking.length > 0
+
+  /**
+   * Once submitted, the page has answered its own question and should stop
+   * asking it. Leaving a blocking summary and a submit-shaped control on screen
+   * would be the interface still posing a question it has already resolved —
+   * and `status: 'submitted'` is a value the API can return, so this is a state
+   * you can *arrive* in, not only one you click into. Someone opening a
+   * finished review should know within the first half second.
+   *
+   * The counts stay, past tense: they are the record of what this document was
+   * submitted with, which is the thing a compliance file needs to show later.
+   */
+  if (review.status === 'submitted') {
+    const on = submittedOn(submission)
+    // The headline already says "Submitted"; this line is the when and the who.
+    const summary = [on, submission?.by].filter(Boolean).join(' · ') || 'Awaiting processing'
+
+    if (compact) {
+      return (
+        <p aria-live="polite" className={cn('min-w-0 flex-1 text-sm', className)}>
+          <span className="font-semibold">Submitted</span>{' '}
+          <span className="text-muted-foreground">{on ?? 'for processing'}</span>
+        </p>
+      )
+    }
+
+    return (
+      <div id={SUBMIT_BLOCKED_ID} aria-live="polite" className={cn('border-b px-4 py-4', className)}>
+        <p className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+          <CheckCircle2 className="size-5 shrink-0 text-severity-minor" aria-hidden />
+          Submitted
+        </p>
+        <p className="mt-0.5 text-sm text-muted-foreground">{summary}</p>
+        <p className="mt-3 text-sm text-muted-foreground">
+          {blocked
+            ? `Submitted with ${blocking.length} unresolved.`
+            : `${counts.minor} minor ${counts.minor === 1 ? 'issue' : 'issues'} left unresolved.`}{' '}
+          Corrections require a new version.
+        </p>
+      </div>
+    )
+  }
 
   const headline = blocked
     ? `${blocking.length} ${blocking.length === 1 ? 'issue' : 'issues'} must be fixed`
@@ -44,11 +112,7 @@ export function ReviewVerdict({ review, compact = false, className }: ReviewVerd
 
   if (compact) {
     return (
-      <p
-        id={SUBMIT_BLOCKED_ID}
-        aria-live="polite"
-        className={cn('min-w-0 flex-1 text-sm', className)}
-      >
+      <p aria-live="polite" className={cn('min-w-0 flex-1 text-sm', className)}>
         <span className="font-semibold">{headline}</span>{' '}
         <span className="text-muted-foreground">{detail}</span>
       </p>
@@ -60,7 +124,7 @@ export function ReviewVerdict({ review, compact = false, className }: ReviewVerd
       <p className="text-lg font-semibold tracking-tight text-balance">{headline}</p>
       <p className="mt-0.5 text-sm text-muted-foreground">{detail}</p>
 
-      <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
+      <ul aria-label="Severity breakdown" className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
         {(Object.keys(counts) as Severity[]).map((severity) => (
           <li key={severity} className="flex items-center gap-1.5 text-sm">
             <SeverityDot severity={severity} />

@@ -1,16 +1,19 @@
 import { useCallback, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useSearchParams } from 'react-router'
 import { AppHeader } from '@/components/AppHeader'
 import { DocumentPanel } from '@/components/DocumentPanel'
 import type { SeekTarget } from '@/components/DocumentViewer'
 import { IssuesPanel } from '@/components/IssuesPanel'
-import { ReviewVerdict, SUBMIT_BLOCKED_ID } from '@/components/ReviewVerdict'
+import { ReviewVerdict } from '@/components/ReviewVerdict'
 import { Splitter } from '@/components/Splitter'
 import { ThumbStrip } from '@/components/ThumbStrip'
-import { Button } from '@/components/ui/button'
 import { useReview } from '@/hooks/useReview'
+import { DEFAULT_VERSION, REVIEW_DOCUMENT, versionOf } from '@/lib/documents'
 import { canSubmit, groupByPage, numberByPage } from '@/lib/review'
 import { cn } from '@/lib/utils'
 import type { Review } from '@/types/review'
+import type { Submission } from '@/lib/submission'
+import { SubmitReviewButton } from '@/components/SubmitReviewButton'
 
 /**
  * The shell.
@@ -41,7 +44,23 @@ const DOCUMENT_PANEL_ID = 'document-panel'
 const ISSUES_PANEL_ID = 'issues-panel'
 
 export function ReviewPage() {
-  const state = useReview()
+  /**
+   * The version lives in the URL, not in component state.
+   *
+   * It is a different thing to look at, so it deserves an address: a link to
+   * "this document at v2" is a link someone can paste, reload and bookmark.
+   * Component state would make the back button lie about where you are.
+   */
+  const [params, setParams] = useSearchParams()
+  const version = Number(params.get('v')) || DEFAULT_VERSION
+  const selected = versionOf(REVIEW_DOCUMENT, version)
+
+  const setVersion = useCallback(
+    (next: number) => setParams({ v: String(next) }, { replace: false }),
+    [setParams],
+  )
+
+  const { state, submit } = useReview(selected.url)
 
   if (state.status === 'loading') {
     return (
@@ -62,14 +81,36 @@ export function ReviewPage() {
     )
   }
 
-  return <ReviewShell review={state.review} />
+  return (
+    <ReviewShell
+      review={state.review}
+      submission={state.submission}
+      onSubmit={submit}
+      version={selected.version}
+      onVersionChange={setVersion}
+    />
+  )
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
   return <div className="flex h-dvh items-center justify-center bg-background p-6">{children}</div>
 }
 
-function ReviewShell({ review }: { review: Review }) {
+interface ReviewShellProps {
+  review: Review
+  submission: Submission | null
+  onSubmit: () => void
+  version: number
+  onVersionChange: (version: number) => void
+}
+
+function ReviewShell({
+  review,
+  submission,
+  onSubmit,
+  version,
+  onVersionChange,
+}: ReviewShellProps) {
   const [tab, setTab] = useState<Tab>('issues')
   const [issuesWidth, setIssuesWidth] = useState(DEFAULT_ISSUES_WIDTH)
   /**
@@ -91,6 +132,7 @@ function ReviewShell({ review }: { review: Review }) {
   const issues = useMemo(() => numberByPage(review.issues), [review.issues])
   const issuesByPage = useMemo(() => groupByPage(issues), [issues])
   const submittable = canSubmit(review)
+  const submitted = review.status === 'submitted'
 
   /**
    * The seam. Seeking *scrolls* — it never sets the focused page.
@@ -123,18 +165,8 @@ function ReviewShell({ review }: { review: Review }) {
     [seekToPage],
   )
 
-  const submitButton = (
-    <Button
-      aria-disabled={!submittable}
-      aria-describedby={submittable ? undefined : SUBMIT_BLOCKED_ID}
-      // shadcn's default button is 32px tall, which is under the 44px touch
-      // minimum — on the one control this whole page exists to gate. The layout
-      // suite caught it; it stays 44px in both shapes because it is the primary
-      // action either way.
-      className={cn('min-h-11', !submittable && 'opacity-50')}
-    >
-      Submit review
-    </Button>
+  const submitButton = submitted ? null : (
+    <SubmitReviewButton review={review} submittable={submittable} onConfirm={onSubmit} />
   )
 
   return (
@@ -148,7 +180,12 @@ function ReviewShell({ review }: { review: Review }) {
         Skip to document
       </a>
 
-      <AppHeader review={review} actions={submitButton} />
+      <AppHeader
+        review={review}
+        actions={submitButton}
+        version={version}
+        onVersionChange={onVersionChange}
+      />
 
       {/* Compact only. Two views is not a tab bar's job, and the bottom edge is
           already carrying the verdict and the submit button. */}
@@ -190,7 +227,7 @@ function ReviewShell({ review }: { review: Review }) {
           {/* Outside the scroller on purpose. Inside it, the answer to
               acceptance criterion #3 scrolls off the top of the panel — and in
               the full shape nothing else on screen carries the blocking count. */}
-          <ReviewVerdict review={review} className="shrink-0" />
+          <ReviewVerdict review={review} submission={submission} className="shrink-0" />
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
             <IssuesPanel issues={issues} focusedPage={focusedPage} onSeek={openIssue} />
           </div>
@@ -235,7 +272,7 @@ function ReviewShell({ review }: { review: Review }) {
           blocking, which is the plainest statement of the rule — and the bottom
           of the screen is both thumb reach and where iOS puts primary actions. */}
       <div className="flex shrink-0 items-center gap-3 border-t bg-card px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] lg:hidden">
-        <ReviewVerdict review={review} compact />
+        <ReviewVerdict review={review} submission={submission} compact />
         {submitButton}
       </div>
     </div>

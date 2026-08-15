@@ -1,5 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { Review } from '@/types/review'
+import {
+  asSubmitted,
+  clearSubmission,
+  readSubmission,
+  writeSubmission,
+  type Submission,
+} from '@/lib/submission'
 
 /**
  * The mock stands in for an endpoint that doesn't exist yet.
@@ -7,7 +14,18 @@ import type { Review } from '@/types/review'
  * It's fetched over HTTP rather than imported, so the async boundary is real
  * and the loading and error states are honest instead of theatre.
  */
-const REVIEW_URL = '/review_mock.json'
+/**
+ * Which fixture to load is now a *version*, not a query string.
+ *
+ * It started as `?fixture=clean` — a demo affordance for showing the open gate,
+ * since the supplied mock can only ever demonstrate the blocked half of the
+ * most important rule in the app. Two versions of one document says the same
+ * thing without the apologetic query param: v2 is the supplied review, v3 is
+ * the same report re-uploaded with the blockers resolved.
+ *
+ * The gate never consults any of this. `canSubmit` reads the review's issues
+ * and nothing else; a different version just gives it different issues.
+ */
 
 /**
  * The supplied mock points `pdf_url` at example.com. We substitute the local
@@ -20,7 +38,20 @@ const LOCAL_PDF_URL = '/docs/example_document.pdf'
 export type ReviewState =
   | { status: 'loading' }
   | { status: 'error'; message: string }
-  | { status: 'ready'; review: Review }
+  | { status: 'ready'; review: Review; submission: Submission | null }
+
+export interface UseReview {
+  state: ReviewState
+  /** Records the submission and flips the review's status. One-way. */
+  submit: () => void
+  /**
+   * Undoes it — for the documents list, so the gate can be demonstrated more
+   * than once. Not a product feature: there is no reopened status in the enum
+   * and no un-submit in the spec's flow. It exists so a reviewer clicking
+   * through this build isn't left with a one-shot demo.
+   */
+  clear: () => void
+}
 
 /**
  * A cast is a promise, not a check.
@@ -93,7 +124,7 @@ function withLocalPdf(review: Review): Review {
   }
 }
 
-export function useReview(): ReviewState {
+export function useReview(url: string): UseReview {
   const [state, setState] = useState<ReviewState>({ status: 'loading' })
 
   useEffect(() => {
@@ -103,7 +134,7 @@ export function useReview(): ReviewState {
 
     async function load() {
       try {
-        const response = await fetch(REVIEW_URL, { signal: controller.signal })
+        const response = await fetch(url, { signal: controller.signal })
         if (!response.ok) {
           throw new Error(`Request failed with ${response.status}`)
         }
@@ -111,7 +142,16 @@ export function useReview(): ReviewState {
         if (!isReview(payload)) {
           throw new Error('The review data was not in the expected shape.')
         }
-        setState({ status: 'ready', review: withLocalPdf(payload) })
+        // The stored submission is layered over the fixture, so a submitted
+        // review renders as submitted on a cold load — which is exactly what a
+        // real endpoint returning status: 'submitted' would produce.
+        const review = withLocalPdf(payload)
+        const submission = readSubmission(review)
+        setState({
+          status: 'ready',
+          review: submission ? asSubmitted(review) : review,
+          submission,
+        })
       } catch (error) {
         if (controller.signal.aborted) return
         // Raw parser output ("Unexpected token '<'…") tells a reviewer nothing
@@ -121,9 +161,35 @@ export function useReview(): ReviewState {
       }
     }
 
+    // Re-runs when the version changes, which is the whole point of the prop.
+    setState({ status: 'loading' })
     load()
     return () => controller.abort()
+  }, [url])
+
+  const submit = useCallback(() => {
+    setState((previous) => {
+      if (previous.status !== 'ready' || previous.review.status === 'submitted') return previous
+      const submission: Submission = {
+        at: new Date().toISOString(),
+        by: `${previous.review.user.first_name} ${previous.review.user.last_name}`,
+      }
+      writeSubmission(previous.review, submission)
+      return { status: 'ready', review: asSubmitted(previous.review), submission }
+    })
   }, [])
 
-  return state
+  const clear = useCallback(() => {
+    setState((previous) => {
+      if (previous.status !== 'ready') return previous
+      clearSubmission(previous.review)
+      return {
+        status: 'ready',
+        review: { ...previous.review, status: 'on_review' },
+        submission: null,
+      }
+    })
+  }, [])
+
+  return { state, submit, clear }
 }

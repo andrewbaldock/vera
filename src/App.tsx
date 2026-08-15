@@ -1,29 +1,48 @@
 import { Suspense, lazy } from 'react'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
+import { DocumentsPage } from '@/components/DocumentsPage'
 import { ReviewPage } from '@/components/ReviewPage'
 
 /**
- * `?demo` keeps the react-pdf spike reachable.
+ * Two real routes, and the spike.
  *
- * It proved the four viewer behaviors the real one depends on, so it stays as
- * evidence rather than being deleted once the app exists. One line reading the
- * query string is cheaper than a router for a single alternate view.
+ * A router rather than a hand-rolled `pushState`, for the same reason the build
+ * uses shadcn instead of hand-rolled components and react-pdf instead of raw
+ * pdf.js: use the library when one exists, and build it yourself only when
+ * nothing covers it. Writing a router for two routes is the same mistake as
+ * writing a pdf.js binding — and this page is one screen of four in the spec's
+ * own flow, so the second and third routes are not hypothetical.
  *
- * Lazily, though. A static import is cheaper in *code* and much more expensive
- * in *bytes*: react-pdf plus pdf.js is ~450 KB that every real user downloads
- * for a view none of them will open, and its worker is configured at module
- * scope, so merely importing it does work on every page load.
+ * `/documents` is the canonical list. `/` redirects rather than duplicating it,
+ * so there is one URL per thing.
+ *
+ * The `?demo` spike is lazily loaded: react-pdf and pdf.js are ~420 KB, and a
+ * view nobody opens should not be on anybody's critical path.
  */
 const ReactPdfDemo = lazy(async () => ({
   default: (await import('@/demo/ReactPdfDemo')).ReactPdfDemo,
 }))
 
 export default function App() {
-  if (new URLSearchParams(window.location.search).has('demo')) {
-    return (
-      <Suspense fallback={<p className="p-6 text-sm text-muted-foreground">Loading the spike…</p>}>
-        <ReactPdfDemo />
-      </Suspense>
-    )
-  }
-  return <ReviewPage />
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Navigate to="/documents" replace />} />
+        <Route path="/documents" element={<DocumentsPage />} />
+        <Route path="/reviews/:documentId" element={<ReviewPage />} />
+        <Route
+          path="/demo"
+          element={
+            <Suspense
+              fallback={<p className="p-6 text-sm text-muted-foreground">Loading the spike…</p>}
+            >
+              <ReactPdfDemo />
+            </Suspense>
+          }
+        />
+        {/* Anything else is a typo, not a page. Send it somewhere real. */}
+        <Route path="*" element={<Navigate to="/documents" replace />} />
+      </Routes>
+    </BrowserRouter>
+  )
 }

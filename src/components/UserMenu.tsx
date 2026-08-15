@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useTheme, type ThemePreference } from '@/hooks/useTheme'
+import { CURRENT_USER } from '@/lib/session'
 import type { ReviewUser } from '@/types/review'
 
 /**
@@ -30,7 +31,7 @@ function initials(user: ReviewUser): string {
   return `${user.first_name.charAt(0)}${user.last_name.charAt(0)}`.toUpperCase()
 }
 
-export function UserMenu({ user }: { user: ReviewUser }) {
+export function UserMenu({ user = CURRENT_USER }: { user?: ReviewUser } = {}) {
   const { preference, setTheme } = useTheme()
   const name = `${user.first_name} ${user.last_name}`
 

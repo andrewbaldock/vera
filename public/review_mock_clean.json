@@ -1,0 +1,231 @@
+{
+  "id": "kfp2ma91dd7b0",
+  "name": "Quarterly Field Review - Coastal Region.pdf",
+  "uploaded_at": "2025-04-02T09:15:00Z",
+  "status": "on_review",
+  "version": 4,
+  "document": {
+    "pdf_url": "https://example.com/pdf/example_document.pdf",
+    "pages": [
+      {
+        "page_num": 1,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 2,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 3,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 4,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 5,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 6,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 7,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 8,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 9,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 10,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 11,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 12,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 13,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 14,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 15,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 16,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 17,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 18,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 19,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 20,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 21,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 22,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 23,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 24,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 25,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 26,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 27,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 28,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 29,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 30,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 31,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 32,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 33,
+        "height": 792,
+        "width": 612
+      },
+      {
+        "page_num": 34,
+        "height": 792,
+        "width": 612
+      }
+    ]
+  },
+  "user": {
+    "id": "user_42",
+    "first_name": "Jane",
+    "last_name": "Cooper"
+  },
+  "issues": [
+    {
+      "id": "issue_c1",
+      "title": "Low Resolution Exterior Photos",
+      "description": "2 of 6 exterior photographs on pages 21-22 have resolution below the 300 DPI minimum required threshold.",
+      "severity": "minor",
+      "page": 21
+    },
+    {
+      "id": "issue_c2",
+      "title": "Incomplete Market Trend Data",
+      "description": "The market conditions table on page 10 is missing Q3 2024 data. All four quarters should be represented for a complete 12-month trend analysis.",
+      "severity": "minor",
+      "page": 10
+    },
+    {
+      "id": "issue_c3",
+      "title": "Methodology Section Incomplete",
+      "description": "The scope of work on page 31 does not describe the regression analysis methodology referenced in the GLA adjustment rationale on page 16.",
+      "severity": "minor",
+      "page": 31
+    },
+    {
+      "id": "issue_c4",
+      "title": "Comparable Photo Caption Mismatch",
+      "description": "The photo labeled 'Front Exterior \u2014 509 Birch Lane' on page 26 appears to show the same property as the photo on page 24 labeled '118 Oak Avenue'.",
+      "severity": "minor",
+      "page": 26
+    },
+    {
+      "id": "issue_c5",
+      "title": "Site Improvement Cost Not Sourced",
+      "description": "The renovation cost estimates in the table on page 6 (totaling $78,700) are listed without attribution. Source should be noted (owner interview, receipts, etc).",
+      "severity": "minor",
+      "page": 6
+    },
+    {
+      "id": "issue_c6",
+      "title": "Exposure Time Justification Weak",
+      "description": "Exposure time estimate of 30-60 days on page 20 references average DOM of 45 days but doesn't account for the subject's specific characteristics or price point.",
+      "severity": "minor",
+      "page": 20
+    }
+  ]
+}

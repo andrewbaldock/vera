@@ -62,7 +62,7 @@ export function ReactPdfDemo() {
   // its canvas paints. Without this the document has almost no height while it
   // renders, so scrolling to page 30 lands near the top and then everything
   // grows underneath you. This is what those height/width fields are *for*.
-  const review = useReview()
+  const { state: review } = useReview('/review_mock.json')
   const apiPages = review.status === 'ready' ? review.review.document.pages : []
 
   // One entry per page wrapper, so we can both scroll to a page and measure it.

@@ -54,7 +54,19 @@ export function IssuesPanel({ issues, focusedPage, onSeek }: IssuesPanelProps) {
                   <span className="tabular-nums text-muted-foreground">{issue.number}</span>{' '}
                   {issue.title}
                 </span>
-                <span className="mt-0.5 block text-xs text-muted-foreground">
+                {/*
+                  The description is the actual finding — "Effective Date
+                  Mismatch" names the problem, but only this says the cover page
+                  reads 03/10/2025 while page 3 reads 01/15/2024.
+                  Shown in full, not truncated: these run two or three lines and
+                  the decisive detail is usually the last clause, so clamping
+                  would hide precisely the part worth reading. Twenty-five rows
+                  is a scroll, not a problem.
+                */}
+                <span className="mt-1 block text-xs text-muted-foreground">
+                  {issue.description}
+                </span>
+                <span className="mt-1.5 block text-xs font-medium text-muted-foreground">
                   {SEVERITY_LABEL[issue.severity]} · Page {issue.page}
                 </span>
               </span>

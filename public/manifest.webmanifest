@@ -1,6 +1,6 @@
 {
-  "name": "UNDIRT \u2014 Document Review",
-  "short_name": "UNDIRT",
+  "name": "VERA \u2014 Document Review",
+  "short_name": "VERA",
   "description": "Review an automated document check and decide whether it can be submitted.",
   "start_url": "/",
   "scope": "/",

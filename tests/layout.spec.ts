@@ -55,7 +55,7 @@ function fullOnly(page: Page) {
 
 /** Loading is a real async state, so wait for the review rather than for a timeout. */
 async function gotoReview(page: Page) {
-  await page.goto('/')
+  await page.goto('/reviews/souj5sd12c8a3f')
   await expect(page.getByRole('list', { name: 'Issues' })).toBeVisible()
 }
 
