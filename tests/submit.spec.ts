@@ -21,7 +21,7 @@ const CLEAN = '/reviews/souj5sd12c8a3f?v=3'
  */
 async function open(page: Page, url: string) {
   await page.goto(url)
-  await expect(page.getByRole('list', { name: 'Issues' })).toBeVisible()
+  await expect(page.getByRole('grid', { name: 'Issues' })).toBeVisible()
 }
 
 const submitButton = (page: Page) =>
@@ -146,7 +146,7 @@ test.describe('once nothing is blocking', () => {
     // The case that matters: status: 'submitted' is a value the API can return,
     // so this has to be a state you can arrive in, not only one you click into.
     await page.reload()
-    await expect(page.getByRole('list', { name: 'Issues' })).toBeVisible()
+    await expect(page.getByRole('grid', { name: 'Issues' })).toBeVisible()
     await expect(verdict(page).getByText('Submitted')).toBeVisible()
     await expect(submitButton(page)).toHaveCount(0)
   })

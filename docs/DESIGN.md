@@ -58,7 +58,11 @@ Wanted, and deliberately not built. Each satisfies **no acceptance criterion**, 
 
 ### Where this page sits
 
-The spec's flow diagram gives four pages. We own **one**:
+The spec's flow diagram gives four pages. We own **one** — plus a deliberate stub, added late and worth being explicit about.
+
+**`/documents` is a stub, not the Documents Page.** That screen owns upload, filtering, pagination and assignment, and building it would be building someone else's ticket. What exists here is one live row, three inert placeholders and a reset control: the smallest surface that gives the Review Page somewhere to be opened *from* and returned *to*. Without it, submitting is a one-way trip and the most important interaction in the build can be exercised exactly once by whoever is evaluating it. That makes the list demo infrastructure rather than product, and it is labelled that way in the UI.
+
+The pages we own, then:
 
 ```
 Upload Page ──upload──> Processing Page ──completes, version+1──> [ REVIEW PAGE ] ──submit──> Submitted Page
@@ -75,8 +79,8 @@ Everything upstream and downstream belongs to teammates. The loop back to Upload
 | # | Criterion | Satisfied by |
 |---|---|---|
 | 1 | See the document, search text across the entire PDF with CMD+F | A text layer for **every** page, all in the DOM at once, so the platform's own find can reach any of them. Canvases render only near the viewport — see §6d for why that separation matters. |
-| 2 | Cannot submit until all critical + major are resolved; minor may be ignored | `canSubmit` derived from the current issue list — no stored flag |
-| 3 | The page clearly communicates what's blocking submission | Blocking summary tied to the specific blockers, not a generic disabled button |
+| 2 | Cannot submit until all critical + major are resolved; minor may be ignored | `canSubmit(review)` derived from the review data alone. It takes a whole `Review`, so a filtered list, a hidden severity or a ticked checkbox cannot reach it — the separation is a type error, not a rule to remember. Blocked, the page doesn't offer submit at all; it offers *Upload new version*, which is the action that actually exists. |
+| 3 | The page clearly communicates what's blocking submission | A verdict above the list, outside the scroller so it cannot scroll away, tied to the specific blockers rather than a generic disabled button — and it reads the opposite just as well when the gate opens. |
 
 ---
 
@@ -97,21 +101,23 @@ Read from the real `review_mock.json` — 34 pages, 25 issues (4 critical, 8 maj
 
 > 📐 **Sketched:** [`wireframes/VERA_wireframes.svg`](wireframes/VERA_wireframes.svg) — the visual companion to this section, drawn before any code. ([live source](https://docs.google.com/drawings/d/1P1lXCZPaLolqYNq0aOk2XJNdWGl8UmqJt4W83rlUnVE/edit?usp=sharing))
 
-Jane arrives on the Review Page for *Annual Compliance Report - Northeast Region.pdf*.
+Jane opens her queue at `/documents` and picks *Annual Compliance Report - Northeast Region*.
 
-1. **The page has three regions:** a header, an issues list on the left, and the PDF viewer on the right, separated by a **draggable resizer**. Issues left follows the PDF-tool convention (Preview, Chrome, Acrobat) where the left rail is a way *into* the document — which is exactly what a clickable issue list is. The document takes the clear majority of the width by default (roughly one-third / two-thirds): it is 612pt of dense evidence, and squeezing it defeats the point of showing it. Split position persists in `localStorage`.
-2. **A summary sits above the list** — the verdict, separate from the worklist. Form: **"12 blockers, 13 minors"**, and when minors are collapsed, **"12 blockers, 13 minors (hidden)"**. Blocking count leads; minors are reported but clearly not part of the verdict, and the summary always accounts for them even when the list doesn't show them. When the gate opens it must read the opposite just as well: *no blockers, 13 minors, you can submit.*
-3. **She sees the issues in page order by default**, with a control to re-sort by severity (critical → major → minor).
-4. **A hide/show toggle for minor issues**, defaulting to **shown**. Once she toggles it, the choice is remembered in `localStorage`. Minors are 13 of 25 and none can block her; collapsing them turns a wall into a punch list.
-5. **The list is clickable.** Clicking an issue takes the viewer to that issue's page.
-6. **Each issue carries a checkbox** — a private note that *"I have addressed this."* Saved to `localStorage`. It changes very little about the UI. It is a marker of what she's done and not done, nothing more. **It does not gate submit.**
-7. **She scans the list and clicks an issue.** The viewer moves to that page, and the status bar above the viewer names the issues on it (see D2).
-8. **The viewer has forward/back page controls.** Navigating by page, not only by issue.
-9. **The link runs both directions.** When she lands on a page that has issues, those issues are emphasized in the list — *"here's what needs attention on this page."*
-10. **The status bar above the viewer is always current** — `[ PAGE 13 ]` plus a labeled chip per issue on that page, updating as she scrolls.
-11. **She works through the list**, checking things off or not, then leaves to fix them in her own system.
-12. **When the gate opens** and she clicks submit, a confirmation names what she is choosing to ignore — *"Submit with 13 minor issues unresolved?"* The product permits it; she should say so once, deliberately. Minor-can-be-ignored is a decision the user makes, not something the app does quietly on her behalf.
-13. **After submitting**, the page renders its terminal state: status **Submitted**, the review read-only, the submit button gone rather than disabled, remaining minors shown as *accepted as-is* rather than as outstanding work, and a link back to the (out-of-scope) document list.
+1. **The list is where she starts and where she returns.** It is explicitly not the Documents Page from the spec's flow — that screen owns upload, filtering and assignment, and belongs to someone else's ticket. This is the smallest surface that gives the Review Page somewhere to be opened from, which turns submitting from a one-way trip into something she can do twice.
+2. **The review has three regions:** a header, an issues list on the left, and the PDF viewer on the right, separated by a **draggable resizer**. Issues left follows the PDF-tool convention (Preview, Chrome, Acrobat) where the left rail is a way *into* the document — which is exactly what a clickable issue list is. The document takes the clear majority of the width by default, roughly one-third / two-thirds: it is 612pt of dense evidence, and squeezing it defeats the point of showing it.
+3. **The verdict sits above the list**, separate from the worklist, and outside the scroller so it cannot scroll away. It leads with what is blocking — *"12 issues must be fixed"* — and reads the opposite just as well when the gate opens: *Ready to submit, 6 minor issues can be accepted.*
+4. **The severity breakdown under it is also the filter.** Clicking *13 Minor* drops those rows from the list and drops the lozenge to half opacity — but the number never changes, so the summary keeps telling the truth about the document while the list shows a subset of it. That is what makes it safe for one control to both report and filter.
+5. **Issues are in page order by default**, with a sort control offering severity instead. Page order is how the document is worked through when she goes to fix things; severity answers *what is worst*, which the verdict has already partly answered.
+6. **Each issue shows its description, in full.** The title names the problem; only the description says the cover page reads 03/10/2025 while page 3 reads 01/15/2024. It is not truncated — these run two or three lines and the decisive clause is usually last.
+7. **Each row carries a Done checkbox** — a private note that *"I have handled this."* Saved per review **and version**. A Done lozenge appears once anything is ticked, hiding those rows on the same rule as the severity filters, and severity sort sinks them to the bottom. **None of it gates submit.**
+8. **The list is clickable, and the link runs both ways.** Clicking an issue takes the viewer to its page; landing on a page tints the issues that live there. One value, three readers.
+9. **The status bar above the viewer is always current** — `PAGE 13`, the issues on it, and a tap to expand them in full with severity named as a word, not only a color.
+10. **She works through the list**, ticking things off, then leaves to fix them in her own system.
+11. **While anything is blocking, the only action offered is *Upload new version*.** Not a greyed-out submit — a button labelled with something it refuses to perform is a small lie told on every render, and disabling it only makes the lie quieter. It opens a deliberately inert dialog explaining that uploading belongs to another screen, so the blocked state shows where the loop goes instead of looking like a dead end.
+12. **That action stays available after the gate opens**, alongside submit and outlined rather than filled — submitting is the goal, this is the escape hatch. Jane may well decide to fix the six minors after all, and withdrawing the way to do that the moment the document passes would make the clean state feel like a trap. It disappears only once the review is submitted, when there is nothing left to re-upload for. On a phone it collapses to an icon so the bottom bar can still carry the verdict and the primary action at 320px.
+13. **When the gate opens** and she submits, a confirmation names exactly what she is choosing to accept — *"6 minor issues will be accepted as-is"* — and says plainly that it cannot be undone. The product permits it; she should say so once, deliberately.
+14. **Submitting is a sequence, not an instant.** The dialog becomes the progress surface: *Submitting…*, then *Submitted*, then back to the queue with the finished row settling in indigo. The delay is deliberate — a real submission is a network round trip, and collapsing the one irreversible action in the app into nothing makes it feel like it never happened.
+15. **A review that is already submitted renders as submitted**, on a cold load, with no click involved — because `status: 'submitted'` is a value the API can return. The verdict becomes the outcome, the submit control is gone rather than disabled, and the remaining minors are shown as *accepted as-is* rather than as outstanding work.
 
 **There is no un-submit.** The status enum has no reopened state and the flow diagram's submit arrow is one-way. Submission is the moment the document leaves the user and goes to the lender — it isn't ours to reverse. A mistake after submission is corrected the same way as any other: new document, new upload, new review.
 
@@ -324,15 +330,59 @@ This must be visually and structurally distinct from the product UI (a labeled d
 
 ## 6b. Persisted state
 
-Three things end up in `localStorage`, and they do **not** share a lifetime. Getting the scoping wrong here is a real bug, not a tidiness question — stale checkmarks leaking into a new version would tell the user a defect was handled when it wasn't.
+Three things end up in `localStorage`, and they do **not** share a lifetime. Getting the scoping wrong is a real bug rather than a tidiness question — a stale checkmark leaking into a new version would tell the user a defect was handled when it wasn't.
 
-| What | Scope | Key shape | Why that scope |
+| What | Key | Scope | Why that scope |
 |---|---|---|---|
-| Hide/show minor issues | User preference | global | It's about how Jane likes to work, not about this document. She'd want it to hold across every review she opens. |
-| Split position | Device preference | global | Belongs to the screen she's sitting at. |
-| Issue checkboxes | **This review, this version** | `review id + version` | When version 3 arrives with a fresh issue list, last version's checkmarks are meaningless. They must not carry over. |
+| Theme preference | `vera.theme` | **Device** | Which theme suits you depends on the screen you are looking at and the light you are sitting in, not on who you are. Signing in on a different machine should not drag a laptop's dark mode onto a bright office monitor. |
+| Done marks | `vera.done.<id>.v<n>` | **This review, this version** | When v3 arrives with a fresh issue list, v2's ticks are meaningless — and worse than meaningless, since a stale one would claim a defect was handled that the new review never raised. |
+| Submission | `vera.submitted.<id>.v<n>` | **This review, this version** | `status: 'submitted'` is a value the API can return, so the page has to render a submitted review on a cold load with no click involved. Persisting it means the demo exercises the real path rather than a boolean in component state. |
 
-**Open question for the backend:** do issue `id`s survive a re-parse? If `issue_1` in v2 and `issue_1` in v3 are unrelated defects, version-scoping is doing real work. Nothing in the spec says either way.
+**Two things deliberately do *not* persist**, reversing what an earlier draft of this section claimed:
+
+- **Split position.** It was going to be a device preference. In practice the splitter is dragged rarely and the default is good, so persistence would be code and a storage key earning nothing. Cut rather than built and left unmentioned.
+- **Sort order and severity filters.** These are a *view* of one document, not a way of working. Carrying "minors hidden" into the next review would hide thirteen issues someone never chose to hide, on a compliance tool — a bad failure direction. They reset, deliberately.
+
+### The reviewer's own layer — and the API it implies
+
+Done marks and notes are not review data. They belong to a *person working on* a review, and
+in production they are the same table:
+
+```
+user_issue_meta
+  user_id      who
+  document_id  which document
+  issue_id     which finding
+  version      which version raised it        (nullable — see below)
+  done         boolean
+  note         text
+  updated_at
+```
+
+**The two fields have deliberately different lifetimes, and that is the interesting part.**
+
+- **Done is scoped to the version.** "I have handled this" stops being true the moment a new
+  version arrives with a fresh set of findings. A tick carried forward would state that a
+  defect was dealt with when the latest review never raised it — which is the one direction of
+  error a compliance tool must not make.
+- **A note is scoped to the document.** "This is acceptable because the appraiser confirmed
+  the measurement by phone" does not expire when v4 is uploaded. If the same finding comes
+  back, that reasoning is exactly what should be waiting rather than retyped — and on a
+  compliance file the reasoning is the most valuable thing in the room, because it is what
+  gets defended months later.
+
+So the same table, different keys: `done` by `(user, document, version, issue)`, `note` by
+`(user, document, issue)`.
+
+Locally these are two `localStorage` namespaces with those exact shapes, which means the swap
+to a real endpoint is a change of transport rather than of model.
+
+**Why this is a separate API and not part of the review payload:** the review is what the
+system found; this is what a person thinks about it. They have different owners, different
+write permissions and different audit requirements — and the separation is what keeps
+`canSubmit` unable to see any of it.
+
+**Open question for the backend:** do issue `id`s survive a re-parse? If `issue_1` in v2 and `issue_1` in v3 are unrelated defects, version-scoping is doing real work and the done marks are correct. If ids are stable across versions, there is an argument for carrying ticks forward — but only if the backend can say so, and nothing in the spec does.
 
 ---
 
@@ -501,7 +551,9 @@ That is the same "own the skin, depend on the behavior" split applied honestly, 
 
 That isn't a gap, it's the interesting part: it's a new primitive being added to the system, following the system's conventions — cva variants, the same token layer, and the full WAI-ARIA window-splitter pattern (`role="separator"`, focusable, `aria-orientation`, `aria-valuenow/min/max`, arrow keys to nudge, Home/End to snap). Consuming a design system is table stakes; extending one correctly is the actual work.
 
-**The domain components** — `IssueRow`, `SeverityChip`, `PageStrip`, `StatusBar` — are composed *from* the primitives rather than invented alongside them. That composition boundary is the thing that keeps a system coherent as the product grows: primitives stay generic and few, domain components stay specific and many.
+**The domain components** are composed *from* the primitives rather than invented alongside them, and as built they are `IssuesPanel`, `ReviewVerdict`, `DocumentPanel`, `ThumbStrip`, `Splitter`, `ReviewAction` and the two severity marks in `lib/severity` + `components/severity`. That composition boundary is what keeps a system coherent as the product grows: primitives stay generic and few, domain components stay specific and many.
+
+Worth noting what *didn't* survive contact: an earlier draft of this section named a `SeverityChip`. In the build, severity presentation split in two — a `SeverityDot` for lists and a `SeverityMark` for the thumb strip, where a 29px-wide segment has no room for a label and the mark has to carry meaning in thickness instead. One component would have had to be two things.
 
 ### Where accessibility changed a design decision
 
@@ -514,6 +566,29 @@ That isn't a gap, it's the interesting part: it's a new primitive being added to
 **The confirmation uses the system's Dialog (Radix underneath), not a native `<dialog>`.** Native `<dialog>` + `showModal()` would give the same focus trap, focus return, escape and inertness for free, and I considered it — but once a system exists, a screen that opens modals its own private way is the first crack in the system. Consistency with the primitive layer beats platform purity here. It's worth knowing both work; it's worth picking the one the next screen will also use.
 
 **Severity is never color alone.** Color plus an icon plus the text label, everywhere severity appears — list rows, status bar labels, and the strip.
+
+### The list is a grid, and the app explains itself
+
+Two decisions that arrived late and belong together.
+
+**The issues list uses the ARIA grid pattern.** Two columns, a roving tabindex, arrow keys
+inside. The arithmetic makes the case on its own: twenty-five rows with an issue button and a
+Done checkbox each is fifty tab stops, and reaching issue nineteen means pressing `Tab`
+thirty-seven times. As a grid it is one stop, and `↑`/`↓` walk the issues while `Enter` opens
+a page *without moving focus* — so the loop is read, open, arrow on, open the next, never
+touching the mouse and never losing your place. `→` and `Tab` cross to the Done box, `←` and
+`Shift+Tab` come back, and `Tab` at the final column is left alone so the grid can always be
+escaped.
+
+This is the pattern's actual use case rather than a box ticked. A reviewer works a list of
+findings against a document all day; that is a spreadsheet-shaped job, and it should feel like
+one.
+
+**And there is a user guide in the app**, under the account menu. Keyboard navigation this
+good is worth nothing if nobody discovers it, and a wiki page is where discoverability goes to
+die. The guide states the keys, the rules that are easy to get wrong (Done never opens the
+gate; ticks don't cross versions; submitting can't be undone), and what the app deliberately
+does not do. A user who knows why something is missing is not a user filing a bug about it.
 
 ### The rest
 
@@ -546,6 +621,8 @@ We are not going to fix that client-side, and pretending otherwise would be wors
 1. Development approach + what most required expertise.
 2. **UX sketches — ✅ [`wireframes/VERA_wireframes.svg`](wireframes/VERA_wireframes.svg)**, drawn in Google Drawings *before* the build. [Live source](https://docs.google.com/drawings/d/1P1lXCZPaLolqYNq0aOk2XJNdWGl8UmqJt4W83rlUnVE/edit?usp=sharing). Kept as-is even where the final implementation differs — they record intent, not a spec.
 3. What's required for a production deployment.
+
+All three are written against a build with **28 unit tests and 184 browser tests across six spec files**, which is worth stating in the writeups rather than claiming "well tested".
 
 ### The README is a deliverable too
 
@@ -598,6 +675,18 @@ It is the first file anyone opens, and it is read by people arriving two differe
 | 2026-08-14 | **The compact layout hides the inactive view with `display: none`**, so find-on-page reaches the document only from the Document tab | Keeping the document mounted and moved off-screen; a `visibility`/`clip` variant | Restoring find in both tabs would highlight a match somewhere the user cannot see, in a layout whose premise is one thing at a time — and it would pin all 34 text layers in the DOM permanently on the device where memory is actually scarce, which is the pressure the text-layer/canvas split exists to relieve. Find while looking at the document is the only moment anyone invokes it. §6d's claim was an absolute and is now qualified; the full layout is unaffected because both panels are always mounted. |
 | 2026-08-14 | **PWA ships `display: browser`. The browser chrome is load-bearing, so we keep it** | `display: standalone`, which is what "make it a PWA" usually means | Standalone is the app-like option and it removes the browser chrome — which is exactly where iOS keeps Find on Page. There is no share sheet and no address bar in a standalone window, so installing the app would delete the affordance acceptance criterion #1 depends on. Chrome over polish: an installed icon that opens into Safari keeps whole-document search working on the device we most want to test on. `apple-mobile-web-app-capable` is deliberately absent for the same reason — on iOS it forces standalone regardless of the manifest. The alternative is building find into the page, which D1 declined *because the platform had one*; that reasoning inverts the moment the platform's is taken away, so the cheaper move is to not take it away. |
 | 2026-08-14 | The product says minor findings are **accepted**, never *ignored* | Using the brief's own word, "ignored" | The brief's acceptance criterion reads "minor may be ignored", which is fine in a requirements document and wrong in a regulated one. *Ignored* means not looked at; what actually happens is that a qualified reviewer sees the finding, judges it non-material and accepts it. That distinction is the entire value of the record, and no lender wants a compliance file stating six findings were ignored. "Accepted as-is" is also appraisal-native language. The stronger term is *exception* — precise, and standard in "approved with exceptions" — but it reads stiffer, and *accepted* carries the meaning without the jargon. The submitted state stopped saying "unresolved" for the same reason: on a closed file they are not outstanding work, they are accepted. |
+| 2026-08-14 | **React Router**, and `/documents` exists as a stub | Hand-rolled `pushState`; owning no second route at all | Writing a router for two routes is the same mistake as writing a pdf.js binding — use the library when one exists, which is the rule already applied to shadcn and react-pdf. The stub list is what makes the gate demonstrable more than once; without somewhere to return to, submitting is a one-way trip and an evaluator gets one shot at the most important interaction in the build. |
+| 2026-08-14 | **The version lives in the URL** (`?v=3`), not in component state | Component state; a version picker with no address | It is a different thing to look at, so it deserves an address — "this document at v2" becomes a link that survives a paste and a reload, and the back button stops lying about where you are. |
+| 2026-08-14 | **Two versions of one document replace `?fixture=clean`** | Two separate documents; a query-param demo switch | Both fixtures share one PDF, and two differently-named properties with byte-identical pages is a fiction a reviewer notices. Same document, later version is the truth — and it tells the product's own loop: fix externally, re-upload, gate opens. The apologetic query param disappeared with it. |
+| 2026-08-14 | **Blocked, the page does not offer submit.** It offers *Upload new version*, and keeps offering it after the gate opens | Keeping an `aria-disabled` submit; showing upload only while blocked | A control labelled with something it refuses to perform is a small lie told on every render, and disabling it only makes the lie quieter. This supersedes the `aria-disabled` decision below and answers the same problem better: not having an unavailable control beats explaining one. It stays visible once the gate opens because someone may decide to fix the minors after all, and withdrawing the escape hatch the moment a document passes makes the clean state feel like a trap — it disappears only on submission, when there is nothing left to re-upload for. Outlined rather than filled throughout, because submitting is the goal and this is the fallback; icon-only below `lg`, where the bottom bar is already carrying the verdict and the primary action. |
+| 2026-08-14 | **The upload dialog is deliberately inert** | Wiring a real file input; linking away to nothing | VERA does not upload — that screen is a teammate's ticket. But a blocked state with no visible next step makes the gate look like a dead end when it is actually a loop. The dialog shows where the loop goes and stops at the boundary, saying so in as many words. |
+| 2026-08-14 | **Submitting is a sequence**: confirm → *Submitting…* → *Submitted* → the queue | Submitting instantly; a toast | Deliberate theatre, and the honest kind. A real submission is a network round trip, and collapsing the one irreversible action in the app into an instant nothing makes it feel like it did not happen. The dialog becomes the progress surface rather than vanishing and leaving the page to explain itself. The finished row then settles on the list over three and a half seconds — slow, because a quick flash reads as an error and this is a completion. |
+| 2026-08-14 | **A Done checkbox per issue, scoped to review + version** | No checkbox; a global "handled" list | A private worklist, and the point is what it *cannot* do: `canSubmit` takes a whole `Review` and a checkbox is not part of one, so a defective file cannot be submitted by lying to a checkbox. Version scoping is not tidiness — a tick carried from v2 would claim a defect was handled that v3 never raised. |
+| 2026-08-14 | **The severity counts are also the filter**, and the count never changes | A separate filter row; changing the counts to match the list | One control both states the verdict and filters the list, which is only safe because the *number* stays fixed and just the opacity moves. Hide the thirteen minors to concentrate on what is blocking, and the summary still says there are thirteen. Done rows follow the same rule. |
+| 2026-08-14 | **Sorting rearranges rows and never renumbers them**; severity sort sinks done rows | Renumbering on sort; leaving done rows in place | The number appears beside the row *and* against the document, so it has to survive re-sorting. Page order is a map of the document, where a handled issue keeps its place; severity order is a worklist, where what is left to do belongs at the top. |
+| 2026-08-14 | **Severity words get their own text tokens**, separate from the fills | Reusing the dot colors as text | The fills are tuned to read as 8px marks. As 12px type they measured 4.77, 2.56 and 3.63 against white — two of three failing the 4.5 AA floor outright. The darkened text tokens clear 5.8 or better, and a Playwright test measures it against both surfaces in both themes rather than asserting it in a comment. |
+| 2026-08-14 | **VERA is the product name**, always in capitals | Shipping the UNDIRT codename; title case | MIRA is set in capitals everywhere on HomeVision's site, so a sibling product rendered as "Vera" reads as a different kind of thing. Latin *verus*, true: MIRA finds the problems, VERA is where a person decides. The mark borrows their faceted construction rather than their shape — a rounded slab with a triangle tucked under it, arms uneven so it reads as a check as well as a V. |
+| 2026-08-14 | **Deployed to Vercel, not the existing Apache host** | FTP to the same cPanel box as the portfolio site | The portfolio lives on that host. Deploying here would mean touching the same document root, credentials and `.htaccess` as a site actively being sent to employers, for no benefit. Vercel is a separate blast radius with instant certificates. The rewrite matches **only extensionless paths**, because a blanket rule hands `index.html` back for a missing asset with a 200 — the "Unexpected token '<'" white screen that only ever appears after a deploy. |
 | 2026-08-14 | **No pinch-to-zoom — CUT** | Handling the gesture and re-rendering pages at a new scale; letting the browser zoom the page | The expected gesture on an iPad and a real gap, so it is named rather than hidden. Doing it properly reaches into the reserved page heights and the reading-line measurement, both load-bearing. Letting the browser zoom is a one-liner that breaks a fixed app shell. Deferred with the consequence stated: on a tablet the page renders at the width we choose and cannot be magnified. |
 
 ---

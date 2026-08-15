@@ -77,32 +77,45 @@ export function ReviewAction({ review, submittable, onConfirm }: ReviewActionPro
     }, SUBMITTING_MS)
   }, [onConfirm])
 
-  if (!submittable) {
-    return (
-      <UploadDialog
-        review={review}
-        trigger={
-          // Outlined, not filled — but still in the brand color. Submitting is
-          // the goal of this page and keeps the solid weight; uploading is what
-          // you do when you cannot reach it yet, so it steps back without
-          // becoming grey furniture. A neutral outline would read as a cancel.
-          <Button
-            variant="outline"
-            className="min-h-11 border-2 border-primary/55 text-primary hover:border-primary/75 hover:bg-accent hover:text-primary active:bg-accent"
-            aria-describedby={SUBMIT_BLOCKED_ID}
-          >
-            <Upload aria-hidden />
-            Upload new version
-          </Button>
-        }
-      />
-    )
-  }
+  const uploadAction = (
+    <UploadDialog
+      review={review}
+      trigger={
+        // Outlined, not filled — but still in the brand color. Submitting is
+        // the goal of this page and keeps the solid weight; uploading steps
+        // back without becoming grey furniture. A neutral outline would read
+        // as a cancel.
+        //
+        // Icon-only in the compact layout: at 320px the bottom bar is carrying
+        // the verdict and the primary action already, and a second labelled
+        // button would push one of them off. The label stays in the accessible
+        // name, so nothing is lost to a screen reader.
+        <Button
+          variant="outline"
+          className="min-h-11 border-2 border-primary/55 text-primary hover:border-primary/75 hover:bg-accent hover:text-primary active:bg-accent max-lg:size-11 max-lg:px-0"
+          aria-describedby={submittable ? undefined : SUBMIT_BLOCKED_ID}
+        >
+          <Upload aria-hidden />
+          <span className="max-lg:sr-only">Upload new version</span>
+        </Button>
+      }
+    />
+  )
+
+  /**
+   * Uploading a new version is available for as long as the review is open, not
+   * only while it is blocked. Spotting something after the gate opens is a
+   * perfectly ordinary thing to do, and hiding the escape hatch the moment the
+   * document passes would make the clean state feel like a trap.
+   */
+  if (!submittable) return uploadAction
 
   const busy = phase !== 'idle'
 
   return (
-    <AlertDialog open={open} onOpenChange={(next) => !busy && setOpen(next)}>
+    <div className="flex shrink-0 items-center gap-2">
+      {uploadAction}
+      <AlertDialog open={open} onOpenChange={(next) => !busy && setOpen(next)}>
       <AlertDialogTrigger asChild>
         {/* 44px, because shadcn's default is 32 — under the touch minimum, on
             the one control this whole page exists to gate. */}
@@ -181,6 +194,7 @@ export function ReviewAction({ review, submittable, onConfirm }: ReviewActionPro
           </>
         )}
       </AlertDialogContent>
-    </AlertDialog>
+      </AlertDialog>
+    </div>
   )
 }

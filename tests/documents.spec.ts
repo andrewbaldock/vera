@@ -43,7 +43,7 @@ test('opening the document lands on the review, and the back link returns', asyn
   await page.getByRole('link', { name: /Annual Compliance Report/ }).click()
 
   await expect(page).toHaveURL(new RegExp(REVIEW))
-  await expect(page.getByRole('list', { name: 'Issues' })).toBeVisible()
+  await expect(page.getByRole('grid', { name: 'Issues' })).toBeVisible()
 
   await page.getByRole('link', { name: 'Documents' }).click()
   await expect(page).toHaveURL(/\/documents$/)

@@ -16,7 +16,7 @@ test.use({ viewport: { width: 1440, height: 900 } })
 
 async function gotoViewer(page: Page) {
   await page.goto('/reviews/souj5sd12c8a3f')
-  await expect(page.getByRole('list', { name: 'Issues' })).toBeVisible()
+  await expect(page.getByRole('grid', { name: 'Issues' })).toBeVisible()
   // The first canvas appearing means pdf.js has parsed and started painting.
   await expect(page.locator('.react-pdf__Page__canvas').first()).toBeVisible({ timeout: 20_000 })
 }
@@ -80,7 +80,7 @@ test('clicking an issue scrolls the document, and the page in view reports back'
   await expect.poll(scrollTop, { timeout: 15_000 }).toBeGreaterThan(1000)
 
   // And the highlight in the list is the same one value, seen a third way.
-  await expect(page.locator('[aria-label="Issues"] button[aria-current="page"]')).toHaveCount(1)
+  await expect(page.locator('[aria-label="Issues"] [aria-current="page"]')).toHaveCount(1)
 })
 
 /**

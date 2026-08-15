@@ -17,6 +17,12 @@ distinction matters for this build, and the reasoning is in
 [`docs/DESIGN.md`](docs/DESIGN.md). Rotating an iPad across 1024px switches between the two
 layouts, which is the quickest way to see that the wide one isn't the narrow one stretched.
 
+Hosted on Vercel as a static build. `vercel.json` carries the client-routing rewrite, and it
+is written to rewrite **only extensionless paths** — a blanket rule would hand `index.html`
+back for a missing asset with a 200 status, which the browser then tries to parse as
+JavaScript. That is the "Unexpected token '<'" white screen, and it only ever appears after a
+deploy.
+
 ---
 
 ## Quickstart
@@ -123,11 +129,17 @@ Two suites, because they answer different questions.
 attached to its issue when the list is re-sorted, and the payload guard. Pure functions, no
 DOM, milliseconds.
 
-**`bun run test:layout` — the layout, in Chromium and WebKit.** Twelve real viewports from a
-320px iPhone SE to 1920px, asserting no horizontal overflow, that the page itself never
-scrolls, that each width renders the correct shape *and not the other one*, that exactly one
-submit button is visible and on screen, and that every touch target clears 44px. Then a sweep
-from 320 to 1920 in 40px steps, because a fixed matrix sails straight past the 1007px disaster.
+**`bun run test:layout` — everything a browser has to answer, in Chromium and WebKit.** Six
+spec files, 184 tests:
+
+| Spec | What it holds down |
+|---|---|
+| `layout` | Twelve real viewports from a 320px iPhone SE to 1920px — no horizontal overflow, the page itself never scrolls, each width renders the correct shape *and not the other one*, exactly one primary action visible and on screen, every touch target over 44px. Then a sweep from 320 to 1920 in 40px steps, because a fixed matrix sails past the 1007px disaster. |
+| `viewer` | Every page's text layer mounted so browser find can reach the whole document, canvases actually windowed, clicking an issue scrolling the document, and the page staying put when the window crosses the breakpoint. |
+| `submit` | Both halves of the gate — blocked offers upload rather than a dead submit, open asks for confirmation naming what is being accepted, and a submitted review reads as submitted on a cold load. |
+| `done` | The worklist reports progress without moving the gate, hides and shows its own rows, sinks under severity sort, and never crosses versions. |
+| `documents` | The queue, the version switch surviving a reload, and the placeholders being genuinely inert. |
+| `contrast` | Severity text measured against every surface it sits on, in both themes, against the 4.5:1 AA floor. |
 
 No screenshot baselines — WebKit and Chromium rasterize type differently, so baselines would
 need a set each and would churn on every change. Structure is what's actually invariant.

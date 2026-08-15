@@ -106,7 +106,7 @@ export function AppHeader({ review, actions, version, onVersionChange }: AppHead
             <span className="sr-only">Change version</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent align="start" className="min-w-44">
           <DropdownMenuLabel>Version</DropdownMenuLabel>
           {REVIEW_DOCUMENT.versions.map((entry) => (
             <DropdownMenuItem
@@ -115,7 +115,7 @@ export function AppHeader({ review, actions, version, onVersionChange }: AppHead
               className="gap-4"
             >
               <span className="font-medium tabular-nums">v{entry.version}</span>
-              <span className="text-muted-foreground">
+              <span className="flex-1 whitespace-nowrap text-muted-foreground">
                 {new Date(entry.uploadedAt).toLocaleDateString(undefined, {
                   month: 'short',
                   day: 'numeric',

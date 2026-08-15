@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
+@import "@fontsource-variable/ubuntu-sans-mono";
 
 /*
   One trigger: the `.dark` class on <html>. The theme preference has three
@@ -18,6 +19,12 @@
        without the interface moving with it. Point this at HomeVision's own
        display face (Montserrat) and only the wordmark changes. */
     --font-wordmark: var(--font-sans);
+    /* Notes are handwriting on the file, not product copy — a different face is
+       what separates "the reviewer wrote this" from "the system says this".
+       Mono rather than serif: this is working text, closer to a margin
+       annotation than to prose, and it sits beside a document without
+       pretending to be part of it. */
+    --font-note: 'Ubuntu Sans Mono Variable', ui-monospace, monospace;
     /* Severity is product vocabulary, so it lives in the token layer with
        everything else. A component never names a color. */
     --color-severity-critical: var(--severity-critical);

@@ -9,6 +9,7 @@ import { Splitter } from '@/components/Splitter'
 import { ThumbStrip } from '@/components/ThumbStrip'
 import { useReview } from '@/hooks/useReview'
 import { useDoneIssues } from '@/hooks/useDoneIssues'
+import { useIssueNotes } from '@/hooks/useIssueNotes'
 import { DEFAULT_VERSION, REVIEW_DOCUMENT, versionOf } from '@/lib/documents'
 import {
   canSubmit,
@@ -161,6 +162,7 @@ function ReviewShell({
   const [hiddenSeverities, setHiddenSeverities] = useState<ReadonlySet<Severity>>(new Set())
   const [hideDone, setHideDone] = useState(false)
   const { done, toggle: toggleDone, clearAll: clearDone } = useDoneIssues(review)
+  const { notes, setNote } = useIssueNotes(review)
 
   const toggleSeverity = useCallback((severity: Severity) => {
     setHiddenSeverities((previous) => {
@@ -296,6 +298,8 @@ function ReviewShell({
               done={done}
               onToggleDone={toggleDone}
               onClearDone={clearDone}
+              notes={notes}
+              onNoteChange={setNote}
             />
           </div>
         </section>

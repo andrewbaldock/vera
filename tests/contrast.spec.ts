@@ -62,7 +62,7 @@ for (const scheme of ['light', 'dark'] as const) {
   }) => {
     await page.emulateMedia({ colorScheme: scheme })
     await page.goto('/reviews/souj5sd12c8a3f')
-    await expect(page.getByRole('list', { name: 'Issues' })).toBeVisible()
+    await expect(page.getByRole('grid', { name: 'Issues' })).toBeVisible()
 
     const report = await contrastReport(page)
     for (const severity of SEVERITIES) {

@@ -15,14 +15,21 @@ source of truth for intent and this file is wrong and should be fixed.
 Four layers, and dependencies point one way only.
 
 ```
-components/     the shell, the panels, the viewer, the strip, the splitter
-    │           React lives here and only here
+components/     the two pages, the panels, the viewer, the strip, the splitter,
+    │           the actions and dialogs. React lives here and only here.
     ▼
-hooks/          useReview · useTheme
+hooks/          useReview · useDoneIssues · useTheme
     │           async boundaries and browser state
     ▼
-lib/            review.ts · severity.ts · pdf.ts · utils.ts
-    │           the product rules — pure, no React
+lib/            review    the product rules — pure, no React
+    │           documents the demo catalog: one document, two versions
+    │           submission persisted submissions, per review and version
+    │           progress  the reviewer's done marks, same scoping
+    │           severity  severity's colors and labels, as data
+    │           session   who is signed in
+    │           brand     the product name
+    │           pdf       pdf.js worker configuration
+    │           utils     cn()
     ▼
 types/          review.ts
                 the payload shape, modeled from the mock rather than the prose
@@ -42,7 +49,34 @@ export function canSubmit(review: Review): boolean
 It takes the **whole review**, never an array of issues. Handing it a filtered list is not a
 mistake you can make; it is a type error.
 
-## 2. Data flow
+## 2. Routing
+
+Three routes and a spike, using React Router rather than a hand-rolled
+`pushState` — the same rule that picked shadcn over hand-rolled components and
+react-pdf over raw pdf.js: reach for the library when one exists.
+
+| Route | What |
+|---|---|
+| `/documents` | The queue. Where the app lands, and where submitting returns you. |
+| `/reviews/:documentId` | The review. `?v=3` selects the version. |
+| `/demo` | The react-pdf spike, lazily loaded so its ~420 KB never reaches a normal visitor. |
+
+**The version is a query parameter rather than component state** because it is a
+different thing to look at, and different things deserve addresses: `?v=2` is a
+link that survives a paste and a reload, and the back button stops lying about
+where you are.
+
+**`/documents` is a stub, not the Documents Page** from the spec's flow. It has
+one live row, three inert placeholders and a reset control — the smallest
+surface that gives the review somewhere to be opened from and returned to.
+Without it, submitting is a one-way trip and an evaluator gets one attempt at
+the most important interaction in the build.
+
+Deployed as a static build on Vercel, where `vercel.json` carries the rewrite —
+matching **only extensionless paths**, so a missing asset still 404s instead of
+receiving `index.html` with a 200 and being parsed as JavaScript.
+
+## 3. Data flow
 
 ```
 public/review_mock.json
@@ -55,19 +89,33 @@ useReview()                  fetch → isReview() validates → discriminated un
 ReviewPage                   owns the shell and all shared state
         │
         ├── numberByPage()   stable numbering, returned in page order
-        └── groupByPage()    issues keyed by page, for the status bar and the strip
+        ├── sortIssues()     page order, or severity with done rows sunk
+        ├── visibleIssues()  hidden severities and hidden done rows removed
+        └── groupByPage()    issues keyed by page — computed on the UNFILTERED
+                │            list, because the status bar and the strip describe
+                │            the document, not the current view of it
                 │
                 ├── ReviewVerdict     takes `review`, never a list
                 ├── IssuesPanel       takes the view of the issues
                 ├── DocumentPanel     status bar + the viewer
-                └── ThumbStrip        the whole document as one scrub control
+                ├── ThumbStrip        the whole document as one scrub control
+                └── ReviewAction      upload, submit, and the submit sequence
+
+useDoneIssues(review)        the reviewer's private worklist, from localStorage
+                             keyed by review id AND version
 ```
+
+**Two hooks, on purpose.** `useReview` is what the API says about the document;
+`useDoneIssues` is what the person at the keyboard has ticked off. Keeping them
+apart is the same instinct that keeps `canSubmit` in a file that cannot see a
+checkbox — and it is why hiding every severity, ticking every issue and sorting
+the list cannot move the gate by so much as a pixel.
 
 **Validation is at the boundary and nowhere else.** `isReview()` is ~20 hand-written lines
 rather than a schema dependency. Once past it, every component downstream can trust its props
 completely, and none of them carry defensive checks.
 
-## 3. `focusedPage` — one writer, three readers
+## 4. `focusedPage` — one writer, three readers
 
 The single most important piece of state in the app, and the one most worth understanding.
 
@@ -100,7 +148,7 @@ Two consequences worth knowing before touching it:
   page taller than the viewport never reaches the higher thresholds at all. The first version
   froze after one scroll.
 
-## 4. Two layouts, one component tree
+## 5. Two layouts, one component tree
 
 The shape is decided **entirely in CSS**, at 1024px.
 
@@ -131,7 +179,7 @@ View and Stage Manager come out right with no special case.
 under a finger before anyone rotates anything: Pointer Events throughout, 44px targets,
 `touch-action: none` on drag surfaces, nothing essential behind `:hover`.
 
-## 5. The viewer
+## 6. The viewer
 
 The riskiest component, and the one that carries acceptance criterion #1.
 
@@ -156,7 +204,7 @@ The annotation layer is disabled. It exists to make PDF hyperlinks clickable, wh
 document does not need, and it is the layer that ships `z-index: 3` and swallows clicks meant
 for the UI above it.
 
-## 6. The token layer
+## 7. The token layer
 
 `src/index.css` holds the entire theme as CSS custom properties — including product
 vocabulary, not just chrome:
@@ -177,7 +225,7 @@ Dark is one class, `.dark`, applied by `useTheme`. The preference has three valu
 CSS never has to know about the media query. That keeps a single definition of dark instead of
 a class rule and a media query that can drift apart.
 
-## 7. Testing
+## 8. Testing
 
 Two suites, two runners, because they answer different questions.
 
@@ -199,7 +247,7 @@ button, 44px targets.
 The suite earned itself on first run by catching a 32px submit button, under the 44px minimum,
 on the one control the whole page exists to gate.
 
-## 8. Seams — where this changes for production
+## 9. Seams — where this changes for production
 
 Named here so the answer to *"what would you do differently at scale"* points at code rather
 than at good intentions. Fuller treatment in the production-readiness writeup.
@@ -209,7 +257,9 @@ than at good intentions. Fuller treatment in the production-readiness writeup.
 | `useReview` | fetches a static mock | swap the fetch for the real endpoint; `isReview()` stays exactly as it is |
 | `Issue.page` | a page number, no coordinates | bounding boxes from the backend, and the markers move onto the page instead of into a status bar |
 | `CANVAS_WINDOW` | a fixed page count | geometry against the viewport, once documents run to hundreds of pages |
-| submit | no handler yet | a real mutation, optimistic state, and a conflict path when the review changed underneath you |
+| submit | writes to `localStorage`, then plays a fixed 2.7s sequence | a real mutation, with the sequence driven by the request rather than a timer, plus a failure path and a conflict path for a review that changed underneath you |
+| `lib/session` | one constant | whatever auth returns. The distinction between *the signed-in user* and *the review's assigned user* already exists, which is what makes showing someone else's review possible |
+| `lib/documents` | a hand-written catalog of one document | a documents endpoint, and this file becomes a fetch |
 | `focusedPage` | React state | unchanged — the single-writer rule is what makes any of the above safe to add |
 
 ---

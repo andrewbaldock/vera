@@ -80,13 +80,25 @@ export function DocumentsPage() {
         <UserMenu />
       </header>
 
+      {/*
+        A width, not a wall.
+        Full-bleed rows are right on a phone and wrong on a 1440px monitor —
+        a name and a status pill separated by three feet of nothing reads as a
+        page that was never designed for the screen it is on. The list gets a
+        measure and becomes a card, so the desktop layout is a shape rather
+        than the phone one stretched. Same principle as the review page.
+      */}
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-        <ul aria-label="Documents" className="divide-y">
+        <div className="mx-auto w-full max-w-3xl px-4 py-4 sm:px-6 lg:py-8">
+        <ul
+          aria-label="Documents"
+          className="divide-y overflow-hidden rounded-xl border bg-card shadow-sm"
+        >
           <li className={cn(justSubmitted === REVIEW_DOCUMENT.id && 'settle')}>
             <Link
               to={`/reviews/${REVIEW_DOCUMENT.id}`}
               className={cn(
-                'flex min-h-11 items-center gap-3 px-4 py-4 transition-colors',
+                'flex min-h-11 items-center gap-3 px-4 py-4 transition-colors sm:px-5',
                 'hover:bg-accent/60 active:bg-accent',
                 'focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none',
               )}
@@ -119,7 +131,8 @@ export function DocumentsPage() {
           ))}
         </ul>
 
-        <DemoReset document={REVIEW_DOCUMENT} />
+          <DemoReset document={REVIEW_DOCUMENT} />
+        </div>
       </div>
     </div>
   )
@@ -134,7 +147,7 @@ export function DocumentsPage() {
 function PlaceholderRow({ document }: { document: PlaceholderDocument }) {
   return (
     <li>
-      <div aria-disabled className="flex min-h-11 items-center gap-3 px-4 py-4 opacity-45">
+      <div aria-disabled className="flex min-h-11 items-center gap-3 px-4 py-4 opacity-45 sm:px-5">
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-medium">
             {stripExtension(document.name)}

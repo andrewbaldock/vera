@@ -56,7 +56,7 @@ function fullOnly(page: Page) {
 /** Loading is a real async state, so wait for the review rather than for a timeout. */
 async function gotoReview(page: Page) {
   await page.goto('/reviews/souj5sd12c8a3f')
-  await expect(page.getByRole('list', { name: 'Issues' })).toBeVisible()
+  await expect(page.getByRole('grid', { name: 'Issues' })).toBeVisible()
 }
 
 /**
@@ -164,7 +164,7 @@ test.describe('touch targets', () => {
       expect(box!.height).toBeGreaterThanOrEqual(TOUCH_TARGET)
     }
 
-    const rows = await page.getByRole('list', { name: 'Issues' }).getByRole('button').all()
+    const rows = await page.getByRole('grid', { name: 'Issues' }).getByRole('button').all()
     for (const row of rows.slice(0, 5)) {
       const box = await row.boundingBox()
       expect(box!.height).toBeGreaterThanOrEqual(TOUCH_TARGET)

@@ -1,7 +1,9 @@
-import { Check, Monitor, Moon, Sun } from 'lucide-react'
+import { BookOpen, Check, LogOut, Monitor, Moon, Sun, UserRound } from 'lucide-react'
+import { UserGuide } from '@/components/UserGuide'
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
@@ -52,6 +54,34 @@ export function UserMenu({ user = CURRENT_USER }: { user?: ReviewUser } = {}) {
           <span>{name}</span>
           <span className="text-xs font-normal text-muted-foreground">Reviewer</span>
         </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+
+        {/* Present but inert. Account management and sessions belong to the
+            platform this screen sits inside, not to a review page — showing
+            where they live is honest, building them would be someone else's
+            ticket. */}
+        <DropdownMenuItem disabled className="gap-2">
+          <UserRound className="size-4" aria-hidden />
+          Profile
+        </DropdownMenuItem>
+        <DropdownMenuItem disabled className="gap-2">
+          <LogOut className="size-4" aria-hidden />
+          Log out
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        {/* asChild so the dialog trigger is the menu item itself — a nested
+            button inside a menuitem would be two things to focus. */}
+        <UserGuide
+          trigger={
+            <DropdownMenuItem onSelect={(event) => event.preventDefault()} className="gap-2">
+              <BookOpen className="size-4 text-muted-foreground" aria-hidden />
+              User guide
+            </DropdownMenuItem>
+          }
+        />
+
         <DropdownMenuSeparator />
 
         <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">

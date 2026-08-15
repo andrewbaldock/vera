@@ -14,7 +14,7 @@ const REVIEW = '/reviews/souj5sd12c8a3f'
 
 test.use({ viewport: { width: 1440, height: 900 } })
 
-const list = (page: Page) => page.getByRole('list', { name: 'Issues' })
+const list = (page: Page) => page.getByRole('grid', { name: 'Issues' })
 const rows = (page: Page) => list(page).getByRole('listitem')
 const verdict = (page: Page) => page.getByRole('region', { name: 'Issues found' })
 const doneLozenge = (page: Page) =>
