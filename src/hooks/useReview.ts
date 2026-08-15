@@ -24,12 +24,11 @@ import {
  */
 
 /**
- * The supplied mock points `pdf_url` at example.com. The local file is
- * substituted here at the boundary rather than in the fixture, so the fixture
- * stays a faithful copy of what was supplied and the substitution stays visible
- * in code.
+ * The substitution happens here, at the boundary. The path itself lives in
+ * `lib/documents` with the rest of the catalog, because the documents list draws
+ * a cover from it without ever loading a review.
  */
-const LOCAL_PDF_URL = '/docs/example_document.pdf'
+import { LOCAL_PDF_URL } from '@/lib/documents'
 
 export type ReviewState =
   | { status: 'loading' }

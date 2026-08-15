@@ -36,10 +36,18 @@ const PAGE_GUTTER = 24
  * A programmatic scroll passes over every page between here and there and the
  * reading line reports each one, so the list strobes through five pages on the
  * way to page 17. Measurement is suppressed until the scroll settles.
- * `scrollend` is the right signal; the timeout covers browsers that don't fire
- * it, and a scroll that never moves.
+ *
+ * `scrollend` is the signal. The timeout is only for browsers that do not fire
+ * it and for a scroll that never moves — which is why there are two of them.
+ * A single 700ms timer looks like a safety net and behaves like a race: a smooth
+ * scroll from page 1 to page 33 takes about 1.6s, so the timer would win by
+ * roughly 900ms and hand back exactly the strobing it was added to prevent.
+ * Where `scrollend` exists the fallback only has to catch a scroll that never
+ * happened, so it can be long enough to never be the one that fires first.
  */
 const SCROLL_SETTLE_MS = 700
+const SCROLL_SETTLE_FALLBACK_MS = 5000
+const SCROLL_END_SUPPORTED = typeof window !== 'undefined' && 'onscrollend' in window
 
 /**
  * How many pages either side of the one you are reading get a canvas. A
@@ -159,11 +167,15 @@ export function DocumentViewer({
         if (element.getBoundingClientRect().top > readingLine) break
         current = pages[index].page_num
       }
-      // The reading line cannot reach the last page. Its top has to pass a line
-      // a quarter of the way down the panel, and once the document is scrolled
-      // to the end there is nothing below it left to scroll, so on a short final
-      // page the line never gets there and the strip sits on page 33 while the
-      // reader is plainly looking at 34.
+      // On a tall panel the reading line cannot reach the last page. The line
+      // sits a quarter of the way down, so it needs the page's top to rise above
+      // it — but at the end of the scroll there is nothing below the last page
+      // left to move, and if the panel is taller than one rendered page that top
+      // never gets there. Measured on this fixture: an 806px panel puts page 34's
+      // top 519px *above* the line and the loop is right without this; a 1506px
+      // panel leaves it 181px below, and the strip sits on 33 while page 34 fills
+      // the screen. So it is panel height that decides, not page height — every
+      // page here is the same size.
       //
       // Not a lower reading line: that would misreport every *other* page, and
       // the line's position is what makes the measurement right in the general
@@ -246,7 +258,14 @@ export function DocumentViewer({
       // sits on page 7 while the strip and status bar say page 1.
       measureRef.current()
     }
-    const timer = window.setTimeout(release, behavior === 'instant' ? 0 : SCROLL_SETTLE_MS)
+    const timer = window.setTimeout(
+      release,
+      behavior === 'instant'
+        ? 0
+        : SCROLL_END_SUPPORTED
+          ? SCROLL_SETTLE_FALLBACK_MS
+          : SCROLL_SETTLE_MS,
+    )
     scroller.addEventListener('scrollend', release, { once: true })
     return () => {
       window.clearTimeout(timer)

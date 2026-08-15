@@ -17,13 +17,16 @@ import type { Review } from '@/types/review'
 
 /**
  * The one header, in both shapes. The compact shape keeps a back chevron, a
- * truncated title and an overflow; version, upload date and reviewer move behind
- * the `⋯` because they are reference data you consult rather than act on. At
- * `lg` the same three facts come inline.
+ * truncated title, the version control and an overflow.
  *
- * The facts *move* rather than disappear. A compact layout that dropped three
- * pieces of information the full one has would be a different design, not a
- * smaller one.
+ * What moves is the upload date, and only below `sm`: it rides the version
+ * button, because it describes the version rather than the document, and when
+ * the title needs that room it steps back to the `⋯` menu. Nothing is dropped.
+ * A compact layout that lost a fact the full one shows would be a different
+ * design rather than a smaller one.
+ *
+ * The version itself never moves — it is a control, not reference data, and a
+ * control you have to open a menu to find is one you will not use.
  */
 
 interface DocumentFact {
@@ -49,11 +52,15 @@ function uploadedAt(iso: string) {
   })
 }
 
+/**
+ * What the ⋯ menu carries below `lg`. No version here: it has its own control
+ * beside the title at every width, and a detail list that repeats a control
+ * sitting six inches away is noise. This used to build the version and filter
+ * it back out by matching the label string, which quietly turned a rename into
+ * a behavior change.
+ */
 function facts(review: Review): DocumentFact[] {
-  return [
-    { label: 'Version', value: `v${review.version}` },
-    { label: 'Uploaded', value: uploadedAt(review.uploaded_at), iso: review.uploaded_at },
-  ]
+  return [{ label: 'Uploaded', value: uploadedAt(review.uploaded_at), iso: review.uploaded_at }]
 }
 
 interface AppHeaderProps {
@@ -65,7 +72,7 @@ interface AppHeaderProps {
 }
 
 export function AppHeader({ review, actions, version, onVersionChange }: AppHeaderProps) {
-  const documentFacts = facts(review).filter((fact) => fact.label !== 'Version')
+  const documentFacts = facts(review)
 
   return (
     <header
@@ -101,7 +108,10 @@ export function AppHeader({ review, actions, version, onVersionChange }: AppHead
 
       <Link
         to="/documents"
-        className="flex min-h-11 shrink-0 items-center gap-0.5 rounded-md pr-2 text-sm text-muted-foreground transition-colors hover:text-foreground active:text-foreground focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none"
+        // `min-w-11` as well as `min-h-11`: below `sm` the word is `sr-only` and
+        // only the chevron is left, which is 24px wide — a tall target you still
+        // have to hit edge-on.
+        className="flex min-h-11 min-w-11 shrink-0 items-center gap-0.5 rounded-md pr-2 text-sm text-muted-foreground transition-colors hover:text-foreground active:text-foreground focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none"
       >
         <ChevronLeft className="size-4" aria-hidden />
         <span className="max-sm:sr-only">Documents</span>
@@ -177,10 +187,20 @@ export function AppHeader({ review, actions, version, onVersionChange }: AppHead
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="z-50 min-w-56">
           <DropdownMenuLabel>Document details</DropdownMenuLabel>
+          {/* Label above value, not beside it. Side by side, "Uploaded" plus a
+              date carrying a time needs more width than a 390px phone leaves a
+              menu, and the value is what gets clipped — the half worth reading.
+              Stacked, it fits whatever the width turns out to be. */}
           {documentFacts.map((fact) => (
-            <DropdownMenuItem key={fact.label} disabled className="flex justify-between gap-6">
-              <span className="shrink-0 text-muted-foreground">{fact.label}</span>
-              <span className="font-medium whitespace-nowrap">{fact.value}</span>
+            <DropdownMenuItem
+              key={fact.label}
+              disabled
+              className="flex-col items-start gap-0.5 py-1.5"
+            >
+              <span className="text-xs text-muted-foreground">{fact.label}</span>
+              <span className="font-medium">
+                {fact.iso ? <time dateTime={fact.iso}>{fact.value}</time> : fact.value}
+              </span>
             </DropdownMenuItem>
           ))}
         </DropdownMenuContent>

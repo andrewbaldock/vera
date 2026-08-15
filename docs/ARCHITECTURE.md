@@ -18,13 +18,15 @@ Four layers, and dependencies point one way only.
 components/     the two pages, the panels, the viewer, the strip, the splitter,
     │           the actions and dialogs. React lives here and only here.
     ▼
-hooks/          useReview · useDoneIssues · useTheme
+hooks/          useReview · useDoneIssues · useIssueNotes · useScrollTracking
+    │           useTheme
     │           async boundaries and browser state
     ▼
 lib/            review    the product rules — pure, no React
     │           documents the demo catalog: one document, two versions
     │           submission persisted submissions, per review and version
     │           progress  the reviewer's done marks, same scoping
+    │           notes     the reviewer's notes, scoped to the document instead
     │           severity  severity's colors and labels, as data
     │           session   who is signed in
     │           brand     the product name
@@ -103,13 +105,22 @@ ReviewPage                   owns the shell and all shared state
 
 useDoneIssues(review)        the reviewer's private worklist, from localStorage
                              keyed by review id AND version
+useIssueNotes(review)        what the reviewer wrote, keyed by review id only —
+                             a note outlives the version it was written against
+useScrollTracking()          whether the list follows the document. A preference,
+                             so it belongs to neither of the above
 ```
 
-**Two hooks.** `useReview` is what the API says about the document;
-`useDoneIssues` is what the person at the keyboard has ticked off. Keeping them
-apart is what keeps `canSubmit` in a file that cannot see a checkbox, and it is
-why hiding every severity, ticking every issue and sorting the list cannot move
-the gate.
+**The review and the reviewer are separate sources.** `useReview` is what the API
+says about the document. Everything else — what has been ticked, what has been
+written, how the list behaves — is what the person at the keyboard did, and it
+never merges into the review object. That separation is what keeps `canSubmit` in
+a file that cannot see a checkbox, and it is why hiding every severity, ticking
+every issue and sorting the list cannot move the gate.
+
+The two reviewer-owned stores are scoped differently on purpose: a tick means
+"I have handled this" and dies with its version, while a note is something
+learned about the property and survives into the next one.
 
 **Validation is at the boundary and nowhere else.** `isReview()` is ~20 hand-written lines
 rather than a schema dependency. Once past it, every component downstream can trust its props

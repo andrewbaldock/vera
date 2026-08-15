@@ -25,11 +25,19 @@ import type { DocumentPage } from '@/types/review'
  * directions, so it never scrolls: a scroll container inside a
  * `touch-action: none` scrub surface is unscrollable by the finger it exists for.
  *
- * That fit has a ceiling, and it is documented rather than hidden: the factor
- * shrinks width along with height, so past roughly 45 pages the numbers no
- * longer fit and by 100 the miniature is a ~5px thread in a 44px column. Correct
- * for this document, wrong for a long one. `PRODUCTION.md` carries the numbers
- * and what fixing it actually costs.
+ * That fit has a ceiling, named here rather than hidden. The factor shrinks
+ * width along with height, so a long document does not just get shorter
+ * segments, it gets narrower ones: measured against an 800px column of Letter
+ * pages, 34 gives 21.6 x 16.7px, 45 drops under the 16px at which the numbers
+ * stop rendering, and 100 gives 6.0 x 4.6px — a thread down a 44px column.
+ * Correct for this document, wrong for a hundred-page one.
+ *
+ * Fixing it means a minimum segment height with the overflow scrolled, but not
+ * scrolled by the user: a finger drag here already means "scrub", so the strip
+ * would have to scroll itself from the focused page, and the scrub-to-page
+ * mapping stops being a straight measurement once part of the strip is off
+ * screen. Left undone deliberately — the fixture is 34 pages and the arithmetic
+ * is right for it.
  */
 
 /** Gap between segments, in px. Comes out of the budget, never added on top. */

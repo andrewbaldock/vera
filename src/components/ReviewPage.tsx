@@ -155,7 +155,7 @@ function ReviewShell({
   const [hideDone, setHideDone] = useState(false)
   const [scrollTracking, setScrollTracking] = useScrollTracking()
   const { done, toggle: toggleDone, clearAll: clearDone } = useDoneIssues(review)
-  const { notes, setNote } = useIssueNotes(review)
+  const { notes, setNote, clearAll: clearNotes } = useIssueNotes(review)
 
   const toggleSeverity = useCallback((severity: Severity) => {
     setHiddenSeverities((previous) => {
@@ -293,6 +293,7 @@ function ReviewShell({
               onClearDone={clearDone}
               notes={notes}
               onNoteChange={setNote}
+              onClearNotes={clearNotes}
               scrollTracking={scrollTracking}
               onScrollTrackingChange={setScrollTracking}
             />

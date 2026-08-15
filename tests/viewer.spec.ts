@@ -121,23 +121,39 @@ test.describe('resizing across the breakpoint', () => {
   })
 })
 
-test('scrolling to the end of the document reports the last page', async ({ page }) => {
-  await gotoViewer(page)
+/**
+ * A tall window, deliberately, and this is the whole point of the test.
+ *
+ * The end-of-scroll case only bites when the panel is taller than one rendered
+ * page: the reading line then needs page 34's top to rise above a line a quarter
+ * of the way down, and at the bottom of the scroll there is nothing left to move
+ * it. Measured on this fixture — the suite's usual 900px window gives an 806px
+ * panel that puts that top 519px *above* the line, so the loop answers 34 by
+ * itself and this test passes with the branch deleted. At 1600 the panel is
+ * 1506px, the top sits 181px below the line, and the branch is the only thing
+ * returning 34.
+ *
+ * A test that is green whether or not the code exists is worse than no test, so
+ * this one runs where the code is load-bearing.
+ */
+test.describe('a window taller than a page', () => {
+  test.use({ viewport: { width: 1440, height: 1600 } })
 
-  const strip = page.getByRole('slider', { name: 'Document pages' })
-  await expect(strip).toHaveAttribute('aria-valuenow', '1')
+  test('scrolling to the end of the document reports the last page', async ({ page }) => {
+    await gotoViewer(page)
 
-  // All the way down, the way a reader gets to the end.
-  await page
-    .locator('#document-panel div.overflow-y-auto')
-    .evaluate((el) => el.scrollTo({ top: el.scrollHeight, behavior: 'instant' }))
+    const strip = page.getByRole('slider', { name: 'Document pages' })
+    await expect(strip).toHaveAttribute('aria-valuenow', '1')
 
-  // The last page's top never passes the reading line, because at the bottom of
-  // the scroll there is nothing below it left to move. Without the end-of-scroll
-  // case this reports 33 while page 34 fills the panel.
-  await expect
-    .poll(() => strip.getAttribute('aria-valuenow'), { timeout: 10_000 })
-    .toBe('34')
+    // All the way down, the way a reader gets to the end.
+    await page
+      .locator('#document-panel div.overflow-y-auto')
+      .evaluate((el) => el.scrollTo({ top: el.scrollHeight, behavior: 'instant' }))
+
+    await expect
+      .poll(() => strip.getAttribute('aria-valuenow'), { timeout: 10_000 })
+      .toBe('34')
+  })
 })
 
 /**
@@ -165,7 +181,7 @@ test('the issues list follows the document, until you turn tracking off', async 
   await expect.poll(issuesTop, { timeout: 10_000 }).toBeGreaterThan(0)
 
   await page.getByRole('button', { name: 'List options' }).click()
-  await page.getByRole('menuitemcheckbox', { name: 'Scroll tracking' }).click()
+  await page.getByRole('menuitemcheckbox', { name: 'Scroll Tracking' }).click()
 
   // Off: the list stays exactly where the user left it, however far the
   // document moves.

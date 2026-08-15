@@ -6,6 +6,16 @@ import { SEVERITY_LABEL, SEVERITY_TEXT } from '@/lib/severity'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
@@ -57,6 +67,7 @@ interface IssuesPanelProps {
   onClearDone: () => void
   notes: Readonly<Record<string, string>>
   onNoteChange: (issueId: string, text: string) => void
+  onClearNotes: () => void
   scrollTracking: boolean
   onScrollTrackingChange: (tracking: boolean) => void
 }
@@ -73,17 +84,37 @@ export function IssuesPanel({
   onClearDone,
   notes,
   onNoteChange,
+  onClearNotes,
   scrollTracking,
   onScrollTrackingChange,
 }: IssuesPanelProps) {
   const [editing, setEditing] = useState<string | null>(null)
+  /** Set by Escape so the blur it causes discards instead of saving. */
+  const discardingNote = useRef(false)
+  /** Which clear action is waiting on a confirmation, if any. */
+  const [confirming, setConfirming] = useState<'done' | 'notes' | null>(null)
+  const noteCount = Object.keys(notes).length
   const gridRef = useRef<HTMLUListElement>(null)
+  /** The page the list has already followed, so mount is not treated as a move. */
+  const trackedPage = useRef(focusedPage)
+  /** Where focus goes when a confirmation closes. See the dialog below. */
+  const listOptionsRef = useRef<HTMLButtonElement>(null)
   /**
    * Which cell owns the tab stop. Tracked rather than derived from
    * `document.activeElement`, so the list keeps its place when focus leaves and
    * comes back instead of landing on row one again.
    */
   const [active, setActive] = useState({ row: 0, col: 0 })
+
+  /**
+   * Which row actually owns the tab stop. Derived from `active` rather than
+   * trusted, because filtering shortens the list without touching it: hide a
+   * severity while row 20 is focused, twelve rows render, and no row matches a
+   * stored 20. The grid then has *zero* tab stops and Tab can never get back
+   * into it — a keyboard trap in reverse, and the roving tabindex's one
+   * invariant is that exactly one cell is always reachable.
+   */
+  const tabStopRow = Math.min(active.row, Math.max(0, issues.length - 1))
 
   /**
    * Follow the document, when the user has asked for it. `block: 'nearest'` and
@@ -98,6 +129,21 @@ export function IssuesPanel({
    */
   useEffect(() => {
     if (!scrollTracking) return
+    /*
+      Never on mount, and this is not an optimization. `scrollIntoView` sets the
+      browser's sequential focus navigation starting point to the element it
+      scrolls to, so running this on the first render puts that point inside the
+      grid — and the first Tab press lands on an issue row instead of the skip
+      link, with the header, the back link, the version control and Upload new
+      version all *behind* twenty-five rows. The skip link is the first thing the
+      README claims about accessibility and it ended up tenth in the order.
+
+      There is nothing to follow on mount anyway: the list is at the top and so
+      is the document.
+    */
+    if (trackedPage.current === focusedPage) return
+    trackedPage.current = focusedPage
+
     const row = gridRef.current?.querySelector<HTMLElement>(`[data-page="${focusedPage}"]`)
     if (!row) return
     row.scrollIntoView({
@@ -191,7 +237,7 @@ export function IssuesPanel({
         </p>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="min-h-8 gap-1.5 px-2 text-xs">
+            <Button variant="ghost" className="min-h-11 gap-1.5 px-2 text-xs">
               <ArrowDownWideNarrow className="size-3.5" aria-hidden />
               {SORT_LABEL[sort]}
               <span className="sr-only">Change sort order</span>
@@ -211,7 +257,7 @@ export function IssuesPanel({
         <div className="flex justify-end">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="size-8">
+              <Button ref={listOptionsRef} variant="ghost" size="icon" className="size-11">
                 <MoreVertical className="size-4" aria-hidden />
                 <span className="sr-only">List options</span>
               </Button>
@@ -224,16 +270,83 @@ export function IssuesPanel({
                 checked={scrollTracking}
                 onCheckedChange={onScrollTrackingChange}
               >
-                Scroll tracking
+                Scroll Tracking
               </DropdownMenuCheckboxItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem disabled={done.size === 0} onSelect={onClearDone}>
-                Clear all done
+              {/* Both open a confirmation rather than acting. The menu closes on
+                  select, so the dialog is held outside it and keyed by which one
+                  was chosen — a dialog nested in a menu unmounts with it. */}
+              <DropdownMenuItem
+                disabled={done.size === 0}
+                onSelect={() => setConfirming('done')}
+              >
+                Clear All Done
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={noteCount === 0}
+                onSelect={() => setConfirming('notes')}
+              >
+                Clear All Notes
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
+
+      {/*
+        Focus has to be put back by hand. Radix restores it to the dialog's
+        trigger, and this dialog has none — it is opened from a menu item that
+        unmounts with the menu, so every exit (cancel, confirm, Escape) dropped
+        focus on `<body>`. On the one dialog whose own copy says "there is no
+        undo", that is the worst place in the app to lose someone.
+      */}
+      <AlertDialog
+        open={confirming !== null}
+        onOpenChange={(open) => !open && setConfirming(null)}
+      >
+        <AlertDialogContent
+          // `onCloseAutoFocus`, not `onOpenChange`: Radix runs its own restore
+          // after the state handler, so focusing there is immediately undone.
+          onCloseAutoFocus={(event) => {
+            event.preventDefault()
+            listOptionsRef.current?.focus()
+          }}
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirming === 'notes' ? 'Clear all notes?' : 'Clear all done marks?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirming === 'notes' ? (
+                <>
+                  This deletes {noteCount} {noteCount === 1 ? 'note' : 'notes'} on this document,
+                  including any written against a version you are not looking at. Notes are the
+                  only record of what you found out away from the screen, and there is no undo.
+                </>
+              ) : (
+                <>
+                  This unticks {done.size} {done.size === 1 ? 'issue' : 'issues'} on this version.
+                  Nothing about the document or what is blocking submission changes — the marks
+                  are only your own record of what you have worked through.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="min-h-11">Keep them</AlertDialogCancel>
+            <AlertDialogAction
+              className="min-h-11"
+              onClick={() => {
+                if (confirming === 'notes') onClearNotes()
+                else onClearDone()
+                setConfirming(null)
+              }}
+            >
+              {confirming === 'notes' ? 'Clear notes' : 'Clear done marks'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* The panel scrolls from here down, so the scrollbar starts below the
           toolbar instead of running alongside it. */}
@@ -250,9 +363,9 @@ export function IssuesPanel({
         The list is a grid and moves like one. Three columns (the issue, its note
         and its Done box) with a roving tabindex, so the whole list is one tab
         stop and the arrow keys move inside it: up and down walk the issues,
-        Enter opens the page, right or Tab crosses to the checkbox, left or
-        Shift+Tab comes back. Otherwise twenty-five rows with two focusable
-        controls each is fifty tab stops.
+        Enter opens the page, right or Tab crosses to the note and then the Done
+        box, left or Shift+Tab comes back. Otherwise twenty-five rows with three
+        focusable controls each is seventy-five tab stops.
       */}
       <ul
         ref={gridRef}
@@ -288,7 +401,7 @@ export function IssuesPanel({
             <button
               type="button"
               data-cell={`${rowIndex}-0`}
-              tabIndex={active.row === rowIndex && active.col === 0 ? 0 : -1}
+              tabIndex={tabStopRow === rowIndex && active.col === 0 ? 0 : -1}
               onFocus={() => setActive({ row: rowIndex, col: 0 })}
               onClick={() => onSeek(issue.page)}
               aria-current={onFocusedPage ? 'page' : undefined}
@@ -343,10 +456,13 @@ export function IssuesPanel({
               <button
                 type="button"
                 data-cell={`${rowIndex}-1`}
-                tabIndex={active.row === rowIndex && active.col === 1 ? 0 : -1}
+                tabIndex={tabStopRow === rowIndex && active.col === 1 ? 0 : -1}
                 onFocus={() => setActive({ row: rowIndex, col: 1 })}
                 onClick={() => setEditing((current) => (current === issue.id ? null : issue.id))}
-                aria-expanded={editing === issue.id}
+                // Matches what is actually rendered below, which is the editor
+                // *or* a saved note. Tracking only `editing` reported "collapsed"
+                // while a note sat open on the screen.
+                aria-expanded={editing === issue.id || Boolean(notes[issue.id])}
                 aria-label={
                   notes[issue.id]
                     ? `Edit note on "${issue.title}"`
@@ -374,7 +490,7 @@ export function IssuesPanel({
             >
               <Checkbox
                 data-cell={`${rowIndex}-2`}
-                tabIndex={active.row === rowIndex && active.col === 2 ? 0 : -1}
+                tabIndex={tabStopRow === rowIndex && active.col === 2 ? 0 : -1}
                 onFocus={() => setActive({ row: rowIndex, col: 2 })}
                 checked={isDone}
                 onCheckedChange={() => onToggleDone(issue.id)}
@@ -394,6 +510,15 @@ export function IssuesPanel({
                     autoFocus
                     defaultValue={notes[issue.id] ?? ''}
                     onBlur={(event) => {
+                      // Escape gets here too, and before React re-renders:
+                      // handing focus back to the grid blurs this textarea
+                      // synchronously, so without the flag "discard" saves —
+                      // including saving an empty box over a note that existed.
+                      if (discardingNote.current) {
+                        discardingNote.current = false
+                        setEditing(null)
+                        return
+                      }
                       onNoteChange(issue.id, event.target.value)
                       setEditing(null)
                     }}
@@ -401,6 +526,9 @@ export function IssuesPanel({
                     onKeyDown={(event) => {
                       if (event.key === 'Escape') {
                         event.preventDefault()
+                        // Set before focus moves, because that is what triggers
+                        // the blur this flag exists to be seen by.
+                        discardingNote.current = true
                         setEditing(null)
                         // Hand focus back to the cell that opened it, or the
                         // grid loses its place entirely.
@@ -408,10 +536,17 @@ export function IssuesPanel({
                           ?.querySelector<HTMLElement>(`[data-cell="${rowIndex}-1"]`)
                           ?.focus()
                       }
-                      // Enter saves; Shift+Enter is a new line.
+                      // Enter saves; Shift+Enter is a new line. Focus goes back
+                      // to the cell rather than nowhere: a bare `blur()` saves
+                      // correctly but unmounts the textarea, and focus lands on
+                      // `<body>` — the user is silently returned to the top of a
+                      // twenty-five row grid for the crime of finishing a note.
+                      // The blur handler still runs, so this still saves.
                       if (event.key === 'Enter' && !event.shiftKey) {
                         event.preventDefault()
-                        event.currentTarget.blur()
+                        gridRef.current
+                          ?.querySelector<HTMLElement>(`[data-cell="${rowIndex}-1"]`)
+                          ?.focus()
                       }
                       // Arrows move the cursor inside a text field, so the grid
                       // must not see them. Tab is NOT swallowed: it is the way

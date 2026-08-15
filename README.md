@@ -96,12 +96,6 @@ repeats the other.
 - [`docs/wireframes/`](docs/wireframes/) — UX sketches and the two layout shapes, drawn before implementation
 - [`docs/assignment.pdf`](docs/assignment.pdf) — the original brief
 
-**The three requested bonus artifacts:**
-
-- [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) — the development approach, and what in it most required expertise
-- [`docs/PRODUCTION.md`](docs/PRODUCTION.md) — what running this for real would take, split into what the build is already seamed for and what it does not touch at all
-- [`docs/wireframes/`](docs/wireframes/) — the UX sketches, drawn before the build and kept unedited where it diverged
-
 ## How it's put together
 
 ```
@@ -109,7 +103,8 @@ src/
   lib/review.ts        the product rules as pure functions; canSubmit lives here
   types/review.ts      the payload shape, modeled from the mock, not the prose
   hooks/useReview.ts   fetch + validate + loading/error/ready
-  hooks/useTheme.ts    system / light / dark
+  hooks/               done marks, notes, scroll tracking, theme — the reviewer's
+                       own layer, kept apart from what the API said
   components/          the shell, the panels, the thumb strip, the splitter
   components/ui/       shadcn/ui source, copied in and owned here
 tests/                 Playwright — layout, in real browsers
@@ -135,7 +130,7 @@ attached to its issue when the list is re-sorted, and the payload guard. Pure fu
 DOM, milliseconds.
 
 **`bun run test:layout` — everything a browser has to answer, in Chromium and WebKit.** Seven
-spec files, 200 tests:
+spec files, 204 tests:
 
 | Spec | What it holds down |
 |---|---|

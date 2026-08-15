@@ -27,5 +27,10 @@ export function useIssueNotes(review: Pick<Review, 'id'>) {
     [id],
   )
 
-  return { notes, setNote }
+  const clearAll = useCallback(() => {
+    setNotes({})
+    writeNotes({ id }, {})
+  }, [id])
+
+  return { notes, setNote, clearAll }
 }

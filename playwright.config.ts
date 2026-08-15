@@ -22,7 +22,18 @@ export default defineConfig({
   testMatch: '**/*.spec.ts',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: 0,
+  /**
+   * One retry, not zero. These tests drive a real PDF renderer through smooth
+   * scrolls in two engines at once, and on a loaded machine a scroll that
+   * normally settles in 1.6s does not — which is a fact about the laptop, not
+   * about the app. Zero retries means whoever runs this while a build is going
+   * sees red on a suite that is green, and that is the wrong first impression to
+   * hand someone.
+   *
+   * One, deliberately, not three: a test that needs two retries is telling you
+   * something and should not be able to hide.
+   */
+  retries: 1,
   reporter: process.env.CI ? 'github' : [['list']],
 
   use: {

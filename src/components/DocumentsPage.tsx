@@ -5,11 +5,17 @@ import { UserMenu } from '@/components/UserMenu'
 import { HelpButton } from '@/components/UserGuide'
 import { Wordmark } from '@/components/Wordmark'
 import { DemoReset } from '@/components/DemoReset'
+import { CoverThumb } from '@/components/CoverThumb'
 import {
+  DEFAULT_VERSION,
+  LOCAL_PDF_URL,
   PLACEHOLDER_DOCUMENTS,
   REVIEW_DOCUMENT,
+  versionOf,
   type PlaceholderDocument,
 } from '@/lib/documents'
+import { blockingIssues, countBySeverity } from '@/lib/review'
+import { isReview } from '@/hooks/useReview'
 import { cn } from '@/lib/utils'
 import { readSubmission } from '@/lib/submission'
 import type { ReviewStatus } from '@/types/review'
@@ -44,6 +50,56 @@ function stripExtension(name: string): string {
   return name.replace(/\.pdf$/i, '')
 }
 
+/**
+ * Why the row reads the way it does. "Awaiting review" says what state the
+ * document is in and immediately raises the question it cannot answer — waiting
+ * on what? A queue where every row looks equally stuck is a queue you have to
+ * open one at a time to triage.
+ *
+ * Counted from the fixture rather than stored beside the catalog. The number is
+ * a property of the findings, and one typed into the catalog is one that goes
+ * quietly wrong the first time a fixture changes.
+ */
+function useRowSummary(version: number) {
+  const [summary, setSummary] = useState<{ blocking: number; minor: number } | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch(versionOf(REVIEW_DOCUMENT, version).url)
+      .then((response) => response.json())
+      .then((payload: unknown) => {
+        if (cancelled || !isReview(payload)) return
+        setSummary({
+          blocking: blockingIssues(payload.issues).length,
+          minor: countBySeverity(payload.issues).minor,
+        })
+      })
+      // A row that cannot say why is still a row that says what. The queue must
+      // not fail to render because a summary did not arrive.
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [version])
+
+  return summary
+}
+
+/** The same vocabulary the review itself uses, so the queue and the page agree. */
+function summaryLabel(
+  summary: { blocking: number; minor: number } | null,
+  submitted: boolean,
+): string | null {
+  if (!summary) return null
+  if (submitted) {
+    return summary.minor > 0
+      ? `${summary.minor} minor accepted as-is`
+      : 'Nothing outstanding'
+  }
+  if (summary.blocking === 0) return 'Ready to submit'
+  return `${summary.blocking} ${summary.blocking === 1 ? 'issue' : 'issues'} must be fixed`
+}
+
 export function DocumentsPage() {
   const latest = REVIEW_DOCUMENT.versions[REVIEW_DOCUMENT.versions.length - 1]
   const [params] = useSearchParams()
@@ -56,15 +112,23 @@ export function DocumentsPage() {
   const [justSubmitted] = useState(() => params.get('submitted'))
 
   // Status comes from the stored submission, not a hardcoded label: the list
-  // has to be able to say "Submitted" for a review that already is.
-  const [submitted, setSubmitted] = useState(false)
+  // has to be able to say "Submitted" for a review that already is. The version
+  // and not just a boolean, because the row then has to summarize *that* one.
+  const [submittedVersion, setSubmittedVersion] = useState<number | null>(null)
   useEffect(() => {
-    setSubmitted(
-      REVIEW_DOCUMENT.versions.some(
-        (version) => readSubmission({ id: REVIEW_DOCUMENT.id, version: version.version }) !== null,
-      ),
+    const found = REVIEW_DOCUMENT.versions.find(
+      (version) => readSubmission({ id: REVIEW_DOCUMENT.id, version: version.version }) !== null,
     )
+    setSubmittedVersion(found?.version ?? null)
   }, [])
+  const submitted = submittedVersion !== null
+
+  /**
+   * The version this row is about: the one you would land on, or the one that
+   * was submitted. They are different questions and the row can only answer one,
+   * so it answers the one the status pill just raised.
+   */
+  const summary = useRowSummary(submittedVersion ?? DEFAULT_VERSION)
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-background">
@@ -86,7 +150,7 @@ export function DocumentsPage() {
         <div className="mx-auto w-full max-w-3xl px-4 py-4 sm:px-6 lg:py-8">
         <ul
           aria-label="Documents"
-          className="divide-y overflow-hidden rounded-xl border bg-card shadow-sm"
+          className="divide-y overflow-hidden rounded-md border bg-card shadow-sm"
         >
           <li className={cn(justSubmitted === REVIEW_DOCUMENT.id && 'settle')}>
             <Link
@@ -97,6 +161,7 @@ export function DocumentsPage() {
                 'focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none',
               )}
             >
+              <CoverThumb pdfUrl={LOCAL_PDF_URL} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-medium">
                   {stripExtension(REVIEW_DOCUMENT.name)}
@@ -105,6 +170,22 @@ export function DocumentsPage() {
                   {REVIEW_DOCUMENT.versions.length} versions · latest v{latest.version} ·{' '}
                   {formatDate(latest.uploadedAt)}
                 </span>
+                {/* The reason, on its own line and in the severity's own color
+                    when something is blocking. Appended to the line above it
+                    would read as one more piece of filing metadata, which is
+                    exactly what it is not. */}
+                {summaryLabel(summary, submitted) && (
+                  <span
+                    className={cn(
+                      'mt-1 block text-xs font-medium',
+                      !submitted && summary && summary.blocking > 0
+                        ? 'text-severity-critical-text'
+                        : 'text-muted-foreground',
+                    )}
+                  >
+                    {summaryLabel(summary, submitted)}
+                  </span>
+                )}
               </span>
               <span
                 className={cn(
@@ -142,6 +223,7 @@ function PlaceholderRow({ document }: { document: PlaceholderDocument }) {
   return (
     <li>
       <div aria-disabled className="flex min-h-11 items-center gap-3 px-4 py-4 opacity-45 sm:px-5">
+        <CoverThumb />
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-medium">
             {stripExtension(document.name)}

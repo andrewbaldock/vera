@@ -44,6 +44,18 @@ export const REVIEW_DOCUMENT: CatalogDocument = {
   ],
 }
 
+/**
+ * The file behind the demo document. The supplied mock points `pdf_url` at
+ * example.com, so the local copy is substituted at the fetch boundary — the
+ * fixture stays a faithful copy of what was supplied, and the substitution stays
+ * visible in code rather than buried in edited JSON.
+ *
+ * Here rather than in `useReview` because it is catalog data: which file backs
+ * this document is the same kind of fact as which versions it has, and the
+ * documents list needs it to draw a cover without loading a review.
+ */
+export const LOCAL_PDF_URL = '/docs/example_document.pdf'
+
 /** The version a reviewer lands on. */
 export const DEFAULT_VERSION = 2
 

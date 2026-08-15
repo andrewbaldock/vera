@@ -328,13 +328,15 @@ This must be visually and structurally distinct from the product UI (a labeled d
 
 ## 6b. Persisted state
 
-Three things end up in `localStorage`, and they do **not** share a lifetime. Getting the scoping wrong is a real bug rather than a tidiness question: a stale checkmark leaking into a new version would tell the user a defect was handled when it wasn't.
+Five things end up in `localStorage`, and they do **not** share a lifetime. Getting the scoping wrong is a real bug rather than a tidiness question: a stale checkmark leaking into a new version would tell the user a defect was handled when it wasn't.
 
 | What | Key | Scope | Why that scope |
 |---|---|---|---|
 | Theme preference | `vera.theme` | **Device** | Which theme suits you depends on the screen you are looking at and the light you are sitting in, not on who you are. Signing in on a different machine should not drag a laptop's dark mode onto a bright office monitor. |
 | Done marks | `vera.done.<id>.v<n>` | **This review, this version** | When v3 arrives with a fresh issue list, v2's ticks are meaningless, and a stale one would claim a defect was handled that the new review never raised. |
 | Submission | `vera.submitted.<id>.v<n>` | **This review, this version** | `status: 'submitted'` is a value the API can return, so the page has to render a submitted review on a cold load with no click involved. Persisting it means the demo exercises the real path rather than a boolean in component state. |
+| Notes | `vera.notes.<id>` | **This document, every version** | The one thing here that deliberately outlives a version. A tick means "I have handled this" and dies with the findings it was made against; a note is something the reviewer *learned* — "the appraiser confirmed the measurement by phone" — and is still true when v4 arrives. That difference is the whole reason these are two keys and not one. It rests on a surviving finding keeping its issue id across versions, which a unit test enforces because nothing else would notice it breaking. |
+| Scroll tracking | `vera.scrollTracking` | **Device** | Whether the issues list follows the document is a preference about how the tool behaves, not a fact about a review, so it belongs to the machine in the same way the theme does. Stored as a word rather than a boolean, so "never asked" and "explicitly off" cannot be confused — absent means on. |
 
 **Two things do *not* persist:**
 
@@ -556,7 +558,7 @@ Severity presentation is two components rather than one `SeverityChip`: a `Sever
 
 **An issue row is not one big clickable `div`.** Each row holds two independent controls, a button (jump to this issue's page) and a checkbox (my private note), so it cannot be a single clickable region, and nesting a checkbox inside a button is invalid. The row is an `<li>` containing a real `<button>` for the title and a real `<input type="checkbox">` with its own label.
 
-**The verdict is a live region.** When the gate opens, or the minor filter changes what's listed, the summary announces. Otherwise a screen reader user checks something off, the state changes materially, and nothing tells them.
+**The verdict is a live region.** When the gate opens, or a Done tick changes the progress count, the summary announces. Filtering deliberately does *not*: the counts describe the document rather than the view, so hiding the minors leaves the text identical and there is nothing to say. Otherwise a screen reader user checks something off, the state changes materially, and nothing tells them.
 
 **The confirmation uses the system's Dialog (Radix underneath), not a native `<dialog>`.** Native `<dialog>` + `showModal()` would give the same focus trap, focus return, escape and inertness for free, but once a system exists, a screen that opens modals its own private way is the first crack in it. Both work; the one the next screen will also use is the right pick.
 
@@ -566,10 +568,10 @@ Severity presentation is two components rather than one `SeverityChip`: a `Sever
 
 Two decisions that belong together.
 
-**The issues list uses the ARIA grid pattern.** Two columns, a roving tabindex, arrow keys
-inside. The arithmetic makes the case: twenty-five rows with an issue button and a Done
-checkbox each is fifty tab stops, and reaching issue nineteen means pressing `Tab` thirty-seven
-times. As a grid it is one stop, and `↑`/`↓` walk the issues while `Enter` opens a page
+**The issues list uses the ARIA grid pattern.** Three columns, a roving tabindex, arrow keys
+inside. The arithmetic makes the case: twenty-five rows with an issue button, a note and a Done
+checkbox each is seventy-five tab stops, and reaching issue nineteen means pressing `Tab`
+fifty-five times. As a grid it is one stop, and `↑`/`↓` walk the issues while `Enter` opens a page
 *without moving focus*, so the loop is read, open, arrow on, open the next, never touching the
 mouse and never losing your place. `→` and `Tab` cross to the Done box, `←` and `Shift+Tab`
 come back, and `Tab` at the final column is left alone so the grid can always be escaped.
@@ -588,7 +590,7 @@ user who knows why something is missing is not a user filing a bug about it.
 - Landmarks: `header`, the issues panel, `main` for the viewer. Skip link to the document.
 - The splitter implements the WAI-ARIA window-splitter pattern: `role="separator"`, focusable, `aria-orientation`, `aria-valuenow/min/max`, arrow keys to nudge and Home/End to snap.
 - The back link is a real anchor with a real `href`, never `href="#"`.
-- Visible focus everywhere. Outlines are never removed.
+- Visible focus everywhere. The default outline is replaced, never removed: every control swaps it for a 3px `focus-visible` ring, and the splitter — a 6px line with no room for one — inverts its own color instead, which measures about 4:1 against its resting state.
 - Jumping to a page scrolls smoothly, so the movement shows you where you went, unless `prefers-reduced-motion` is set, in which case it jumps.
 - Every icon-only control has an accessible name.
 
@@ -615,7 +617,7 @@ We are not going to fix that client-side. The real answer is server-side: tagged
 2. **UX sketches — ✅ [`wireframes/VERA_wireframes.svg`](wireframes/VERA_wireframes.svg)**, drawn in Google Drawings *before* the build. [Live source](https://docs.google.com/drawings/d/1P1lXCZPaLolqYNq0aOk2XJNdWGl8UmqJt4W83rlUnVE/edit?usp=sharing). Kept as-is even where the final implementation differs — they record intent, not a spec.
 3. What's required for a production deployment.
 
-All three are written against a build with **28 unit tests and 200 browser tests across seven spec files**, which is worth stating in the writeups rather than claiming "well tested".
+All three are written against a build with **32 unit tests and 204 browser tests across seven spec files**, which is worth stating in the writeups rather than claiming "well tested".
 
 ### The README is a deliverable too
 
@@ -681,6 +683,8 @@ It is the first file anyone opens, and it is read by people arriving two differe
 | 2026-08-14 | **VERA is the product name**, always in capitals | Shipping the UNDIRT codename; title case | MIRA is set in capitals everywhere on HomeVision's site, so a sibling product rendered as "Vera" reads as a different kind of thing. Latin *verus*, true: MIRA finds the problems, VERA is where a person decides. The mark borrows their faceted construction rather than their shape: a cut slab with a triangle tucked under it, arms uneven so it reads as a check as well as a V. |
 | 2026-08-14 | **Deployed to Vercel, not the existing Apache host** | FTP to the same cPanel box as the portfolio site | The portfolio lives on that host. Deploying here would mean touching the same document root, credentials and `.htaccess` as a site actively being sent to employers, for no benefit. Vercel is a separate blast radius with instant certificates. The rewrite matches **only extensionless paths**, because a blanket rule hands `index.html` back for a missing asset with a 200: the "Unexpected token '<'" white screen that only ever appears after a deploy. |
 | 2026-08-15 | **Scroll tracking is a setting, default on.** The list follows the document unless the user turns it off | Keeping the list permanently still (the decision below); making it follow with no way out | Both behaviors are defensible and neither is obviously right, which is the signal that it belongs to the user rather than to us. Following keeps the issue beside the page it describes, which matters most on a document you do not know — and the tint is easy to miss when it lands off-screen. Not following leaves a panel you scrolled on purpose where you left it. Default on because a first-time reader benefits from being taken there, and `block: 'nearest'` means it does nothing when the row is already visible, so it never jerks the list while you read down it. This supersedes the row below, which had the reasoning right but forced the answer. |
+| 2026-08-15 | **The queue row says why, not just what** | The status pill alone; a count typed into the catalog | "Awaiting review" raises the question it cannot answer — waiting on what? A queue where every row looks equally stuck has to be triaged one row at a time, by opening each. The row now carries the blocking count of the version you would land on, in the severity's own color, and switches to what was accepted once the document is submitted. Counted from the fixture rather than stored beside the catalog, because the number is a property of the findings and one typed into the catalog goes quietly wrong the first time a fixture changes. |
+| 2026-08-15 | **Each row shows its cover page, as a stack of paper** | No thumbnail; a generic file glyph on every row | A list of documents that shows none of them makes every row the same shape, and a first page is recognizable long before a filename is readable. The sheets behind are the one piece of pure decoration, and they earn it by saying "multi-page" without spending text on it. pdf.js is ~420 KB and this is the first screen anyone loads, so the render is lazily imported and the row reserves its space and shimmers until it arrives. Rows without a PDF get the same stack, empty — not a generic glyph and not somebody else's page: a pending document has no cover yet, and an empty sheet is what that looks like. |
 | 2026-08-14 | **No pinch-to-zoom — CUT** | Handling the gesture and re-rendering pages at a new scale; letting the browser zoom the page | The expected gesture on an iPad and a real gap, named rather than hidden. Doing it properly reaches into the reserved page heights and the reading-line measurement, both load-bearing. Letting the browser zoom is a one-liner that breaks a fixed app shell. Deferred with the consequence stated: on a tablet the page renders at the width we choose and cannot be magnified. |
 
 ---

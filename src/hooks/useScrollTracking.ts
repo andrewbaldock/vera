@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 
 const STORAGE_KEY = 'vera.scrollTracking'
 
@@ -11,7 +11,12 @@ const STORAGE_KEY = 'vera.scrollTracking'
  * Default on, because the highlight is easy to miss when it lands off-screen and
  * a reviewer working an unfamiliar document benefits from being taken there.
  * Stored as a word rather than a boolean so a missing key and an explicit "off"
- * cannot be confused: absent means never asked, which is on.
+ * stay distinguishable: absent means never asked, which is on.
+ *
+ * Written when the user changes it, never on mount. An effect keyed on the value
+ * would fire on first render and stamp "on" into storage before anyone touched
+ * anything — which erases "never asked" and makes the three-state encoding above
+ * a two-state one that only looks careful.
  */
 export function useScrollTracking() {
   const [tracking, setTracking] = useState(() => {
@@ -24,13 +29,14 @@ export function useScrollTracking() {
     }
   })
 
-  useEffect(() => {
+  const choose = useCallback((next: boolean) => {
+    setTracking(next)
     try {
-      localStorage.setItem(STORAGE_KEY, tracking ? 'on' : 'off')
+      localStorage.setItem(STORAGE_KEY, next ? 'on' : 'off')
     } catch {
       // It simply doesn't persist; the toggle still works for this session.
     }
-  }, [tracking])
+  }, [])
 
-  return [tracking, setTracking] as const
+  return [tracking, choose] as const
 }

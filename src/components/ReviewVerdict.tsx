@@ -210,7 +210,7 @@ export function ReviewVerdict({
                 aria-pressed={onToggleSeverity ? !isHidden : undefined}
                 aria-label={isHidden ? `${label} — hidden, show them` : `${label} — hide them`}
                 className={cn(
-                  'flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 text-sm transition-opacity',
+                  'flex min-h-11 items-center gap-1.5 rounded-full border px-2.5 text-sm transition-opacity',
                   'focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none',
                   onToggleSeverity && counts[severity] > 0
                     ? 'hover:bg-accent active:bg-accent'
@@ -238,7 +238,7 @@ export function ReviewVerdict({
                   : `${doneCount} marked done — hide them`
               }
               className={cn(
-                'flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 text-sm transition-opacity',
+                'flex min-h-11 items-center gap-1.5 rounded-full border px-2.5 text-sm transition-opacity',
                 'hover:bg-accent active:bg-accent',
                 'focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none',
                 hideDone && 'opacity-50',

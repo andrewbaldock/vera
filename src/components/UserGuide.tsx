@@ -140,7 +140,7 @@ export function UserGuide({ trigger }: { trigger: React.ReactNode }) {
             </li>
             <li>
               <span className="font-medium text-foreground">The list can follow the document.</span>{' '}
-              Scroll tracking, in the list’s ⋮ menu, scrolls the issues along with the page you’re
+              Scroll Tracking, in the list’s ⋮ menu, scrolls the issues along with the page you’re
               on. Turn it off and the list stays exactly where you put it — the issues on the page
               are still highlighted either way.
             </li>

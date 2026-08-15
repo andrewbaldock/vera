@@ -6,6 +6,7 @@ import {
   groupByPage,
   isBlocking,
   numberByPage,
+  sortIssues,
 } from './review'
 import type { Issue, Review, Severity } from '@/types/review'
 
@@ -116,9 +117,50 @@ describe('numbering', () => {
     numberByPage(original)
     expect(original.map((i) => i.id)).toEqual(['c', 'a'])
   })
+})
 
-  it('handles a clean document', () => {
-    expect(numberByPage([])).toEqual([])
+describe('sorting', () => {
+  // a=1 (p1), b=2 (p5), c=3 (p5), d=4 (p9).
+  const issues = numberByPage([
+    issue('a', 'minor', 1),
+    issue('b', 'critical', 5),
+    issue('c', 'major', 5),
+    issue('d', 'critical', 9),
+  ])
+
+  it('breaks every tie, so the same set always comes back in the same order', () => {
+    // The comparator has four keys, and only a total ordering makes the list
+    // stable. Left partial, two issues of one severity on one page would swap
+    // places depending on the order they arrived in — the list reshuffling
+    // under a filter that should not have touched it.
+    const forward = sortIssues(issues, 'severity')
+    const backward = sortIssues([...issues].reverse(), 'severity')
+
+    expect(forward.map((i) => i.id)).toEqual(['b', 'd', 'c', 'a'])
+    expect(backward.map((i) => i.id)).toEqual(forward.map((i) => i.id))
+  })
+
+  it('sinks what is handled, because severity order is a worklist', () => {
+    const sorted = sortIssues(issues, 'severity', new Set(['b']))
+    // 'b' is the worst issue in the set and still goes last: what is left to do
+    // belongs at the top.
+    expect(sorted.map((i) => i.id)).toEqual(['d', 'c', 'a', 'b'])
+  })
+
+  it('leaves a handled issue in place in page order, because that is a map', () => {
+    // Moving it would misdescribe where things are in the document.
+    expect(sortIssues(issues, 'page', new Set(['a'])).map((i) => i.id)).toEqual([
+      'a',
+      'b',
+      'c',
+      'd',
+    ])
+  })
+
+  it('does not mutate the array it was given', () => {
+    const original = [...issues]
+    sortIssues(original, 'severity')
+    expect(original.map((i) => i.id)).toEqual(['a', 'b', 'c', 'd'])
   })
 })
 
