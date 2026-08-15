@@ -3,7 +3,7 @@ import type { Severity } from '@/types/review'
 /**
  * Severity's presentation, in one place.
  *
- * The colours were already single-sourced as CSS tokens; the *mapping* from a
+ * The colors were already single-sourced as CSS tokens; the *mapping* from a
  * severity to its presentation was not, and had started to appear in a second
  * component. Two copies of a lookup is how the list and the strip end up
  * disagreeing about what "major" looks like.
@@ -26,10 +26,10 @@ export const SEVERITY_LABEL: Record<Severity, string> = {
 }
 
 /**
- * Thickness, so severity survives greyscale.
+ * Thickness, so severity survives grayscale.
  *
  * The thumb strip's marks sit in a 29px-wide segment with no room for a label,
- * so colour would otherwise be carrying that meaning alone — which is the one
+ * so color would otherwise be carrying that meaning alone — which is the one
  * thing the accessibility section says we never do.
  */
 export const SEVERITY_MARK_HEIGHT: Record<Severity, string> = {

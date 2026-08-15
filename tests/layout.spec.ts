@@ -4,7 +4,7 @@ import { test, expect, type Page } from '@playwright/test'
  * The layout tests.
  *
  * These assert *structure*, not pixels. No screenshot baselines: WebKit and
- * Chromium rasterise type differently, so a baseline suite would need one set
+ * Chromium rasterize type differently, so a baseline suite would need one set
  * per engine and would churn on every UI change. What is actually worth
  * asserting is invariant across both engines — the page never scrolls
  * sideways, the shell owns the height, the correct shape renders, and every

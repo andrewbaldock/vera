@@ -8,7 +8,7 @@ import { useReview } from '@/hooks/useReview'
  * A standalone harness for react-pdf. Not product code — deliberately
  * unstyled, self-contained, and kept.
  *
- * It was written before the viewer to prove the four behaviours the real one
+ * It was written before the viewer to prove the four behaviors the real one
  * depends on, while none of them were load-bearing yet:
  *
  *   1. Every page renders, with a text layer, all mounted at once.
@@ -75,7 +75,7 @@ export function ReactPdfDemo() {
    * explicit rather than relying on scroll-margin.
    *
    * Smooth by default — moving the page under someone tells them *where* they
-   * went, which a hard jump doesn't. But honour prefers-reduced-motion: for
+   * went, which a hard jump doesn't. But honor prefers-reduced-motion: for
    * some people a long smooth scroll is nauseating, not helpful.
    */
   const scrollToPage = useCallback((page: number) => {

@@ -15,7 +15,7 @@
 @theme inline {
     --font-sans: 'Geist Variable', sans-serif;
     /* Severity is product vocabulary, so it lives in the token layer with
-       everything else. A component never names a colour. */
+       everything else. A component never names a color. */
     --color-severity-critical: var(--severity-critical);
     --color-severity-major: var(--severity-major);
     --color-severity-minor: var(--severity-minor);

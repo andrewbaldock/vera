@@ -1,7 +1,7 @@
 /**
  * The shape of the review endpoint's response.
  *
- * Modelled from the supplied `review_mock.json` rather than from the prose in
+ * Modeled from the supplied `review_mock.json` rather than from the prose in
  * the brief — where the two disagree, the payload wins. Two things the prose
  * doesn't tell you: `user` is an object rather than a string, and an issue
  * carries a `page` number and nothing else about its location.

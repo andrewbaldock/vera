@@ -25,7 +25,7 @@ The final implementation may differ — the sketches record intent, not a spec.
   first thing you read, not by a caption next to a disabled button.
 - **A status bar above the viewer** names the page in focus and the issues on it.
 - **A thumb strip** down the right edge — one proportional rectangle per page, numbered,
-  marked with a coloured bar per issue on that page.
+  marked with a colored bar per issue on that page.
 - **A checkbox per issue** — the user's private notepad, never an input to `canSubmit`.
 
 Reasoning for each of these is in [`../DESIGN.md`](../DESIGN.md).

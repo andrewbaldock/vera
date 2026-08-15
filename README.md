@@ -57,7 +57,7 @@ bunx playwright install chromium webkit
 ### Two things worth knowing
 
 **`?demo`** — <http://localhost:1337/?demo> opens the react-pdf spike that proved the viewer
-behaviours before the real one was written. It is kept as evidence rather than deleted, and
+behaviors before the real one was written. It is kept as evidence rather than deleted, and
 it is lazy-loaded so it costs regular users nothing.
 
 **Testing on a phone.** The dev server binds all interfaces, and Xcode's iOS Simulator shares
@@ -81,7 +81,7 @@ the code, and it ends in a decision log. If something here isn't explained there
 ```
 src/
   lib/review.ts        the product rules as pure functions — canSubmit lives here
-  types/review.ts      the payload shape, modelled from the mock, not the prose
+  types/review.ts      the payload shape, modeled from the mock, not the prose
   hooks/useReview.ts   fetch + validate + loading/error/ready
   hooks/useTheme.ts    system / light / dark
   components/          the shell, the panels, the thumb strip, the splitter
@@ -114,7 +114,7 @@ scrolls, that each width renders the correct shape *and not the other one*, that
 submit button is visible and on screen, and that every touch target clears 44px. Then a sweep
 from 320 to 1920 in 40px steps, because a fixed matrix sails straight past the 1007px disaster.
 
-No screenshot baselines — WebKit and Chromium rasterise type differently, so baselines would
+No screenshot baselines — WebKit and Chromium rasterize type differently, so baselines would
 need a set each and would churn on every change. Structure is what's actually invariant.
 
 **Caveat worth stating:** Playwright's WebKit is what Safari is built on, but it is not Safari,
@@ -131,9 +131,9 @@ regulated industry, used all day, by people doing careful work.
   announces nothing, so a keyboard user walks past the most important control on the page and
   is never told why. Focusable, plus `aria-describedby` pointing at the blocking summary, means
   reaching it explains itself. The click handler no-ops while blocked.
-- **Severity is never carried by colour alone.** Rows pair the dot with a text label; in the
+- **Severity is never carried by color alone.** Rows pair the dot with a text label; in the
   thumb strip, where a 29px-wide segment has no room for words, the marks differ in *thickness*
-  as well as hue, so they survive greyscale.
+  as well as hue, so they survive grayscale.
 - **The splitter is a real WAI-ARIA window splitter** — `role="separator"`, `aria-valuenow`,
   arrow keys and Home/End. Radix has no such primitive, so it's authored here to the system's
   own conventions rather than left as a mouse-only gap.
@@ -141,7 +141,7 @@ regulated industry, used all day, by people doing careful work.
   scrub control instead of 34 tap targets means `role="slider"`, `aria-valuetext`, arrow keys
   and Home/End come along for free. A control built for touch delivers keyboard navigation of
   the entire document.
-- **Landmarks and a skip link.** `header`, a labelled issues region, `main` for the document,
+- **Landmarks and a skip link.** `header`, a labeled issues region, `main` for the document,
   and a skip link so a keyboard user doesn't walk 25 issues to reach the document.
 - **Nothing essential is behind `:hover`**, because the wide layout appears on touch screens.
   Hover is layered on top as an enhancement only.
@@ -195,7 +195,7 @@ not the resolved tree. The list is short on purpose, and every line should be de
 | `react-pdf` | ^10.4.1 | Thin, maintained React binding over Mozilla's pdf.js. Adds no rendering of its own — it saves writing the worker and text-layer glue, not the engine. |
 | `pdfjs-dist` | 5.4.296 | The PDF engine. **Pinned exactly**, with no caret: the worker version must match what `react-pdf` loads or it throws at runtime. Declared rather than relied on via hoisting. |
 | `tailwindcss`, `@tailwindcss/vite` | ^4.3.3 | Styling, and the token layer the whole theme rests on. |
-| `radix-ui` | ^1.6.7 | Accessible behaviour under the shadcn components — menus, focus management, dismissal. The part that is genuinely hard to write. |
+| `radix-ui` | ^1.6.7 | Accessible behavior under the shadcn components — menus, focus management, dismissal. The part that is genuinely hard to write. |
 | `lucide-react` | ^1.31.0 | Icons. Also, as it happens, the icon set HomeVision's own site uses. |
 | `class-variance-authority` | ^0.7.1 | Typed component variants. Arrives with shadcn. |
 | `clsx`, `tailwind-merge` | ^2.1.1 / ^3.6.0 | Conditional classes, with later Tailwind utilities correctly overriding earlier ones. The `cn()` helper. |
@@ -220,7 +220,7 @@ not the resolved tree. The list is short on purpose, and every line should be de
 **Vite + React + TypeScript + Tailwind + shadcn/ui** (Radix underneath).
 
 No SSR need for a post-upload page behind auth, so Vite rather than Next.js — and every line
-of it is explainable, which a framework whose behaviour I haven't shipped in production would
+of it is explainable, which a framework whose behavior I haven't shipped in production would
 not be.
 
 The component library is a deliberate call rather than a default. This page has about ten
@@ -231,7 +231,7 @@ screen looks small enough to hand-roll, and twenty screens later there are twent
 different buttons.
 
 shadcn specifically, because it copies source into the repo rather than shipping a runtime
-dependency: Radix supplies the hard behaviour, the skin stays ours to edit, tokens are CSS
+dependency: Radix supplies the hard behavior, the skin stays ours to edit, tokens are CSS
 variables, and the registry keeps it re-syncable rather than a fork.
 
 The splitter and the thumb strip are authored here, since Radix has no such primitives —

@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils'
 import type { Severity } from '@/types/review'
 
 /**
- * Severity is never carried by colour alone, so the dot is always accompanied
+ * Severity is never carried by color alone, so the dot is always accompanied
  * by its text label at the call site.
  */
 export function SeverityDot({ severity, className }: { severity: Severity; className?: string }) {
@@ -16,7 +16,7 @@ export function SeverityDot({ severity, className }: { severity: Severity; class
 }
 
 /**
- * The thumb strip's per-issue mark: colour *and* thickness, because a 29px-wide
+ * The thumb strip's per-issue mark: color *and* thickness, because a 29px-wide
  * segment has no room for a label. It stays out of the accessibility tree
  * because the slider announces the same fact through `aria-valuetext`.
  */

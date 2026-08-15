@@ -44,7 +44,7 @@ export function IssuesPanel({ issues, focusedPage, onSeek }: IssuesPanelProps) {
                 onFocusedPage && 'bg-focus-tint hover:bg-focus-tint',
               )}
             >
-              {/* Not colour alone: the focused rows carry an edge marker too. */}
+              {/* Not color alone: the focused rows carry an edge marker too. */}
               {onFocusedPage && (
                 <span className="absolute inset-y-0 left-0 w-[3px] bg-focus-edge" aria-hidden />
               )}

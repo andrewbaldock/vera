@@ -17,7 +17,7 @@ import type { DocumentPage } from '@/types/review'
  * users navigation of the entire document.
  *
  * Sizing: **one scale factor, computed once, multiplied into every page's real
- * width and height.** Nothing is normalised — a Legal page among Letter pages
+ * width and height.** Nothing is normalized — a Legal page among Letter pages
  * renders visibly taller, which is the most common real anomaly and the whole
  * point of the rule.
  *
