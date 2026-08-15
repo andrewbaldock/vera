@@ -13,13 +13,26 @@ import type { CatalogDocument } from '@/lib/documents'
  * un-submit feature, and the spec's flow has no reopened status and no arrow
  * back. Corrections happen by uploading a new version.
  */
-export function DemoReset({ document }: { document: CatalogDocument }) {
+export function DemoReset({
+  document,
+  onReset,
+}: {
+  document: CatalogDocument
+  /**
+   * Told, not left to notice. The queue reads the stored submission once on
+   * mount, so clearing storage underneath it leaves the row saying "Submitted"
+   * until a reload — a reset control whose effect you cannot see is worse than
+   * none, because the next thing the evaluator tries is submitting again.
+   */
+  onReset?: () => void
+}) {
   const [justReset, setJustReset] = useState(false)
 
   function reset() {
     for (const version of document.versions) {
       clearSubmission({ id: document.id, version: version.version })
     }
+    onReset?.()
     setJustReset(true)
     window.setTimeout(() => setJustReset(false), 2500)
   }

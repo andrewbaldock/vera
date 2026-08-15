@@ -93,6 +93,14 @@ test('the demo reset puts a submitted review back', async ({ page }) => {
 
   await page.getByRole('button', { name: /Reset demo data/ }).click()
 
+  // The row has to answer immediately, on this page, with no reload. The queue
+  // reads the stored submission once on mount, so clearing storage underneath it
+  // left the row still reading "Submitted" — and this test did not see it,
+  // because it navigated away before looking.
+  const row = page.getByRole('list', { name: 'Documents' }).getByRole('listitem').first()
+  await expect(row).toContainText('Awaiting review')
+  await expect(row).toContainText('must be fixed')
+
   // Without the reset, whoever is evaluating the build gets one shot at the most
   // important interaction in it.
   await page.goto(`${REVIEW}?v=3`)

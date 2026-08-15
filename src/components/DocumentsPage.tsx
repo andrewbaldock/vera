@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { ChevronRight } from 'lucide-react'
 import { UserMenu } from '@/components/UserMenu'
@@ -116,12 +116,14 @@ export function DocumentsPage() {
   // has to be able to say "Submitted" for a review that already is. The version
   // and not just a boolean, because the row then has to summarize *that* one.
   const [submittedVersion, setSubmittedVersion] = useState<number | null>(null)
-  useEffect(() => {
+  const readSubmittedVersion = useCallback(() => {
     const found = REVIEW_DOCUMENT.versions.find(
       (version) => readSubmission({ id: REVIEW_DOCUMENT.id, version: version.version }) !== null,
     )
     setSubmittedVersion(found?.version ?? null)
   }, [])
+  // On mount, and again whenever the demo reset clears the storage it reads.
+  useEffect(() => readSubmittedVersion(), [readSubmittedVersion])
   const submitted = submittedVersion !== null
 
   /**
@@ -207,7 +209,7 @@ export function DocumentsPage() {
           ))}
         </ul>
 
-          <DemoReset document={REVIEW_DOCUMENT} />
+          <DemoReset document={REVIEW_DOCUMENT} onReset={readSubmittedVersion} />
         </div>
       </div>
     </div>
