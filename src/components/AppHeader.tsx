@@ -1,5 +1,4 @@
-import { Check, ChevronDown, ChevronLeft, FileUp, MoreHorizontal } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import { Check, ChevronDown, ChevronLeft, MoreHorizontal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -10,6 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { REVIEW_DOCUMENT } from '@/lib/documents'
 import { UserMenu } from '@/components/UserMenu'
+import { HelpButton } from '@/components/UserGuide'
 import { Wordmark } from '@/components/Wordmark'
 import { PRODUCT_NAME } from '@/lib/brand'
 import { Link } from 'react-router'
@@ -31,12 +31,6 @@ interface DocumentFact {
   value: string
   /** Set when the value is a moment, so it renders as a real `<time>`. */
   iso?: string
-  /**
-   * Not `Upload` or `CloudUpload`: both already mean the *action* elsewhere in
-   * this header, and the same glyph on a fact reads as a button that does
-   * nothing. `FileUp` is the document, not the verb.
-   */
-  Icon?: LucideIcon
 }
 
 /**
@@ -58,12 +52,7 @@ function uploadedAt(iso: string) {
 function facts(review: Review): DocumentFact[] {
   return [
     { label: 'Version', value: `v${review.version}` },
-    {
-      label: 'Uploaded',
-      value: uploadedAt(review.uploaded_at),
-      iso: review.uploaded_at,
-      Icon: FileUp,
-    },
+    { label: 'Uploaded', value: uploadedAt(review.uploaded_at), iso: review.uploaded_at },
   ]
 }
 
@@ -129,9 +118,19 @@ export function AppHeader({ review, actions, version, onVersionChange }: AppHead
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="min-h-11 shrink-0 gap-1 px-2 text-xs font-medium tabular-nums"
+            className="min-h-11 shrink-0 gap-1.5 px-2 text-xs font-medium tabular-nums"
           >
             v{version}
+            {/* The upload date belongs to the version, so it rides the control
+                that changes it rather than floating at the far end of the bar
+                where it read as a fact about the document. Dropped below `sm`,
+                where the title needs the room; the ⋯ menu still carries it. */}
+            <time
+              dateTime={review.uploaded_at}
+              className="hidden text-[11px] font-normal text-muted-foreground sm:inline"
+            >
+              {uploadedAt(review.uploaded_at)}
+            </time>
             <ChevronDown className="size-3.5" aria-hidden />
             <span className="sr-only">Change version</span>
           </Button>
@@ -164,17 +163,10 @@ export function AppHeader({ review, actions, version, onVersionChange }: AppHead
       {/* Everything after this is pushed to the far end. */}
       <span className="flex-1" aria-hidden />
 
-      {/* Inline in the full shape; behind the ⋯ below it. Same three facts. */}
-      <dl className="hidden shrink-0 items-center gap-4 text-xs text-muted-foreground lg:flex">
-        {documentFacts.map((fact) => (
-          <div key={fact.label} className="flex items-center gap-1">
-            <dt className="sr-only">{fact.label}</dt>
-            {fact.Icon && <fact.Icon className="size-3.5 shrink-0" aria-hidden />}
-            <dd>{fact.iso ? <time dateTime={fact.iso}>{fact.value}</time> : fact.value}</dd>
-          </div>
-        ))}
-      </dl>
-
+      {/* No inline facts in the full shape: the version and its upload date are
+          both on the version control now, and repeating them at the far end of
+          the bar said the same thing twice in two places. The ⋯ menu below `lg`
+          still carries them, because the date is dropped from the button there. */}
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -194,6 +186,7 @@ export function AppHeader({ review, actions, version, onVersionChange }: AppHead
         </DropdownMenuContent>
       </DropdownMenu>
 
+      <HelpButton />
       <UserMenu />
 
       {actions && <div className="hidden shrink-0 lg:block">{actions}</div>}

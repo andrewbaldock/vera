@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { ChevronRight } from 'lucide-react'
 import { UserMenu } from '@/components/UserMenu'
+import { HelpButton } from '@/components/UserGuide'
 import { Wordmark } from '@/components/Wordmark'
 import { DemoReset } from '@/components/DemoReset'
 import {
@@ -71,6 +72,7 @@ export function DocumentsPage() {
         <Wordmark className="py-4" />
         <span className="h-5 w-px shrink-0 bg-border" aria-hidden />
         <h1 className="min-w-0 flex-1 truncate py-4 text-base font-semibold">Documents</h1>
+        <HelpButton />
         <UserMenu />
       </header>
 

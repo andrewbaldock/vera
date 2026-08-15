@@ -7,6 +7,9 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { PRODUCT_NAME } from '@/lib/brand'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+import { CircleHelp } from 'lucide-react'
 
 /**
  * How to use it, from inside it. A compliance tool is used all day by people who
@@ -17,6 +20,26 @@ import { PRODUCT_NAME } from '@/lib/brand'
  * It is also where the app states what it does not do, so a user who knows why
  * is not a user filing a bug.
  */
+
+/**
+ * The guide's own control, so help is one press from the work rather than
+ * behind the avatar with profile and log out — things you touch once a month,
+ * beside the one thing a first-time user needs in the first minute. Icon-only:
+ * a question mark in a circle needs no label at any width, and the header is
+ * the most contested space in the app.
+ */
+export function HelpButton({ className }: { className?: string }) {
+  return (
+    <UserGuide
+      trigger={
+        <Button variant="ghost" size="icon" className={cn('size-11 shrink-0', className)}>
+          <CircleHelp className="size-5" aria-hidden />
+          <span className="sr-only">Using {PRODUCT_NAME}</span>
+        </Button>
+      }
+    />
+  )
+}
 
 function Key({ children }: { children: React.ReactNode }) {
   return (
@@ -67,6 +90,12 @@ export function UserGuide({ trigger }: { trigger: React.ReactNode }) {
               only clear when a new version comes back clean.
             </li>
             <li>
+              <span className="font-medium text-foreground">Notes are yours as well.</span> Add one
+              to any issue to record what you found out — who you called, which document you
+              checked, why a minor one is fine to accept. Select <span className="font-medium text-foreground">Note</span>{' '}
+              on a row, or reach it with the keyboard.
+            </li>
+            <li>
               <span className="font-medium text-foreground">The severity counts are filters.</span>{' '}
               Select one to hide those issues. The count stays put, so the summary keeps telling
               you the truth about the document.
@@ -84,12 +113,16 @@ export function UserGuide({ trigger }: { trigger: React.ReactNode }) {
             <Row keys={<><Key>↑</Key><Key>↓</Key></>}>Move between issues</Row>
             <Row keys={<Key>Enter</Key>}>Open that issue’s page, without losing your place</Row>
             <Row keys={<><Key>→</Key><span className="text-muted-foreground">/</span><Key>Tab</Key></>}>
-              Cross to the Done box
+              Across the row — the note, then the Done box
             </Row>
             <Row keys={<><Key>←</Key><span className="text-muted-foreground">/</span><Key>⇧</Key><Key>Tab</Key></>}>
-              Back to the issue
+              Back toward the issue
             </Row>
             <Row keys={<Key>Space</Key>}>Tick an issue done</Row>
+            <Row keys={<Key>Esc</Key>}>
+              Leave a note without saving it — <Key>Enter</Key> saves, <Key>⇧</Key>
+              <Key>Enter</Key> is a new line
+            </Row>
             <Row keys={<><Key>⌘</Key><Key>F</Key></>}>
               Search the whole document — every page is loaded, so your browser’s own find
               reaches all of it
@@ -112,9 +145,14 @@ export function UserGuide({ trigger }: { trigger: React.ReactNode }) {
               are still highlighted either way.
             </li>
             <li>
-              <span className="font-medium text-foreground">Your Done ticks are per version.</span>{' '}
-              A new version is a new set of findings, so ticks don’t carry over — one from an
-              older version would tell you something was handled when it wasn’t.
+              <span className="font-medium text-foreground">
+                Notes carry across versions. Done ticks don’t.
+              </span>{' '}
+              A note is something you learned about the property — “confirmed the measurement by
+              phone” is still true when a new version arrives, so it stays with the issue. A tick
+              means “I’ve handled this”, and a new version is a new set of findings, so a tick
+              carried over would tell you something was handled when it wasn’t. Ticks start clean
+              each version; notes are waiting for you.
             </li>
           </ul>
         </section>

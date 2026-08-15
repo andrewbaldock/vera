@@ -92,6 +92,8 @@ export function DocumentViewer({
    * on every later resize.
    */
   const appliedSeek = useRef(-1)
+  /** The current reading-line measurement, so a settled seek can run it once. */
+  const measureRef = useRef<() => void>(() => {})
   const [available, setAvailable] = useState(0)
   /**
    * Whether `<Document>` has swapped its loading message for the pages. Until it
@@ -179,6 +181,11 @@ export function DocumentViewer({
       setNearPage((previous) => (previous === current ? previous : current))
     }
 
+    // Held so the seek can measure once the scroll it started has settled.
+    // Measurement is otherwise driven entirely by scroll events, and a seek
+    // suppresses those for the length of its own scroll.
+    measureRef.current = measure
+
     const onScroll = () => {
       if (frame) return
       frame = requestAnimationFrame(measure)
@@ -231,6 +238,13 @@ export function DocumentViewer({
 
     const release = () => {
       suppressUntilSettled.current = false
+      // Measure once, here. Measurement runs off scroll events, and by the time
+      // suppression lifts the scroll may already be over — `scrollend` fires
+      // before the settle timer whenever the scroll is short or the machine is
+      // quick. No further scroll event then arrives, so without this the
+      // focused page keeps whatever value it had before the seek: the document
+      // sits on page 7 while the strip and status bar say page 1.
+      measureRef.current()
     }
     const timer = window.setTimeout(release, behavior === 'instant' ? 0 : SCROLL_SETTLE_MS)
     scroller.addEventListener('scrollend', release, { once: true })

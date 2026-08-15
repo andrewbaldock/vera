@@ -52,6 +52,25 @@ describe('the demo catalog', () => {
     expect(resolved.issues.length).toBeGreaterThan(0)
   })
 
+  it('keeps a surviving finding’s id across versions, which is what notes hang on', () => {
+    const [v2, v3] = FIXTURES.map((f) => f.payload)
+    if (!isReview(v2) || !isReview(v3)) throw new Error('fixtures are not reviews')
+
+    // A note is stored per document and per issue id, so the same finding
+    // reappearing in a later version has to be the same id or the note silently
+    // belongs to nothing. Matched on title because that is what makes two
+    // entries "the same finding" to a reader.
+    const idByTitle = new Map(v2.issues.map((issue) => [issue.title, issue.id]))
+    const survivors = v3.issues.filter((issue) => idByTitle.has(issue.title))
+
+    expect(survivors.length).toBeGreaterThan(0)
+    for (const issue of survivors) {
+      expect(issue.id, `"${issue.title}" changed id between versions`).toBe(
+        idByTitle.get(issue.title),
+      )
+    }
+  })
+
   it('shares one PDF across versions, which is why they must be one document', () => {
     const urls = new Set(FIXTURES.map((f) => (f.payload as { document: { pdf_url: string } }).document.pdf_url))
     expect(urls.size).toBe(1)

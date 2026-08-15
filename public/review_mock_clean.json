@@ -186,42 +186,42 @@
   },
   "issues": [
     {
-      "id": "issue_c1",
+      "id": "issue_13",
       "title": "Low Resolution Exterior Photos",
       "description": "2 of 6 exterior photographs on pages 21-22 have resolution below the 300 DPI minimum required threshold.",
       "severity": "minor",
       "page": 21
     },
     {
-      "id": "issue_c2",
+      "id": "issue_14",
       "title": "Incomplete Market Trend Data",
       "description": "The market conditions table on page 10 is missing Q3 2024 data. All four quarters should be represented for a complete 12-month trend analysis.",
       "severity": "minor",
       "page": 10
     },
     {
-      "id": "issue_c3",
+      "id": "issue_15",
       "title": "Methodology Section Incomplete",
       "description": "The scope of work on page 31 does not describe the regression analysis methodology referenced in the GLA adjustment rationale on page 16.",
       "severity": "minor",
       "page": 31
     },
     {
-      "id": "issue_c4",
+      "id": "issue_16",
       "title": "Comparable Photo Caption Mismatch",
       "description": "The photo labeled 'Front Exterior \u2014 509 Birch Lane' on page 26 appears to show the same property as the photo on page 24 labeled '118 Oak Avenue'.",
       "severity": "minor",
       "page": 26
     },
     {
-      "id": "issue_c5",
+      "id": "issue_17",
       "title": "Site Improvement Cost Not Sourced",
       "description": "The renovation cost estimates in the table on page 6 (totaling $78,700) are listed without attribution. Source should be noted (owner interview, receipts, etc).",
       "severity": "minor",
       "page": 6
     },
     {
-      "id": "issue_c6",
+      "id": "issue_18",
       "title": "Exposure Time Justification Weak",
       "description": "Exposure time estimate of 30-60 days on page 20 references average DOM of 45 days but doesn't account for the subject's specific characteristics or price point.",
       "severity": "minor",

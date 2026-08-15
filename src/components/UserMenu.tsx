@@ -1,5 +1,4 @@
-import { BookOpen, Check, LogOut, Monitor, Moon, Sun, UserRound } from 'lucide-react'
-import { UserGuide } from '@/components/UserGuide'
+import { Check, LogOut, Monitor, Moon, Sun, UserRound } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -64,19 +63,6 @@ export function UserMenu({ user = CURRENT_USER }: { user?: ReviewUser } = {}) {
           <LogOut className="size-4" aria-hidden />
           Log out
         </DropdownMenuItem>
-
-        <DropdownMenuSeparator />
-
-        {/* asChild so the dialog trigger is the menu item itself. A nested
-            button inside a menuitem would be two things to focus. */}
-        <UserGuide
-          trigger={
-            <DropdownMenuItem onSelect={(event) => event.preventDefault()} className="gap-2">
-              <BookOpen className="size-4 text-muted-foreground" aria-hidden />
-              User guide
-            </DropdownMenuItem>
-          }
-        />
 
         <DropdownMenuSeparator />
 

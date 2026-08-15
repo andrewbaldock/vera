@@ -229,4 +229,47 @@ test.describe('tapping an issue on a phone', () => {
       )
       .toBeGreaterThan(1000)
   })
+
+  /**
+   * On a phone the status bar is the only thing naming what is wrong on the page
+   * in front of you, so it opens by default and each finding opens to its own
+   * description. A title says a finding exists; the description is the finding.
+   */
+  test('the page bar names the findings, and each one opens to its description', async ({
+    page,
+  }) => {
+    await page.goto('/reviews/souj5sd12c8a3f')
+    await expect(page.getByRole('grid', { name: 'Issues' })).toBeVisible()
+    await page
+      .locator('[data-cell$="-0"]')
+      .filter({ hasText: 'Missing Flood Zone Documentation' })
+      .click()
+    await expect(page.locator('.react-pdf__Page__canvas').first()).toBeVisible({ timeout: 20_000 })
+    // Wait for the seek to land before looking for page 7's findings. A canvas
+    // on screen only means the document painted; the bar still says page 1
+    // until the scroll arrives, and the rows below belong to whatever page the
+    // bar is showing.
+    await expect(
+      page.locator('#document-panel').getByText(/page 7/i).first(),
+    ).toBeVisible({ timeout: 20_000 })
+
+    // Open without being asked: both findings on page 7 are named.
+    const finding = page
+      .getByRole('button')
+      .filter({ hasText: 'Missing Flood Zone Documentation' })
+      .last()
+    await expect(finding).toBeVisible({ timeout: 20_000 })
+    await expect(finding).toHaveAttribute('aria-expanded', 'false')
+
+    // Scoped: the issues list carries the same text, and it is in the DOM
+    // behind the other tab.
+    const description = page
+      .locator('#document-panel')
+      .getByText(/no supporting documentation or map excerpt/i)
+    await expect(description).toBeHidden()
+
+    await finding.click()
+    await expect(finding).toHaveAttribute('aria-expanded', 'true')
+    await expect(description).toBeVisible()
+  })
 })

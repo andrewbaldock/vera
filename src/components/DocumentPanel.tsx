@@ -23,9 +23,10 @@ import { cn } from '@/lib/utils'
  * inside a page would be a claim we cannot support, and roughly half these
  * issues are absences ("Missing Summary of Findings") with nothing to point at.
  *
- * It expands rather than truncating. Three issues on one page needs ~580px and a
- * phone has under 300, so collapsed it says how many and expanded it says which,
- * with severity carried by a label as well as a color.
+ * It expands rather than truncating, in two steps. Three issues on one page
+ * needs ~580px and a phone has under 300, so the bar says how many, opening it
+ * says which, and opening a finding says what it actually is. Severity is
+ * carried by a label as well as a color at every step.
  *
  * `z-10` is not arbitrary: react-pdf ships pdf.js's CSS, where `.textLayer` is
  * `z-index: 2` and `.annotationLayer` is `z-index: 3`. At equal z-index the
@@ -53,7 +54,27 @@ export function DocumentPanel({
   onPageInView,
   className,
 }: DocumentPanelProps) {
-  const [expanded, setExpanded] = useState(false)
+  /**
+   * Open by default. This bar is the only thing naming what is wrong on the
+   * page you are looking at, and collapsed it made the reader ask for
+   * information the screen already had. Still a toggle, and the choice sticks
+   * while you scroll: a user who closed it does not want it reopening on every
+   * page that happens to have a finding.
+   */
+  const [expanded, setExpanded] = useState(true)
+
+  /** Which descriptions are open. Independent, not one-at-a-time: two findings
+   *  on a page are usually read together, and closing one to read the next is
+   *  the kind of help nobody asked for. */
+  const [openIssues, setOpenIssues] = useState<ReadonlySet<string>>(new Set())
+
+  function toggleIssue(id: string) {
+    setOpenIssues((previous) => {
+      const next = new Set(previous)
+      if (!next.delete(id)) next.add(id)
+      return next
+    })
+  }
   const count = issuesOnPage.length
   const summary =
     count === 0 ? 'No issues on this page' : `${count} ${count === 1 ? 'issue' : 'issues'}`
@@ -89,22 +110,56 @@ export function DocumentPanel({
         </button>
 
         {expanded && count > 0 && (
-          <ul className="border-t px-3 pb-2">
-            {issuesOnPage.map((issue) => (
-              <li key={issue.id} className="flex items-start gap-2 py-1.5 text-xs">
-                <SeverityDot severity={issue.severity} className="mt-1" />
-                <span className="min-w-0">
-                  <span className="font-medium">
-                    <span className="tabular-nums text-muted-foreground">{issue.number}</span>{' '}
-                    {issue.title}
-                  </span>
-                  {/* Severity as a word, not only as a color. */}
-                  <span className={cn('ms-1.5', SEVERITY_TEXT[issue.severity])}>
-                    {SEVERITY_LABEL[issue.severity]}
-                  </span>
-                </span>
-              </li>
-            ))}
+          /*
+            Each finding opens on its own. A title names the finding; the
+            description *is* the finding, and without it this view can only tell
+            you something is wrong on the page you are looking at. Showing every
+            description at once would push the document off a phone, so they are
+            a second disclosure inside the first, and the list stays capped for
+            the case where several are open at once.
+          */
+          <ul className="max-h-[45dvh] divide-y overflow-y-auto overscroll-contain border-t px-3 pb-2">
+            {issuesOnPage.map((issue) => {
+              const isOpen = openIssues.has(issue.id)
+              return (
+                <li key={issue.id} className="text-xs">
+                  <button
+                    type="button"
+                    onClick={() => toggleIssue(issue.id)}
+                    aria-expanded={isOpen}
+                    className="flex min-h-11 w-full items-start gap-2 py-2 text-start"
+                  >
+                    <SeverityDot severity={issue.severity} className="mt-1 shrink-0" />
+                    <span className="min-w-0 flex-1">
+                      <span className="font-medium">
+                        {/* Hashed for the same reason as the issues list: a bare
+                            number against a title reads as a count. */}
+                        <span className="tabular-nums text-muted-foreground">
+                          <span className="sr-only">Issue </span>
+                          <span aria-hidden>#</span>
+                          {issue.number}
+                        </span>{' '}
+                        {issue.title}
+                      </span>
+                      {/* Severity as a word, not only as a color. */}
+                      <span className={cn('ms-1.5', SEVERITY_TEXT[issue.severity])}>
+                        {SEVERITY_LABEL[issue.severity]}
+                      </span>
+                    </span>
+                    <ChevronDown
+                      className={cn(
+                        'mt-0.5 size-3.5 shrink-0 text-muted-foreground transition-transform',
+                        isOpen && 'rotate-180',
+                      )}
+                      aria-hidden
+                    />
+                  </button>
+                  {isOpen && (
+                    <p className="pb-2 pe-6 ps-4 text-muted-foreground">{issue.description}</p>
+                  )}
+                </li>
+              )
+            })}
           </ul>
         )}
       </div>

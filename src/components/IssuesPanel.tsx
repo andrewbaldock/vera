@@ -305,7 +305,18 @@ export function IssuesPanel({
               <SeverityDot severity={issue.severity} className="mt-1.5" />
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-medium">
-                  <span className="tabular-nums text-muted-foreground">{issue.number}</span>{' '}
+                  {/*
+                    Hashed, because a bare number butted against a title reads as
+                    a quantity: "2 Missing Summary of Findings" says two of them
+                    are missing. The hash is the cheapest thing that can only be
+                    an identifier. Spoken as "Issue 2", since a screen reader has
+                    no such ambiguity to resolve and "hash" is noise.
+                  */}
+                  <span className="tabular-nums text-muted-foreground">
+                    <span className="sr-only">Issue </span>
+                    <span aria-hidden>#</span>
+                    {issue.number}
+                  </span>{' '}
                   {issue.title}
                 </span>
                 {/*
