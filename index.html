@@ -32,7 +32,7 @@
     <!-- viewport-fit=cover is what makes env(safe-area-inset-*) report real
          numbers on iOS. Without it the bottom bar sits under the home indicator. -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <!-- Public name. Codename UNDIRT stays in the code; see src/lib/brand.ts -->
+    <!-- Public name. Codename VERA stays in the code; see src/lib/brand.ts -->
     <title>VERA — Document Review</title>
     <script>
       // Runs before first paint. Without it a dark-mode user gets a white flash
@@ -40,7 +40,7 @@
       // Deliberately duplicated logic — it has to be inline to be early enough,
       // and the duplicate is four lines rather than an import.
       try {
-        var pref = localStorage.getItem('undirt.theme') || 'system'
+        var pref = localStorage.getItem('vera.theme') || 'system'
         var dark =
           pref === 'dark' ||
           (pref === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)

@@ -9,9 +9,16 @@ import { Splitter } from '@/components/Splitter'
 import { ThumbStrip } from '@/components/ThumbStrip'
 import { useReview } from '@/hooks/useReview'
 import { DEFAULT_VERSION, REVIEW_DOCUMENT, versionOf } from '@/lib/documents'
-import { canSubmit, groupByPage, numberByPage } from '@/lib/review'
+import {
+  canSubmit,
+  groupByPage,
+  numberByPage,
+  sortIssues,
+  visibleIssues,
+  type SortMode,
+} from '@/lib/review'
 import { cn } from '@/lib/utils'
-import type { Review } from '@/types/review'
+import type { Review, Severity } from '@/types/review'
 import type { Submission } from '@/lib/submission'
 import { SubmitReviewButton } from '@/components/SubmitReviewButton'
 
@@ -129,8 +136,31 @@ function ReviewShell({
   const [seek, setSeek] = useState<SeekTarget>({ page: 1, nonce: 0, behavior: 'instant' })
   const splitRef = useRef<HTMLDivElement>(null)
 
+  const [sort, setSort] = useState<SortMode>('page')
+  /**
+   * View state, not review state. It changes what the list shows and never what
+   * the verdict says — the counts stay derived from the whole review, which is
+   * why the same lozenges can both report and filter without lying.
+   */
+  const [hiddenSeverities, setHiddenSeverities] = useState<ReadonlySet<Severity>>(new Set())
+
+  const toggleSeverity = useCallback((severity: Severity) => {
+    setHiddenSeverities((previous) => {
+      const next = new Set(previous)
+      if (next.has(severity)) next.delete(severity)
+      else next.add(severity)
+      return next
+    })
+  }, [])
+
   const issues = useMemo(() => numberByPage(review.issues), [review.issues])
+  // Grouping is deliberately off the *unfiltered* list: the status bar and the
+  // thumb strip describe the document, not the current view of the list.
   const issuesByPage = useMemo(() => groupByPage(issues), [issues])
+  const listed = useMemo(
+    () => sortIssues(visibleIssues(issues, hiddenSeverities), sort),
+    [issues, hiddenSeverities, sort],
+  )
   const submittable = canSubmit(review)
   const submitted = review.status === 'submitted'
 
@@ -227,9 +257,22 @@ function ReviewShell({
           {/* Outside the scroller on purpose. Inside it, the answer to
               acceptance criterion #3 scrolls off the top of the panel — and in
               the full shape nothing else on screen carries the blocking count. */}
-          <ReviewVerdict review={review} submission={submission} className="shrink-0" />
+          <ReviewVerdict
+            review={review}
+            submission={submission}
+            hidden={hiddenSeverities}
+            onToggleSeverity={toggleSeverity}
+            className="shrink-0"
+          />
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-            <IssuesPanel issues={issues} focusedPage={focusedPage} onSeek={openIssue} />
+            <IssuesPanel
+              issues={listed}
+              totalCount={issues.length}
+              focusedPage={focusedPage}
+              onSeek={openIssue}
+              sort={sort}
+              onSortChange={setSort}
+            />
           </div>
         </section>
 

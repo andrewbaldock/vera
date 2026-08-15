@@ -111,7 +111,7 @@ test.describe('once nothing is blocking', () => {
     await page.getByRole('alertdialog').getByRole('button', { name: 'Submit review' }).click()
 
     await expect(verdict(page).getByText('Submitted')).toBeVisible()
-    await expect(verdict(page).getByText(/left unresolved/)).toBeVisible()
+    await expect(verdict(page).getByText(/accepted as-is/)).toBeVisible()
     // Gone, not disabled. The page has answered its own question.
     await expect(submitButton(page)).toHaveCount(0)
   })

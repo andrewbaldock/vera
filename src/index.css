@@ -23,6 +23,12 @@
     --color-severity-critical: var(--severity-critical);
     --color-severity-major: var(--severity-major);
     --color-severity-minor: var(--severity-minor);
+    /* Fills and text are different roles. The dot colors are tuned to read as
+       marks at 8px; the same values as 12px type would fail contrast — amber
+       badly. These are the darkened text-safe pair. */
+    --color-severity-critical-text: var(--severity-critical-text);
+    --color-severity-major-text: var(--severity-major-text);
+    --color-severity-minor-text: var(--severity-minor-text);
     /* The focused page tints three separate regions — the issue rows, the
        status bar and the thumb strip segment. One token keeps them identical. */
     --color-focus-tint: var(--focus-tint);
@@ -106,6 +112,9 @@
     --severity-critical: oklch(0.577 0.245 27.325);
     --severity-major: oklch(0.72 0.15 68);
     --severity-minor: oklch(0.62 0.02 260);
+    --severity-critical-text: oklch(0.505 0.196 27.3);
+    --severity-major-text: oklch(0.505 0.115 62);
+    --severity-minor-text: oklch(0.505 0.018 260);
     --focus-tint: #eef0fe;
     --focus-edge: #5865f3;
 }
@@ -152,6 +161,9 @@
     --severity-critical: oklch(0.704 0.191 22.216);
     --severity-major: oklch(0.79 0.14 70);
     --severity-minor: oklch(0.68 0.02 260);
+    --severity-critical-text: oklch(0.79 0.15 22);
+    --severity-major-text: oklch(0.85 0.12 75);
+    --severity-minor-text: oklch(0.75 0.018 260);
     --focus-tint: #232848;
     --focus-edge: #7c86f7;
 }

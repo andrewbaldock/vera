@@ -135,6 +135,14 @@ export function DocumentViewer({
       if (suppressUntilSettled.current) return
 
       const bounds = scroller.getBoundingClientRect()
+      // In the compact layout the inactive tab is `display: none`, and a hidden
+      // element has no layout box — every page then reports a top of 0, so the
+      // reading line concludes "the last page whose top passed the line" and
+      // pins focusedPage to the final page. Switching back left the viewer
+      // showing page 34 with the canvas window around it, which reads as a
+      // blank document. Measuring something with no geometry is never right.
+      if (bounds.height === 0 || bounds.width === 0) return
+
       const readingLine = bounds.top + Math.min(160, bounds.height * 0.25)
 
       let current = pages[0]?.page_num ?? 1

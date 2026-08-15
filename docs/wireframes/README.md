@@ -3,12 +3,12 @@
 Drawn in Google Drawings **before** the implementation, as a way of settling the layout and
 the flow rather than reverse-justifying whatever the code ended up doing.
 
-**Export:** [`UNDIRT_wireframes.svg`](UNDIRT_wireframes.svg)
+**Export:** [`VERA_wireframes.svg`](VERA_wireframes.svg)
 **Source (live):** https://docs.google.com/drawings/d/1P1lXCZPaLolqYNq0aOk2XJNdWGl8UmqJt4W83rlUnVE/edit?usp=sharing
 
 ## Layout shapes
 
-[`UNDIRT_layouts.drawio`](UNDIRT_layouts.drawio) — editable source, with [`UNDIRT_layouts.svg`](UNDIRT_layouts.svg) exported from it.
+[`VERA_layouts.drawio`](VERA_layouts.drawio) — editable source, with [`VERA_layouts.svg`](VERA_layouts.svg) exported from it.
 
 Six panels drawn **to relative scale**, so the shapes can be compared rather than described: iPhone and iPad-portrait in the compact shape (Issues and Document tabs each), iPad-landscape and desktop in the full shape. Page 13 is the focused page in every panel, which is what makes the contextual highlighting visible — the thumb strip marks it, the two issues on it highlight in the list, and the status bar names them.
 

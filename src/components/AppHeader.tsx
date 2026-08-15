@@ -144,12 +144,12 @@ export function AppHeader({ review, actions, version, onVersionChange }: AppHead
             <span className="sr-only">Document details</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="z-50">
+        <DropdownMenuContent align="end" className="z-50 min-w-56">
           <DropdownMenuLabel>Document details</DropdownMenuLabel>
           {documentFacts.map((fact) => (
             <DropdownMenuItem key={fact.label} disabled className="flex justify-between gap-6">
-              <span className="text-muted-foreground">{fact.label}</span>
-              <span className="font-medium">{fact.value}</span>
+              <span className="shrink-0 text-muted-foreground">{fact.label}</span>
+              <span className="font-medium whitespace-nowrap">{fact.value}</span>
             </DropdownMenuItem>
           ))}
         </DropdownMenuContent>

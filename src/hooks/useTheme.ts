@@ -16,7 +16,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 export type ThemePreference = 'system' | 'light' | 'dark'
 
-const STORAGE_KEY = 'undirt.theme'
+const STORAGE_KEY = 'vera.theme'
 
 function isPreference(value: unknown): value is ThemePreference {
   return value === 'system' || value === 'light' || value === 'dark'

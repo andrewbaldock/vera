@@ -1,6 +1,6 @@
 import { blockingIssues, countBySeverity } from '@/lib/review'
 import { SeverityDot } from '@/components/severity'
-import { SEVERITY_LABEL } from '@/lib/severity'
+import { SEVERITY_LABEL, SEVERITY_TEXT } from '@/lib/severity'
 import { cn } from '@/lib/utils'
 import { CheckCircle2 } from 'lucide-react'
 import type { Review, Severity } from '@/types/review'
@@ -36,6 +36,9 @@ interface ReviewVerdictProps {
   submission?: Submission | null
   /** The compact bottom bar has one line to work with, not four. */
   compact?: boolean
+  /** Severities currently hidden from the list. */
+  hidden?: ReadonlySet<Severity>
+  onToggleSeverity?: (severity: Severity) => void
   className?: string
 }
 
@@ -52,6 +55,8 @@ export function ReviewVerdict({
   review,
   submission,
   compact = false,
+  hidden,
+  onToggleSeverity,
   className,
 }: ReviewVerdictProps) {
   const blocking = blockingIssues(review.issues)
@@ -92,8 +97,8 @@ export function ReviewVerdict({
         <p className="mt-0.5 text-sm text-muted-foreground">{summary}</p>
         <p className="mt-3 text-sm text-muted-foreground">
           {blocked
-            ? `Submitted with ${blocking.length} unresolved.`
-            : `${counts.minor} minor ${counts.minor === 1 ? 'issue' : 'issues'} left unresolved.`}{' '}
+            ? `Submitted with ${blocking.length} outstanding.`
+            : `${counts.minor} minor ${counts.minor === 1 ? 'issue' : 'issues'} accepted as-is.`}{' '}
           Corrections require a new version.
         </p>
       </div>
@@ -104,10 +109,20 @@ export function ReviewVerdict({
     ? `${blocking.length} ${blocking.length === 1 ? 'issue' : 'issues'} must be fixed`
     : 'Ready to submit'
 
+  /**
+   * "Accepted", not "ignored".
+   *
+   * The brief's own wording is "minor may be ignored", and that is fine for a
+   * requirements document — but in the product it is the wrong verb. Ignored
+   * means *not looked at*. What actually happens is that a qualified reviewer
+   * sees the finding, judges it non-material and accepts it, which is the whole
+   * value of the record. No lender wants a compliance file saying six findings
+   * were ignored.
+   */
   const detail = blocked
     ? 'before you can submit'
     : counts.minor > 0
-      ? `${counts.minor} minor ${counts.minor === 1 ? 'issue' : 'issues'} may be ignored`
+      ? `${counts.minor} minor ${counts.minor === 1 ? 'issue' : 'issues'} can be accepted`
       : 'No issues found'
 
   if (compact) {
@@ -124,14 +139,41 @@ export function ReviewVerdict({
       <p className="text-lg font-semibold tracking-tight text-balance">{headline}</p>
       <p className="mt-0.5 text-sm text-muted-foreground">{detail}</p>
 
-      <ul aria-label="Severity breakdown" className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
-        {(Object.keys(counts) as Severity[]).map((severity) => (
-          <li key={severity} className="flex items-center gap-1.5 text-sm">
-            <SeverityDot severity={severity} />
-            <span className="font-medium tabular-nums">{counts[severity]}</span>
-            <span className="text-muted-foreground">{SEVERITY_LABEL[severity]}</span>
-          </li>
-        ))}
+      {/*
+        The breakdown and the filter are the same control on purpose.
+        Crucially the *number* never changes when a severity is hidden — only
+        the opacity does. So the summary keeps telling the truth about the
+        document while the list shows a subset of it, which is what makes it
+        safe for one element to both state the verdict and filter the list.
+      */}
+      <ul aria-label="Severity breakdown" className="mt-3 flex flex-wrap gap-1.5">
+        {(Object.keys(counts) as Severity[]).map((severity) => {
+          const isHidden = hidden?.has(severity) ?? false
+          const label = `${counts[severity]} ${SEVERITY_LABEL[severity]}`
+          return (
+            <li key={severity}>
+              <button
+                type="button"
+                onClick={() => onToggleSeverity?.(severity)}
+                disabled={!onToggleSeverity || counts[severity] === 0}
+                aria-pressed={onToggleSeverity ? !isHidden : undefined}
+                aria-label={isHidden ? `${label} — hidden, show them` : `${label} — hide them`}
+                className={cn(
+                  'flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 text-sm transition-opacity',
+                  'focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none',
+                  onToggleSeverity && counts[severity] > 0
+                    ? 'hover:bg-accent active:bg-accent'
+                    : 'cursor-default',
+                  isHidden && 'opacity-50',
+                )}
+              >
+                <SeverityDot severity={severity} />
+                <span className="font-medium tabular-nums">{counts[severity]}</span>
+                <span className={SEVERITY_TEXT[severity]}>{SEVERITY_LABEL[severity]}</span>
+              </button>
+            </li>
+          )
+        })}
       </ul>
     </div>
   )

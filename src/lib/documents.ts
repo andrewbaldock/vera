@@ -4,7 +4,7 @@ import type { ReviewStatus } from '@/types/review'
  * The demo catalog.
  *
  * There is no documents endpoint — this page belongs to a teammate's ticket, and
- * UNDIRT owns the Review Page. What exists here is the smallest list that gives
+ * VERA owns the Review Page. What exists here is the smallest list that gives
  * the review page somewhere to be opened *from* and somewhere to return *to*,
  * which is what makes the gate demonstrable rather than a one-way trip.
  *

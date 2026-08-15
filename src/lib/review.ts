@@ -79,3 +79,47 @@ export function groupByPage(issues: NumberedIssue[]): Map<number, NumberedIssue[
   }
   return byPage
 }
+
+/** How the list is ordered. Page order is the default; see below. */
+export type SortMode = 'page' | 'severity'
+
+const SEVERITY_RANK: Record<Severity, number> = { critical: 0, major: 1, minor: 2 }
+
+/**
+ * Order the list without touching the numbering.
+ *
+ * The number stays attached to its issue no matter how the rows are arranged —
+ * that is `numberByPage`'s job, and it matters because the same number appears
+ * beside the row and against the document. Sorting rearranges rows; it must
+ * never renumber them.
+ *
+ * Page order is the default because that is the order the document is worked
+ * through when someone goes to fix things. Severity order answers a different
+ * question — *what is worst* — and the verdict above the list already answers
+ * *what is blocking*, so this is a convenience rather than the main event.
+ *
+ * Severity sort falls back to page order within a severity, so the ordering is
+ * total and stable rather than dependent on the input order.
+ */
+export function sortIssues(issues: NumberedIssue[], mode: SortMode): NumberedIssue[] {
+  if (mode === 'page') return [...issues].sort((a, b) => a.page - b.page || a.number - b.number)
+  return [...issues].sort(
+    (a, b) =>
+      SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity] || a.page - b.page || a.number - b.number,
+  )
+}
+
+/**
+ * Hide whole severities from the list.
+ *
+ * Only ever applied to what the list renders. The verdict is computed from the
+ * whole review and stays true while this is on — which is the point: you can
+ * hide the thirteen minors to concentrate on what is blocking, and the summary
+ * still says there are thirteen of them.
+ */
+export function visibleIssues(
+  issues: NumberedIssue[],
+  hidden: ReadonlySet<Severity>,
+): NumberedIssue[] {
+  return hidden.size === 0 ? issues : issues.filter((issue) => !hidden.has(issue.severity))
+}

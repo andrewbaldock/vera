@@ -24,11 +24,14 @@ import type { Review } from '@/types/review'
  * one stays focusable, points at the blocking summary through
  * `aria-describedby`, and simply does nothing when pressed while blocked.
  *
- * The confirmation is not ceremony. "Minor issues may be ignored" is a judgment
- * the user is making on a mortgage file, submission is a one-way door with no
+ * The confirmation is not ceremony. Accepting minor findings is a judgment the
+ * user is making on a mortgage file, submission is a one-way door with no
  * un-submit anywhere in the spec's flow, and the dialog is the one moment to
  * say both things out loud. It names the count rather than saying "some issues"
  * — a number is a thing you can decide against.
+ *
+ * "Accepted", never "ignored": the reviewer looked and judged. The record has to
+ * say that, because it is the record that gets defended later.
  */
 
 interface SubmitReviewButtonProps {
@@ -79,7 +82,7 @@ export function SubmitReviewButton({ review, submittable, onConfirm }: SubmitRev
                   <span className="font-medium text-foreground">
                     {minors} minor {minors === 1 ? 'issue' : 'issues'}
                   </span>{' '}
-                  will be submitted unresolved.
+                  will be accepted as-is.
                 </p>
               )}
               <p>

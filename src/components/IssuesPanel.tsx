@@ -1,7 +1,16 @@
+import { ArrowDownWideNarrow, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { SeverityDot } from '@/components/severity'
-import { SEVERITY_LABEL } from '@/lib/severity'
-import type { NumberedIssue } from '@/lib/review'
+import { SEVERITY_LABEL, SEVERITY_TEXT } from '@/lib/severity'
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import type { NumberedIssue, SortMode } from '@/lib/review'
 
 /**
  * The list, and only the list.
@@ -20,15 +29,66 @@ import type { NumberedIssue } from '@/lib/review'
  * actually lost.
  */
 
-interface IssuesPanelProps {
-  issues: NumberedIssue[]
-  focusedPage: number
-  onSeek: (page: number) => void
+const SORT_LABEL: Record<SortMode, string> = {
+  page: 'Page order',
+  severity: 'Severity',
 }
 
-export function IssuesPanel({ issues, focusedPage, onSeek }: IssuesPanelProps) {
+interface IssuesPanelProps {
+  issues: NumberedIssue[]
+  /** Before filtering — so an empty list can say whether it is empty or hidden. */
+  totalCount: number
+  focusedPage: number
+  onSeek: (page: number) => void
+  sort: SortMode
+  onSortChange: (sort: SortMode) => void
+}
+
+export function IssuesPanel({
+  issues,
+  totalCount,
+  focusedPage,
+  onSeek,
+  sort,
+  onSortChange,
+}: IssuesPanelProps) {
   return (
-    <ul aria-label="Issues" className="divide-y">
+    <>
+      <div className="flex items-center justify-between gap-2 border-b px-3 py-1.5">
+        <p className="text-xs text-muted-foreground tabular-nums">
+          {issues.length === totalCount
+            ? `${totalCount} ${totalCount === 1 ? 'issue' : 'issues'}`
+            : `${issues.length} of ${totalCount} shown`}
+        </p>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="min-h-8 gap-1.5 px-2 text-xs">
+              <ArrowDownWideNarrow className="size-3.5" aria-hidden />
+              {SORT_LABEL[sort]}
+              <span className="sr-only">Change sort order</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+            {(Object.keys(SORT_LABEL) as SortMode[]).map((mode) => (
+              <DropdownMenuItem key={mode} onSelect={() => onSortChange(mode)} className="gap-6">
+                <span className="flex-1">{SORT_LABEL[mode]}</span>
+                {mode === sort && <Check className="size-4" aria-hidden />}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {issues.length === 0 && (
+        <p className="px-4 py-8 text-center text-sm text-muted-foreground">
+          {totalCount === 0
+            ? 'No issues were found in this document.'
+            : 'Every severity is hidden. Turn one back on above.'}
+        </p>
+      )}
+
+      <ul aria-label="Issues" className="divide-y">
       {issues.map((issue) => {
         const onFocusedPage = issue.page === focusedPage
         return (
@@ -66,14 +126,18 @@ export function IssuesPanel({ issues, focusedPage, onSeek }: IssuesPanelProps) {
                 <span className="mt-1 block text-xs text-muted-foreground">
                   {issue.description}
                 </span>
-                <span className="mt-1.5 block text-xs font-medium text-muted-foreground">
-                  {SEVERITY_LABEL[issue.severity]} · Page {issue.page}
+                <span className="mt-1.5 block text-xs font-medium">
+                  <span className={SEVERITY_TEXT[issue.severity]}>
+                    {SEVERITY_LABEL[issue.severity]}
+                  </span>
+                  <span className="text-muted-foreground"> · Page {issue.page}</span>
                 </span>
               </span>
             </button>
           </li>
         )
       })}
-    </ul>
+      </ul>
+    </>
   )
 }

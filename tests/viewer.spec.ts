@@ -82,3 +82,38 @@ test('clicking an issue scrolls the document, and the page in view reports back'
   // And the highlight in the list is the same one value, seen a third way.
   await expect(page.locator('[aria-label="Issues"] button[aria-current="page"]')).toHaveCount(1)
 })
+
+/**
+ * The bug this exists to prevent: shrink a desktop window to phone width and the
+ * viewer came back blank, showing page 34 of 34.
+ *
+ * In the compact layout the inactive tab is `display: none`, and a hidden
+ * element has no layout box — so every page reported a top of zero, and the
+ * reading line dutifully concluded that the last page whose top had passed the
+ * line was the final one. Switching back left the canvas window parked around
+ * page 34, which is nearly empty, so the document looked like it had failed to
+ * load. Nothing had failed; it was measuring geometry that did not exist.
+ */
+test.describe('resizing across the breakpoint', () => {
+  test('keeps the page you were on, and the document still renders', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await gotoViewer(page)
+
+    await page.getByRole('button', { name: /Missing Flood Zone Documentation/ }).click()
+    await expect(page.getByRole('slider', { name: 'Document pages' })).toHaveAttribute(
+      'aria-valuenow',
+      '7',
+    )
+
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.getByRole('tab', { name: 'Document' }).click()
+
+    // Still page 7 — not the last page — and painting again at the new width.
+    // Scoped to main and case-insensitive: the issues panel also says "Page 7"
+    // in each row's meta line, and the status bar's capitals come from CSS.
+    await expect(page.locator('main').getByText(/page 7/i).first()).toBeVisible()
+    await expect(page.locator('.react-pdf__Page__canvas').first()).toBeVisible()
+    const canvases = await page.locator('.react-pdf__Page__canvas').count()
+    expect(canvases).toBeGreaterThan(0)
+  })
+})

@@ -14,7 +14,7 @@ const DocumentViewer = lazy(async () => ({
   default: (await import('@/components/DocumentViewer')).DocumentViewer,
 }))
 import { SeverityDot } from '@/components/severity'
-import { SEVERITY_LABEL } from '@/lib/severity'
+import { SEVERITY_LABEL, SEVERITY_TEXT } from '@/lib/severity'
 import type { NumberedIssue } from '@/lib/review'
 import type { DocumentPage } from '@/types/review'
 import { cn } from '@/lib/utils'
@@ -105,7 +105,7 @@ export function DocumentPanel({
                     {issue.title}
                   </span>
                   {/* Severity as a word, not only as a color. */}
-                  <span className="ms-1.5 text-muted-foreground">
+                  <span className={cn('ms-1.5', SEVERITY_TEXT[issue.severity])}>
                     {SEVERITY_LABEL[issue.severity]}
                   </span>
                 </span>

@@ -23,7 +23,7 @@ export interface Submission {
 }
 
 function key(review: Pick<Review, 'id' | 'version'>): string {
-  return `undirt.submitted.${review.id}.v${review.version}`
+  return `vera.submitted.${review.id}.v${review.version}`
 }
 
 export function readSubmission(review: Pick<Review, 'id' | 'version'>): Submission | null {

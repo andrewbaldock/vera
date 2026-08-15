@@ -2,16 +2,13 @@
 
 HomeVision frontend take-home: the **Review Page**.
 
-*Codename **UNDIRT** — Uploaded New Doc Issue Review Tool. It names the repo, the
-storage keys and the docs, and it stays that way; renaming a codebase to match a
-brand is churn with no reader on the other end. **VERA** is what the user sees —
-Latin* verus, *true. MIRA finds the problems; VERA is where a person decides.*
+*Latin* verus, *true. MIRA finds the problems; VERA is where a person decides.*
 
 A user uploads a document; the backend's AI processes it and reports issues that must be
 resolved before submission. This page shows those issues, explains what is blocking
 submission, and opens the gate when nothing critical or major remains.
 
-**UNDIRT does no uploading. It is the gate.**
+**VERA does no uploading. It is the gate.**
 
 ### ▶︎ Live: **[vera.andrewbaldock.com](https://vera.andrewbaldock.com)**
 

@@ -19,6 +19,19 @@ export const SEVERITY_COLOR: Record<Severity, string> = {
   minor: 'bg-severity-minor',
 }
 
+/**
+ * Text color, separate from the fill.
+ *
+ * The dot colors are picked to read as marks at 8px. Reusing them for 12px type
+ * would fail contrast — the amber by a mile — so severity as a *word* gets its
+ * own darkened token. Same vocabulary, different role.
+ */
+export const SEVERITY_TEXT: Record<Severity, string> = {
+  critical: 'text-severity-critical-text',
+  major: 'text-severity-major-text',
+  minor: 'text-severity-minor-text',
+}
+
 export const SEVERITY_LABEL: Record<Severity, string> = {
   critical: 'Critical',
   major: 'Major',

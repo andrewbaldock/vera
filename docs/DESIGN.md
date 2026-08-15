@@ -16,11 +16,11 @@ This doc is written *before* the code and updated *as* the code. It is the recor
 
 ## 1. What this app is
 
-**UNDIRT — Uploaded New Doc Issue Review Tool.**
+**VERA — Uploaded New Doc Issue Review Tool.**
 
 This is an App that lets a user review the issues detected by automation in a PDF they uploaded, and understand what must be fixed before the document can be submitted.
 
-Fixing happens in the user's own system, and the corrected version is uploaded somewhere else. **UNDIRT does no uploading. It is the gate.** It stays shut while any critical or major issue remains, and opens when none do — at which point the user can say "this doc is good."
+Fixing happens in the user's own system, and the corrected version is uploaded somewhere else. **VERA does no uploading. It is the gate.** It stays shut while any critical or major issue remains, and opens when none do — at which point the user can say "this doc is good."
 
 ---
 
@@ -46,7 +46,7 @@ Not our call. The assignment draws these lines itself.
 - **Any real backend.** Mock response only.
 - **Actually submitting.** The submit endpoint doesn't exist yet; the brief says to skip the call. UI only.
 - **Creating a new version / the upload flow.** That's the Upload Page — a teammate's ticket in the spec's own flow diagram.
-- **A list view of all documents this user has to review.** UNDIRT is the single-document view you reach *from* that list. The list is not in the spec's flow diagram — this is our inference about the surrounding product, not something the assignment stated.
+- **A list view of all documents this user has to review.** VERA is the single-document view you reach *from* that list. The list is not in the spec's flow diagram — this is our inference about the surrounding product, not something the assignment stated.
 
 ### Out — considered, then cut as gold-plating
 
@@ -95,7 +95,7 @@ Read from the real `review_mock.json` — 34 pages, 25 issues (4 critical, 8 maj
 
 ## 5. Jane's flow
 
-> 📐 **Sketched:** [`wireframes/UNDIRT_wireframes.svg`](wireframes/UNDIRT_wireframes.svg) — the visual companion to this section, drawn before any code. ([live source](https://docs.google.com/drawings/d/1P1lXCZPaLolqYNq0aOk2XJNdWGl8UmqJt4W83rlUnVE/edit?usp=sharing))
+> 📐 **Sketched:** [`wireframes/VERA_wireframes.svg`](wireframes/VERA_wireframes.svg) — the visual companion to this section, drawn before any code. ([live source](https://docs.google.com/drawings/d/1P1lXCZPaLolqYNq0aOk2XJNdWGl8UmqJt4W83rlUnVE/edit?usp=sharing))
 
 Jane arrives on the Review Page for *Annual Compliance Report - Northeast Region.pdf*.
 
@@ -544,7 +544,7 @@ We are not going to fix that client-side, and pretending otherwise would be wors
 ## 8. Bonus artifacts to deliver
 
 1. Development approach + what most required expertise.
-2. **UX sketches — ✅ [`wireframes/UNDIRT_wireframes.svg`](wireframes/UNDIRT_wireframes.svg)**, drawn in Google Drawings *before* the build. [Live source](https://docs.google.com/drawings/d/1P1lXCZPaLolqYNq0aOk2XJNdWGl8UmqJt4W83rlUnVE/edit?usp=sharing). Kept as-is even where the final implementation differs — they record intent, not a spec.
+2. **UX sketches — ✅ [`wireframes/VERA_wireframes.svg`](wireframes/VERA_wireframes.svg)**, drawn in Google Drawings *before* the build. [Live source](https://docs.google.com/drawings/d/1P1lXCZPaLolqYNq0aOk2XJNdWGl8UmqJt4W83rlUnVE/edit?usp=sharing). Kept as-is even where the final implementation differs — they record intent, not a spec.
 3. What's required for a production deployment.
 
 ### The README is a deliverable too
@@ -564,7 +564,7 @@ It is the first file anyone opens, and it is read by people arriving two differe
 | 2026-08-14 | Vite + React + TypeScript | Next.js | No SSR need for a post-upload page behind auth. Every line explainable. Next.js is not yet shipped experience — choosing it would mean defending framework behavior not personally lived. |
 | 2026-08-14 | ~~Hand-rolled components + CSS tokens on `main`; a second branch on a component library~~ **SUPERSEDED** — see the shadcn row below | — | Reversed once the framing changed from "this page" to "one screen in a suite." shadcn also collapses the two-branch idea: you own the source *and* depend on the behavior in one codebase, so there is no second side left to demonstrate. |
 | 2026-08-14 | Scope: no in-browser fixing, no real backend, no versioning | Simulating the re-upload loop | The spec puts resolution outside the app. Simulating it would misrepresent the product. |
-| 2026-08-14 | **UNDIRT does no uploading. It is a gate.** The re-upload loop exits the page. | An upload control on the Review Page; simulating the version bump | The flow diagram gives re-upload to the Upload Page — a teammate's ticket. Owning it would be building someone else's screen and blurring the one job this page has. |
+| 2026-08-14 | **VERA does no uploading. It is a gate.** The re-upload loop exits the page. | An upload control on the Review Page; simulating the version bump | The flow diagram gives re-upload to the Upload Page — a teammate's ticket. Owning it would be building someone else's screen and blurring the one job this page has. |
 | 2026-08-14 | **Continuous-scroll PDF viewer**, all pages and text layers mounted | Single page at a time; single page + hijacked CMD+F | Native CMD+F only finds text in the DOM. Whole-document search is an acceptance criterion, so the viewer architecture follows from it. Virtualization is the production answer at larger page counts. |
 | 2026-08-14 | **`react-pdf`** as the renderer, wrapping Mozilla's `pdf.js` | Raw `pdfjs-dist`; commercial SDKs (Nutrient/PSPDFKit, Apryse) | `pdf.js` is the only serious open engine — Mozilla-owned, in Firefox, ~53k stars, since 2011, ~23M weekly downloads. `react-pdf` is a thin, maintained React binding over it (npm since 2014, v10, ~5M weekly) that adds no rendering of its own, so I get the heavy-hitter engine and skip writing the text-layer/worker glue. Raw `pdfjs-dist` = re-inventing a solved binding; commercial SDKs = annotation/licensing overkill for a read-only screen. |
 | 2026-08-14 | Issues list sorts by **page order by default**, with a severity sort available | Severity-first default | Jane works through the document in page order when she goes to fix things. "What's blocking" is communicated by the summary above the list, not by the list's ordering. |
@@ -597,6 +597,7 @@ It is the first file anyone opens, and it is read by people arriving two differe
 | 2026-08-14 | **Two test suites, two runners** — vitest on the rules, Playwright on the layout | One runner; screenshot baselines | The rules are pure functions, so they test fastest with no DOM at all. Layout is the opposite: jsdom has no layout engine, so the entire class of bug the layout suite exists to catch is the class jsdom cannot see. No screenshot baselines — WebKit and Chromium rasterize type differently, so they would need a set each and would churn on every change; structure is what's actually invariant. The suite earned itself immediately by catching a 32px submit button under the 44px minimum. |
 | 2026-08-14 | **The compact layout hides the inactive view with `display: none`**, so find-on-page reaches the document only from the Document tab | Keeping the document mounted and moved off-screen; a `visibility`/`clip` variant | Restoring find in both tabs would highlight a match somewhere the user cannot see, in a layout whose premise is one thing at a time — and it would pin all 34 text layers in the DOM permanently on the device where memory is actually scarce, which is the pressure the text-layer/canvas split exists to relieve. Find while looking at the document is the only moment anyone invokes it. §6d's claim was an absolute and is now qualified; the full layout is unaffected because both panels are always mounted. |
 | 2026-08-14 | **PWA ships `display: browser`. The browser chrome is load-bearing, so we keep it** | `display: standalone`, which is what "make it a PWA" usually means | Standalone is the app-like option and it removes the browser chrome — which is exactly where iOS keeps Find on Page. There is no share sheet and no address bar in a standalone window, so installing the app would delete the affordance acceptance criterion #1 depends on. Chrome over polish: an installed icon that opens into Safari keeps whole-document search working on the device we most want to test on. `apple-mobile-web-app-capable` is deliberately absent for the same reason — on iOS it forces standalone regardless of the manifest. The alternative is building find into the page, which D1 declined *because the platform had one*; that reasoning inverts the moment the platform's is taken away, so the cheaper move is to not take it away. |
+| 2026-08-14 | The product says minor findings are **accepted**, never *ignored* | Using the brief's own word, "ignored" | The brief's acceptance criterion reads "minor may be ignored", which is fine in a requirements document and wrong in a regulated one. *Ignored* means not looked at; what actually happens is that a qualified reviewer sees the finding, judges it non-material and accepts it. That distinction is the entire value of the record, and no lender wants a compliance file stating six findings were ignored. "Accepted as-is" is also appraisal-native language. The stronger term is *exception* — precise, and standard in "approved with exceptions" — but it reads stiffer, and *accepted* carries the meaning without the jargon. The submitted state stopped saying "unresolved" for the same reason: on a closed file they are not outstanding work, they are accepted. |
 | 2026-08-14 | **No pinch-to-zoom — CUT** | Handling the gesture and re-rendering pages at a new scale; letting the browser zoom the page | The expected gesture on an iPad and a real gap, so it is named rather than hidden. Doing it properly reaches into the reserved page heights and the reading-line measurement, both load-bearing. Letting the browser zoom is a one-liner that breaks a fixed app shell. Deferred with the consequence stated: on a tablet the page renders at the width we choose and cannot be magnified. |
 
 ---

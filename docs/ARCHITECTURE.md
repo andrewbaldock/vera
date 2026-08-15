@@ -1,12 +1,12 @@
-# UNDIRT — Architecture
+# VERA — Architecture
 
 **How it works.** [`DESIGN.md`](DESIGN.md) is the record of *why* every decision was taken;
 this is the map of what those decisions built. Where the two disagree, DESIGN.md is the
 source of truth for intent and this file is wrong and should be fixed.
 
-![Architecture](architecture/UNDIRT_architecture.svg)
+![Architecture](architecture/VERA_architecture.svg)
 
-*Editable source: [`architecture/UNDIRT_architecture.drawio`](architecture/UNDIRT_architecture.drawio)*
+*Editable source: [`architecture/VERA_architecture.drawio`](architecture/VERA_architecture.drawio)*
 
 ---
 
