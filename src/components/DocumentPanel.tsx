@@ -1,8 +1,22 @@
-import { useState } from 'react'
+import { Suspense, lazy, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
+import type { SeekTarget } from '@/components/DocumentViewer'
+
+/**
+ * The viewer is split out of the entry chunk.
+ *
+ * pdf.js is ~420 KB, and the verdict — the answer to acceptance criterion #3 —
+ * needs none of it. Loading it eagerly means a phone on cellular waits for a
+ * rendering engine before it can be told what is blocking submission. Split, the
+ * shell and the issue list paint immediately and the document arrives after.
+ */
+const DocumentViewer = lazy(async () => ({
+  default: (await import('@/components/DocumentViewer')).DocumentViewer,
+}))
 import { SeverityDot } from '@/components/severity'
 import { SEVERITY_LABEL } from '@/lib/severity'
 import type { NumberedIssue } from '@/lib/review'
+import type { DocumentPage } from '@/types/review'
 import { cn } from '@/lib/utils'
 
 /**
@@ -16,8 +30,8 @@ import { cn } from '@/lib/utils'
  *
  * It expands rather than truncating. Three issues on one page needs ~580px and
  * a phone has under 300, so collapsed it says how many and expanded it says
- * which — with severity carried by a label as well as a colour, because a
- * truncated string with a coloured dot is two ways of saying nothing.
+ * which — with severity carried by a label as well as a color, because a
+ * truncated string with a colored dot is two ways of saying nothing.
  *
  * `z-10` is not arbitrary: react-pdf ships pdf.js's CSS, where `.textLayer` is
  * `z-index: 2` and `.annotationLayer` is `z-index: 3`. At equal z-index the
@@ -27,15 +41,22 @@ import { cn } from '@/lib/utils'
 
 interface DocumentPanelProps {
   focusedPage: number
-  pageCount: number
+  /** The API's page dimensions — the viewer reserves heights from them. */
+  pages: DocumentPage[]
+  pdfUrl: string
   issuesOnPage: NumberedIssue[]
+  seek: SeekTarget
+  onPageInView: (page: number) => void
   className?: string
 }
 
 export function DocumentPanel({
   focusedPage,
-  pageCount,
+  pages,
+  pdfUrl,
   issuesOnPage,
+  seek,
+  onPageInView,
   className,
 }: DocumentPanelProps) {
   const [expanded, setExpanded] = useState(false)
@@ -83,7 +104,7 @@ export function DocumentPanel({
                     <span className="tabular-nums text-muted-foreground">{issue.number}</span>{' '}
                     {issue.title}
                   </span>
-                  {/* Severity as a word, not only as a colour. */}
+                  {/* Severity as a word, not only as a color. */}
                   <span className="ms-1.5 text-muted-foreground">
                     {SEVERITY_LABEL[issue.severity]}
                   </span>
@@ -101,9 +122,15 @@ export function DocumentPanel({
         left. The thumb strip's slider already reports the same fact through
         aria-valuetext, on demand, when they ask for it.
       */}
-      <div className="flex min-h-0 flex-1 items-center justify-center overflow-y-auto overscroll-contain p-6">
-        <p className="text-sm text-muted-foreground">Document viewer — {pageCount} pages</p>
-      </div>
+      <Suspense
+        fallback={
+          <p className="flex min-h-0 flex-1 items-center justify-center p-6 text-sm text-muted-foreground">
+            Loading the document…
+          </p>
+        }
+      >
+        <DocumentViewer url={pdfUrl} pages={pages} seek={seek} onPageInView={onPageInView} />
+      </Suspense>
     </div>
   )
 }

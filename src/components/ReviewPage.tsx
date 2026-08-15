@@ -1,6 +1,7 @@
-import { useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useCallback, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { AppHeader } from '@/components/AppHeader'
 import { DocumentPanel } from '@/components/DocumentPanel'
+import type { SeekTarget } from '@/components/DocumentViewer'
 import { IssuesPanel } from '@/components/IssuesPanel'
 import { ReviewVerdict, SUBMIT_BLOCKED_ID } from '@/components/ReviewVerdict'
 import { Splitter } from '@/components/Splitter'
@@ -78,6 +79,13 @@ function ReviewShell({ review }: { review: Review }) {
    * that can disagree.
    */
   const [focusedPage, setFocusedPage] = useState(1)
+  /**
+   * A request to move the document, not a statement about where it is.
+   *
+   * The nonce is what makes "take me to page 13" work when you are already on
+   * page 13 — without it the effect never re-runs and the click does nothing.
+   */
+  const [seek, setSeek] = useState<SeekTarget>({ page: 1, nonce: 0, behavior: 'instant' })
   const splitRef = useRef<HTMLDivElement>(null)
 
   const issues = useMemo(() => numberByPage(review.issues), [review.issues])
@@ -85,24 +93,35 @@ function ReviewShell({ review }: { review: Review }) {
   const submittable = canSubmit(review)
 
   /**
-   * The seam — and the *only* writer.
+   * The seam. Seeking *scrolls* — it never sets the focused page.
    *
-   * Today it sets the focused page directly, because there is no document to
-   * scroll yet. Once the viewer lands, seeking will scroll the viewer and the
-   * reading-line measurement will set `focusedPage`, making scroll position the
-   * single source. Every control that means "take me to this page" has to come
-   * through here, or the thumb strip — the one control whose entire job is
-   * moving the document — would move a highlight and scroll nothing.
+   * Scroll position is the single writer of `focusedPage`, via the viewer's
+   * reading line. That is what keeps the highlight honest: it always means
+   * "this is what you are looking at" rather than "this is what you asked for",
+   * and the two are different for the whole length of a smooth scroll.
+   *
+   * Every control that means "take me to this page" comes through here, the
+   * thumb strip included — a scrubber that moved a highlight without moving the
+   * document would be a decoration.
    */
-  function seekToPage(page: number) {
-    setFocusedPage(page)
-  }
+  const seekToPage = useCallback((page: number, behavior: ScrollBehavior = 'smooth') => {
+    setSeek((previous) => ({ page, nonce: previous.nonce + 1, behavior }))
+  }, [])
+
+  /** Dragging the strip should track the thumb, not animate to every page it passes. */
+  const scrubToPage = useCallback(
+    (page: number) => seekToPage(page, 'instant'),
+    [seekToPage],
+  )
 
   /** Tapping an issue is a seek *plus* a navigation, but only where tabs exist. */
-  function openIssue(page: number) {
-    seekToPage(page)
-    setTab('document')
-  }
+  const openIssue = useCallback(
+    (page: number) => {
+      setTab('document')
+      seekToPage(page)
+    },
+    [seekToPage],
+  )
 
   const submitButton = (
     <Button
@@ -195,8 +214,11 @@ function ReviewShell({ review }: { review: Review }) {
         >
           <DocumentPanel
             focusedPage={focusedPage}
-            pageCount={review.document.pages.length}
+            pages={review.document.pages}
+            pdfUrl={review.document.pdf_url}
             issuesOnPage={issuesByPage.get(focusedPage) ?? []}
+            seek={seek}
+            onPageInView={setFocusedPage}
           />
         </main>
 
@@ -205,7 +227,7 @@ function ReviewShell({ review }: { review: Review }) {
           pages={review.document.pages}
           issuesByPage={issuesByPage}
           focusedPage={focusedPage}
-          onSeek={seekToPage}
+          onSeek={scrubToPage}
         />
       </div>
 
