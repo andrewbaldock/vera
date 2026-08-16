@@ -11,7 +11,7 @@ submission, and opens the gate when nothing critical or major remains.
 Uploading and fixing happen elsewhere — both are other screens in the brief's own flow. This
 one decides whether the document can go.
 
-### ▶︎ Live: **[vera-baldrocks-projects.vercel.app](https://vera-baldrocks-projects.vercel.app)**
+### ▶︎ Live: **[vera.andrewbaldock.com](https://vera.andrewbaldock.com)**
 
 Deployed so it can be opened on a real phone rather than a resized desktop window; the
 reasoning for that distinction is in [`docs/DESIGN.md`](docs/DESIGN.md). Rotating an iPad

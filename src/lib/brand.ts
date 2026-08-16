@@ -1,5 +1,5 @@
 /**
- * The product name, in one place. Always capitals: HomeVision sets MIRA that way
+ * The product name, in one place. Always capitals: the platform sets MIRA that way
  * everywhere on their own site, so a sibling product rendered as "Vera" reads as
  * a person's name rather than a system's.
  *

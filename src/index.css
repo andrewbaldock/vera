@@ -3,6 +3,7 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
 @import "@fontsource-variable/ubuntu-sans-mono";
+@import "@fontsource/goldman/700.css";
 
 /*
   One trigger: the `.dark` class on <html>. The preference has three values
@@ -15,9 +16,16 @@
 @theme inline {
     --font-sans: 'Geist Variable', sans-serif;
     /* The wordmark's face, kept separate from the UI's so the brand can move
-       without the interface moving with it. Point this at HomeVision's own
-       display face (Montserrat) and only the wordmark changes. */
-    --font-wordmark: var(--font-sans);
+       without the interface moving with it. Only the wordmark reads this, so
+       swapping the brand face is this line and nothing else — pointing it at
+       the platform's own display face would change the mark and leave the
+       interface alone.
+
+       Goldman, at 700 only: it ships two static weights rather than a variable
+       axis, and the mark is the sole consumer, so shipping the one weight it
+       uses is the whole cost. Asking for 600 here would have the browser
+       synthesise a bold that nobody drew. */
+    --font-wordmark: 'Goldman', var(--font-sans);
     /* Notes are handwriting on the file, not product copy, and a different face
        separates "the reviewer wrote this" from "the system says this". Mono
        rather than serif: this is working text, closer to a margin annotation
@@ -34,6 +42,8 @@
     --color-severity-critical-text: var(--severity-critical-text);
     --color-severity-major-text: var(--severity-major-text);
     --color-severity-minor-text: var(--severity-minor-text);
+    --color-wordmark-from: var(--wordmark-from);
+    --color-wordmark-to: var(--wordmark-to);
     --color-ready: var(--ready);
     --color-ready-text: var(--ready-text);
     --color-ready-surface: var(--ready-surface);
@@ -126,6 +136,13 @@
     --focus-tint: #eef0fe;
     --focus-edge: #5865f3;
 
+    /* The wordmark's gradient. It starts at the primary the rest of the app
+       already uses and travels to a deeper violet, so the mark reads as the
+       richest thing on screen without introducing a colour the product does not
+       otherwise own. Only the wordmark uses it. */
+    --wordmark-from: #5865f3;
+    --wordmark-to: #8b32d9;
+
     /* The cleared state, and the only green in the product: severity owns red,
        amber and slate, so green means "nothing here is blocking you" and cannot
        be confused with a finding. Three roles, for the same reason severity has
@@ -181,6 +198,10 @@
     --severity-minor-text: oklch(0.75 0.018 260);
     --focus-tint: #232848;
     --focus-edge: #7c86f7;
+
+    /* Lifted for a dark ground: the light pair goes muddy against near-black. */
+    --wordmark-from: #8f98fa;
+    --wordmark-to: #c07cf5;
 
     --ready: oklch(0.7 0.15 156);
     --ready-text: oklch(0.82 0.13 156);

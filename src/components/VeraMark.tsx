@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils'
 
 /**
  * The VERA mark. A cut slab for the long arm, a wide triangle beneath it for the
- * short one. The triangle is HomeVision's facet language, their logo being built
+ * short one. The triangle is the platform's facet language, its logo being built
  * entirely from flat triangular planes of a single color, and square caps keep
  * the two shapes in the same geometric dialect. Not a rounded slab, which softens
  * into something friendlier than the mark beside it.
