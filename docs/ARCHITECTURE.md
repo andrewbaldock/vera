@@ -40,7 +40,7 @@ types/          review.ts
 
 **The direction is the guarantee, not a convention.** `canSubmit` lives in `lib/review.ts`,
 which imports nothing but types. There is no path from a checkbox, a filter or any piece of UI
-state into the gate, because the file that computes the gate cannot see them. That is stronger
+state into `canSubmit`, because the file that computes it cannot see them. That is stronger
 than a code review promising the same thing.
 
 The signature says it twice:
@@ -115,9 +115,7 @@ useScrollTracking()          whether the list follows the document. A preference
 **The review and the reviewer are separate sources.** `useReview` is what the API
 says about the document. Everything else — what has been ticked, what has been
 written, how the list behaves — is what the person at the keyboard did, and it
-never merges into the review object. That separation is what keeps `canSubmit` in
-a file that cannot see a checkbox, and it is why hiding every severity, ticking
-every issue and sorting the list cannot move the gate.
+never merges into the review object.
 
 The two reviewer-owned stores are scoped differently on purpose: a tick means
 "I have handled this" and dies with its version, while a note is something
@@ -261,7 +259,7 @@ across both: no horizontal overflow, the right shape, exactly one visible submit
 targets.
 
 The suite earned itself on first run by catching a 32px submit button, under the 44px minimum,
-on the one control the whole page exists to gate.
+on the one control that ends the review.
 
 ## 9. Seams — where this changes for production
 

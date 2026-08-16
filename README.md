@@ -6,8 +6,8 @@ Frontend take-home: the **Review Page**.
 
 A user uploads a document; the backend's AI processes it and reports issues that must be
 resolved before submission. This page shows those issues, says what is blocking submission,
-and opens the gate when nothing critical or major remains. Uploading and fixing are other
-screens in the brief's flow — this one decides whether the document can go.
+and says when nothing critical or major is left. Uploading and fixing are other screens in
+the brief's flow — this one is where the reviewing happens.
 
 ### ▶︎ Live: **[vera.andrewbaldock.com](https://vera.andrewbaldock.com)**
 
@@ -122,9 +122,8 @@ src/
 tests/                 Playwright — layout, in real browsers
 ```
 
-**The rules are separated from the UI.** `canSubmit` takes a whole `Review` and reads only its
-issues, so there is no path from a checkbox or a filtered list to the gate. That signature is
-the guarantee, and it's the file most worth reading first.
+**The rules are separated from the UI.** `canSubmit` takes a whole `Review`, never a list of
+issues, so nothing the interface does can reach it. `lib/review.ts` imports nothing but types.
 
 **Two layouts, one component tree.** The shape is decided entirely in CSS at 1024px: no
 media-query hook, no branch, no second subtree to drift. Below that, one thing at a time with a
@@ -148,8 +147,8 @@ spec files, 208 tests:
 |---|---|
 | `layout` | Twelve real viewports from a 320px iPhone SE to 1920px — no horizontal overflow, the page itself never scrolls, each width renders the correct shape *and not the other one*, exactly one primary action visible and on screen, every touch target over 44px. Then a sweep from 320 to 1920 in 40px steps, because a fixed matrix sails past the 1007px disaster. |
 | `viewer` | Every page's text layer mounted so browser find can reach the whole document, canvases actually windowed, clicking an issue scrolling the document, the page staying put when the window crosses the breakpoint, the end of the scroll reporting the last page, the phone path where the seek is made against a panel that has no layout yet, and both screens rendering on a browser with no `URL.parse` — the API a pdf.js dependency needs and Safari only shipped in 18.4. |
-| `submit` | Both halves of the gate: blocked offers upload rather than a dead submit, open asks for confirmation naming what is being accepted, and a submitted review reads as submitted on a cold load. |
-| `done` | The worklist reports progress without moving the gate, hides and shows its own rows, sinks under severity sort, and never crosses versions. |
+| `submit` | Both states: with blockers outstanding the page offers upload rather than a dead submit, and once they are resolved it asks for confirmation naming what is being accepted, and a submitted review reads as submitted on a cold load. |
+| `done` | The worklist reports progress without changing whether the review can be submitted, hides and shows its own rows, sinks under severity sort, and never crosses versions. |
 | `documents` | The queue, the version switch surviving a reload, and the placeholders being inert. |
 | `keyboard` | The issue grid driven entirely from the keyboard: arrows across all three columns, Enter seeking the document without moving the list, Space ticking Done. |
 | `contrast` | Severity text measured against every surface it sits on, in both themes, against the 4.5:1 AA floor. |

@@ -55,7 +55,7 @@ regardless of what happened. In production the phases follow the request:
 - **Failure.** The one irreversible action in the app currently cannot fail. It needs an error
   state that leaves the review submittable.
 - **Conflict.** A reviewer can sit on v2 while v3 is uploaded underneath them. A `409` means *this
-  review is no longer current*, and submitting a stale version is what a gate exists to prevent.
+  review is no longer current*, and submitting a stale version is exactly what the rule prevents.
   The client sends the version it is looking at; the response accepts it or prompts a reload.
 
 An idempotency key belongs on the request too: a retried round trip must not submit twice.
@@ -159,4 +159,4 @@ requirements.
 - **The upload dialog is inert**, because VERA does not upload: that screen is a teammate's
   ticket, and the dialog exists so a blocked state shows where the loop goes.
 - **`clear()` un-submits a review.** There is no reopened status in the enum and no un-submit in
-  the flow; it exists so an evaluator can exercise the gate more than once.
+  the flow; it exists so an evaluator can walk the review through to submission more than once.

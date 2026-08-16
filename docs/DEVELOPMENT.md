@@ -75,7 +75,7 @@ ARIA grid with a roving tabindex: one tab stop instead of fifty, arrow keys to w
 `Enter` to open a page *without moving focus*. The pattern's actual use case, not a box ticked.
 
 **`canSubmit` takes a whole `Review`.** Not an array of issues. A filtered list, a hidden
-severity or a ticked checkbox cannot reach the gate, because handing it one is a type error
+severity or a ticked checkbox cannot reach it, because handing it one is a type error
 rather than a rule someone has to remember. `lib/review.ts` imports nothing but types.
 
 **Which page you are on is a measurement, not an observation.** Observer callbacks fire only on
@@ -94,7 +94,7 @@ covers what only a browser can answer, across seven spec files in both Chromium 
 jsdom has no layout engine and will report that a 900px panel fits in a 320px window, so the
 class of bug the layout suite exists to catch is the class jsdom cannot see. It earned itself on
 first run by catching a 32px submit button, under the 44px minimum, on the one control the whole
-page exists to gate.
+review ends with.
 
 ## The bug only a real device could find
 
