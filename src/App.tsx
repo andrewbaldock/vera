@@ -1,6 +1,7 @@
 import { Suspense, lazy } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 import { DocumentsPage } from '@/components/DocumentsPage'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ReviewPage } from '@/components/ReviewPage'
 
 /**
@@ -23,24 +24,30 @@ const ReactPdfDemo = lazy(async () => ({
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Navigate to="/documents" replace />} />
-        <Route path="/documents" element={<DocumentsPage />} />
-        <Route path="/reviews/:documentId" element={<ReviewPage />} />
-        <Route
-          path="/demo"
-          element={
-            <Suspense
-              fallback={<p className="p-6 text-sm text-muted-foreground">Loading the harness…</p>}
-            >
-              <ReactPdfDemo />
-            </Suspense>
-          }
-        />
-        {/* Anything else is a typo, not a page. Send it somewhere real. */}
-        <Route path="*" element={<Navigate to="/documents" replace />} />
-      </Routes>
-    </BrowserRouter>
+    // Outside the router: without a boundary anywhere, React unmounts the whole
+    // tree on any uncaught error and leaves the background color and nothing
+    // else — content that flashes and then vanishes, with no console on a
+    // tablet to say why.
+    <ErrorBoundary>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Navigate to="/documents" replace />} />
+          <Route path="/documents" element={<DocumentsPage />} />
+          <Route path="/reviews/:documentId" element={<ReviewPage />} />
+          <Route
+            path="/demo"
+            element={
+              <Suspense
+                fallback={<p className="p-6 text-sm text-muted-foreground">Loading the harness…</p>}
+              >
+                <ReactPdfDemo />
+              </Suspense>
+            }
+          />
+          {/* Anything else is a typo, not a page. Send it somewhere real. */}
+          <Route path="*" element={<Navigate to="/documents" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </ErrorBoundary>
   )
 }

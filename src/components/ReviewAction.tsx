@@ -77,17 +77,20 @@ export function ReviewAction({ review, submittable, onConfirm }: ReviewActionPro
         // without becoming gray furniture. A neutral outline would read as a
         // cancel.
         //
-        // Icon-only in the compact layout: at 320px the bottom bar already
-        // carries the verdict and the primary action, and a second labeled
-        // button would push one of them off. The label stays in the accessible
-        // name.
+        // Shortened in the compact layout rather than reduced to an icon. An
+        // upward arrow on its own is not a word: it reads as export, or share,
+        // or open — and this is the only route out of a blocked review, so the
+        // one control that must not be a guess was the one with no label. The
+        // full phrase stays in the accessible name at every width.
         <Button
           variant="outline"
-          className="min-h-11 border-2 border-primary/55 text-primary hover:border-primary/75 hover:bg-accent hover:text-primary active:bg-accent max-lg:size-11 max-lg:px-0"
+          className="min-h-11 border-2 border-primary/55 px-3 text-primary hover:border-primary/75 hover:bg-accent hover:text-primary active:bg-accent"
           aria-describedby={submittable ? undefined : SUBMIT_BLOCKED_ID}
         >
           <Upload aria-hidden />
-          <span className="max-lg:sr-only">Upload new version</span>
+          <span>
+            Upload<span className="max-lg:sr-only"> new version</span>
+          </span>
         </Button>
       }
     />

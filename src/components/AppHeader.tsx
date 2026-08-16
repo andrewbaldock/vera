@@ -11,6 +11,7 @@ import { REVIEW_DOCUMENT } from '@/lib/documents'
 import { UserMenu } from '@/components/UserMenu'
 import { HelpButton } from '@/components/UserGuide'
 import { Wordmark } from '@/components/Wordmark'
+import { TruncatedTitle } from '@/components/TruncatedTitle'
 import { PRODUCT_NAME } from '@/lib/brand'
 import { Link } from 'react-router'
 import type { Review } from '@/types/review'
@@ -117,9 +118,17 @@ export function AppHeader({ review, actions, version, onVersionChange }: AppHead
         <span className="max-sm:sr-only">Documents</span>
       </Link>
 
-      <h1 className="min-w-0 truncate py-3 text-sm font-semibold lg:text-base">
-        {review.name.replace(/\.pdf$/i, '')}
-      </h1>
+      {/* The one truncated name with nowhere else to read it. The queue's rows
+          truncate too, but each row is a link and tapping it opens the document,
+          which puts the full name here — and a popover trigger inside an anchor
+          is a control nested in a control. */}
+      <div className="min-w-0">
+        <TruncatedTitle
+          as="h1"
+          text={review.name.replace(/\.pdf$/i, '')}
+          className="py-3 text-sm font-semibold lg:text-base"
+        />
+      </div>
 
       {/* The version is a control, not a fact: it changes what you are looking
           at, so it sits in the title bar rather than behind the overflow with

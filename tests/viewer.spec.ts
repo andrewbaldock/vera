@@ -40,6 +40,38 @@ test('every page has a text layer, so browser find can reach the whole document'
     .toContain(DEEP_IN_THE_DOCUMENT)
 })
 
+/**
+ * `pdfjs-dist` calls `URL.parse`, which is Chrome 126, Firefox 126 and **Safari
+ * 18.4** — so on an iPad a year older it is `undefined`, pdf.js throws while
+ * resolving the worker, and React unmounts the whole tree. It presented as the
+ * app flashing once and going black, on both browsers, with a stack pointing
+ * only into a vendor chunk.
+ *
+ * Reproduced by removing the API, which is the honest way to test a polyfill:
+ * asserting the polyfill exists proves nothing about the app that needs it.
+ */
+test.describe('a browser without URL.parse', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      // @ts-expect-error removing a platform API on purpose
+      delete URL.parse
+    })
+  })
+
+  test('the queue still renders its cover thumbnails', async ({ page }) => {
+    await page.goto('/documents')
+    await expect(page.getByRole('list', { name: 'Documents' })).toBeVisible()
+    await expect(page.getByText('Something broke.')).toBeHidden()
+    await expect(page.getByRole('link', { name: /Annual Compliance Report/ })).toBeVisible()
+  })
+
+  test('the document still renders', async ({ page }) => {
+    await gotoViewer(page)
+    await expect(page.getByText('Something broke.')).toBeHidden()
+    expect(await page.locator('.react-pdf__Page__canvas').count()).toBeGreaterThan(0)
+  })
+})
+
 test('canvases are windowed, so 34 pages do not cost 34 canvases', async ({ page }) => {
   await gotoViewer(page)
 
