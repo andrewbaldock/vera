@@ -134,11 +134,6 @@ export function UserGuide({ trigger }: { trigger: React.ReactNode }) {
           <h3 className="font-semibold">Worth knowing</h3>
           <ul className="mt-2 list-disc space-y-1.5 ps-5 text-muted-foreground">
             <li>
-              <span className="font-medium text-foreground">Submitting can’t be undone.</span>{' '}
-              There’s no reopening a review — corrections happen by uploading a new version,
-              which comes back as a fresh review.
-            </li>
-            <li>
               <span className="font-medium text-foreground">The list can follow the document.</span>{' '}
               Scroll Tracking, in the list’s ⋮ menu, scrolls the issues along with the page you’re
               on. Turn it off and the list stays exactly where you put it — the issues on the page

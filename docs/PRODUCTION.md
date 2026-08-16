@@ -144,7 +144,7 @@ requirements.
 | **Performance budgets and RUM** | The memory ceiling behind `CANVAS_WINDOW` is *reasoned*, not proven: the iOS Simulator runs on the Mac's RAM. |
 | **Feature flags** | Bounding boxes and virtualization both change the viewer, the riskiest component. |
 | **Dependency and supply-chain scanning** | The renderer parsing every loan file is a third-party dependency: pinning, an SBOM, CVE alerting. |
-| **Browser support policy** | `scrollend`, `dvh` and `env(safe-area-inset-*)` are all load-bearing and all have a support floor. |
+| **Browser support policy** | `scrollend`, `dvh` and `env(safe-area-inset-*)` are all load-bearing and all have a support floor — and this is no longer hypothetical. `pdfjs-dist` calls `URL.parse`, which is Safari 18.4 (March 2025), so on an iPad running 17.4 it is `undefined`, pdf.js throws while resolving its worker, and the whole app went blank. A dependency's floor is the product's floor, and nothing in the build declared one. It is polyfilled and tested by removing the API, but the general answer is a stated support matrix and CI that runs against it. |
 | **i18n and localization readiness** | Strings are inline today, and dates, currency and page numbers all localize differently. |
 
 ---
