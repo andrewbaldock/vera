@@ -336,6 +336,28 @@
   }
 
   /*
+    Tailwind v4's preflight sets `cursor: default` on buttons, where v3 left the
+    browser's pointer alone. That is a defensible reset — a <button> is not a
+    link — but on a screen made almost entirely of buttons it means nothing
+    signals that anything can be clicked, and the answer is one rule rather than
+    a `cursor-pointer` on eighty-seven controls that the eighty-eighth will
+    forget.
+
+    Anything genuinely unavailable keeps the default arrow: `aria-disabled`
+    covers the ⋯ menu's reference rows, which are readable text wearing a
+    menuitem role rather than controls.
+  */
+  button:not(:disabled):not([aria-disabled='true']),
+  [role='button']:not([aria-disabled='true']),
+  [role='tab']:not([aria-disabled='true']),
+  [role='menuitem']:not([aria-disabled='true']),
+  [role='menuitemcheckbox']:not([aria-disabled='true']),
+  [role='checkbox']:not([aria-disabled='true']),
+  summary {
+    cursor: pointer;
+  }
+
+  /*
     The shell is a fixed-height app frame, so the page itself never scrolls.
     Without this, iOS still rubber-bands the whole thing when a drag starts on
     the header, the view switcher or the bottom bar, which reads as the app

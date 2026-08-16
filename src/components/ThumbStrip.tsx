@@ -186,7 +186,10 @@ export function ThumbStrip({
       onPointerCancel={handlePointerUp}
       onKeyDown={handleKeyDown}
       className={cn(
-        'group relative z-10 flex w-11 shrink-0 touch-none flex-col border-l bg-card select-none',
+        // `grab`, not `pointer`. This is one control you press and drag, not
+        // thirty-four you click, and the cursor should say which — the same
+        // reasoning that gives the splitter `col-resize`.
+        'group relative z-10 flex w-11 shrink-0 cursor-grab touch-none flex-col border-l bg-card select-none active:cursor-grabbing',
         'focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none',
         scrubbing && 'cursor-grabbing',
         className,
