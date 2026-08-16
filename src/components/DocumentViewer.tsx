@@ -49,6 +49,14 @@ const SCROLL_SETTLE_FALLBACK_MS = 5000
 const SCROLL_END_SUPPORTED = typeof window !== 'undefined' && 'onscrollend' in window
 
 /**
+ * How long the page counter stays after the scrolling stops. Long enough to
+ * still be there when you look down at it, which is the moment after you stop
+ * moving. It fades slowly for the same reason: something that vanishes the
+ * instant you arrive reads as a glitch.
+ */
+const COUNTER_IDLE_MS = 1100
+
+/**
  * How many pages either side of the one you are reading get a canvas. A
  * full-width page canvas is roughly 10 MB at devicePixelRatio 2, so painting all
  * 34 approaches 350 MB, and iOS Safari discards tabs for less. The text layer is
@@ -110,6 +118,13 @@ export function DocumentViewer({
    * flips, which is exactly what state is for.
    */
   const [pagesMounted, setPagesMounted] = useState(false)
+  /**
+   * Whether the counter is showing. Driven by scroll events, so a document that
+   * fits its panel never raises it: with nothing to scroll there is nothing to
+   * report.
+   */
+  const [scrolling, setScrolling] = useState(false)
+  const idleTimer = useRef(0)
   // Kept here rather than lifted: this is the viewer's own rendering concern,
   // and the parent's focusedPage is about what the *rest of the app* highlights.
   const [nearPage, setNearPage] = useState(pages[0]?.page_num ?? 1)
@@ -197,17 +212,31 @@ export function DocumentViewer({
     // suppresses those for the length of its own scroll.
     measureRef.current = measure
 
-    const onScroll = () => {
+    const schedule = () => {
       if (frame) return
       frame = requestAnimationFrame(measure)
     }
 
+    const onScroll = () => {
+      // Raised here rather than inside `measure`, which is suppressed for the
+      // length of a programmatic scroll. Clicking an issue should show the
+      // counter on the way, and that is exactly when measurement is off.
+      setScrolling(true)
+      window.clearTimeout(idleTimer.current)
+      idleTimer.current = window.setTimeout(() => setScrolling(false), COUNTER_IDLE_MS)
+      schedule()
+    }
+
     measure()
     scroller.addEventListener('scroll', onScroll, { passive: true })
-    window.addEventListener('resize', onScroll, { passive: true })
+    // Resize re-measures the reading line without raising the counter: dragging
+    // the splitter is not reading, and a chip over the document while someone
+    // sizes the panel is in the way.
+    window.addEventListener('resize', schedule, { passive: true })
     return () => {
       scroller.removeEventListener('scroll', onScroll)
-      window.removeEventListener('resize', onScroll)
+      window.removeEventListener('resize', schedule)
+      window.clearTimeout(idleTimer.current)
       if (frame) cancelAnimationFrame(frame)
     }
   }, [pages, onPageInView])
@@ -277,18 +306,22 @@ export function DocumentViewer({
   }, [seek, pages, available, pageWidth, pagesMounted])
 
   return (
-    <div
-      ref={scrollRef}
-      className={cn('min-h-0 flex-1 overflow-y-auto overscroll-contain bg-muted/40', className)}
-    >
-      <Document
-        file={url}
-        onLoadSuccess={() => setPagesMounted(true)}
-        loading={<ViewerMessage>Loading the document…</ViewerMessage>}
-        error={<ViewerMessage>The document could not be displayed.</ViewerMessage>}
-        noData={<ViewerMessage>No document to display.</ViewerMessage>}
-        className="flex flex-col items-center gap-6 py-6"
+    // The wrapper exists so the counter can sit against the panel rather than
+    // against the content. Inside the scroller it would travel with the pages
+    // and be somewhere else on every frame.
+    <div className={cn('relative flex min-h-0 flex-1 flex-col', className)}>
+      <div
+        ref={scrollRef}
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-muted/40"
       >
+        <Document
+          file={url}
+          onLoadSuccess={() => setPagesMounted(true)}
+          loading={<ViewerMessage>Loading the document…</ViewerMessage>}
+          error={<ViewerMessage>The document could not be displayed.</ViewerMessage>}
+          noData={<ViewerMessage>No document to display.</ViewerMessage>}
+          className="flex flex-col items-center gap-6 py-6"
+        >
         {pages.map((page, index) => (
           <div
             key={page.page_num}
@@ -322,7 +355,34 @@ export function DocumentViewer({
             )}
           </div>
         ))}
-      </Document>
+        </Document>
+      </div>
+
+      {/*
+        Where you are, where your eyes already are. The status bar above the
+        viewer carries the same page number, but during a scroll nobody is
+        looking at the top of the panel.
+
+        `aria-hidden` and no live region, for the reason the status bar gives:
+        this changes on every page a momentum scroll passes, so announcing it
+        would queue thirty updates about pages the listener has already left.
+        The thumb strip's slider reports the same fact on demand.
+
+        In fast, out slow. It has to be there the moment you start moving, and
+        something that disappears the instant you stop reads as a glitch rather
+        than as a control standing down.
+      */}
+      <div
+        aria-hidden
+        className={cn(
+          'pointer-events-none absolute bottom-4 left-1/2 z-10 -translate-x-1/2',
+          'rounded-full bg-paper-chip px-3 py-1.5 text-xs font-medium text-paper-chip-text tabular-nums shadow-lg',
+          'transition-opacity motion-reduce:transition-none',
+          scrolling ? 'opacity-100 duration-150' : 'opacity-0 duration-600',
+        )}
+      >
+        {nearPage} / {pages.length}
+      </div>
     </div>
   )
 }

@@ -51,6 +51,8 @@
        bar and the thumb strip segment. One token keeps them identical. */
     --color-focus-tint: var(--focus-tint);
     --color-focus-edge: var(--focus-edge);
+    --color-paper-chip: var(--paper-chip);
+    --color-paper-chip-text: var(--paper-chip-text);
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -158,6 +160,15 @@
     --ready: oklch(0.55 0.13 156);
     --ready-text: oklch(0.43 0.11 156);
     --ready-surface: oklch(0.968 0.026 156);
+
+    /* The page counter floats over the document, and the document is white
+       paper in both themes. So this pair is deliberately absent from `.dark`:
+       keyed to the app's surfaces it becomes a white chip on white paper in
+       light mode, which is what it was before this existed. Opaque, for the
+       reason the ready surface is: a translucent ground has no single value to
+       measure the text against. */
+    --paper-chip: oklch(0.24 0 0);
+    --paper-chip-text: oklch(0.99 0 0);
 }
 
 /* Applied by useTheme, which resolves the three-value preference down to this
