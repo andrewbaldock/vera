@@ -31,6 +31,7 @@ lib/            review    the product rules — pure, no React
     │           session   who is signed in
     │           brand     the product name
     │           pdf       pdf.js worker configuration
+    │           polyfills URL.parse, which pdf.js needs and older Safari lacks
     │           utils     cn()
     ▼
 types/          review.ts
@@ -228,6 +229,7 @@ vocabulary rather than just chrome:
 --severity-critical  --severity-major  --severity-minor
 --focus-tint         --focus-edge
 --ready              --ready-text      --ready-surface
+--wordmark-from      --wordmark-to
 ```
 
 **No component ever names a color.** `SeverityDot` maps a severity to a token class and

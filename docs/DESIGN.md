@@ -639,7 +639,7 @@ We are not going to fix that client-side. The real answer is server-side: tagged
 1. **UX sketches — ✅ [`wireframes/VERA_wireframes.svg`](wireframes/VERA_wireframes.svg)**, drawn in Google Drawings *before* the build. [Live source](https://docs.google.com/drawings/d/1P1lXCZPaLolqYNq0aOk2XJNdWGl8UmqJt4W83rlUnVE/edit?usp=sharing). Kept as-is even where the final implementation differs — they record intent, not a spec.
 2. **What's required for a production deployment — ✅ [`PRODUCTION.md`](PRODUCTION.md)**, split into the seams this build was shaped around and the work it does not touch at all.
 
-Both are against a build with **32 unit tests and 204 browser tests across seven spec files**, which is worth stating rather than claiming "well tested".
+Both are against a build with **32 unit tests and 208 browser tests across seven spec files**, which is worth stating rather than claiming "well tested".
 
 ### The README is a deliverable too
 

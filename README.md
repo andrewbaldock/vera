@@ -5,17 +5,22 @@ Frontend take-home: the **Review Page**.
 *Latin* verus, *true. MIRA finds the problems; VERA is where a person decides.*
 
 A user uploads a document; the backend's AI processes it and reports issues that must be
-resolved before submission. This page shows those issues, explains what is blocking
-submission, and opens the gate when nothing critical or major remains.
-
-Uploading and fixing happen elsewhere — both are other screens in the brief's own flow. This
-one decides whether the document can go.
+resolved before submission. This page shows those issues, says what is blocking submission,
+and opens the gate when nothing critical or major remains. Uploading and fixing are other
+screens in the brief's flow — this one decides whether the document can go.
 
 ### ▶︎ Live: **[vera.andrewbaldock.com](https://vera.andrewbaldock.com)**
 
-Deployed so it can be opened on a real phone rather than a resized desktop window; the
-reasoning for that distinction is in [`docs/DESIGN.md`](docs/DESIGN.md). Rotating an iPad
-across 1024px switches between the two layouts.
+Deployed so it can be opened on a real phone or iPad, which is not the same test as a resized
+desktop window. Rotate an iPad across 1024px and the layout changes shape rather than scale —
+[`docs/DESIGN.md`](docs/DESIGN.md) covers why there are two shapes instead of one that
+stretches.
+
+![VERA on an iPhone and an iPad](docs/mobile.png)
+
+The same build on both. One thing at a time behind a view switcher on the phone; the split
+view, the draggable splitter and the thumb strip on the iPad. Not a media-query hook or a
+second component tree — the shape is decided in CSS at 1024px, so there is nothing to drift.
 
 ---
 
@@ -49,6 +54,8 @@ holds it the server fails loudly instead of quietly moving.
 | `bun test` | Unit tests for the product rules (vitest, ~0.2s) |
 | `bun run test:layout` | Layout tests in real browsers (Playwright) |
 | `bun run lint` | oxlint |
+| `bun run test:watch` | The unit tests, re-running on change |
+| `bun run test:layout:ui` | The layout suite in Playwright's UI mode, for stepping through a failure |
 
 The layout suite needs its browsers once:
 
@@ -134,12 +141,12 @@ attached to its issue when the list is re-sorted, and the payload guard. Pure fu
 DOM, milliseconds.
 
 **`bun run test:layout` — everything a browser has to answer, in Chromium and WebKit.** Seven
-spec files, 204 tests:
+spec files, 208 tests:
 
 | Spec | What it holds down |
 |---|---|
 | `layout` | Twelve real viewports from a 320px iPhone SE to 1920px — no horizontal overflow, the page itself never scrolls, each width renders the correct shape *and not the other one*, exactly one primary action visible and on screen, every touch target over 44px. Then a sweep from 320 to 1920 in 40px steps, because a fixed matrix sails past the 1007px disaster. |
-| `viewer` | Every page's text layer mounted so browser find can reach the whole document, canvases actually windowed, clicking an issue scrolling the document, the page staying put when the window crosses the breakpoint, the end of the scroll reporting the last page, and the phone path where the seek is made against a panel that has no layout yet. |
+| `viewer` | Every page's text layer mounted so browser find can reach the whole document, canvases actually windowed, clicking an issue scrolling the document, the page staying put when the window crosses the breakpoint, the end of the scroll reporting the last page, the phone path where the seek is made against a panel that has no layout yet, and both screens rendering on a browser with no `URL.parse` — the API a pdf.js dependency needs and Safari only shipped in 18.4. |
 | `submit` | Both halves of the gate: blocked offers upload rather than a dead submit, open asks for confirmation naming what is being accepted, and a submitted review reads as submitted on a cold load. |
 | `done` | The worklist reports progress without moving the gate, hides and shows its own rows, sinks under severity sort, and never crosses versions. |
 | `documents` | The queue, the version switch surviving a reload, and the placeholders being inert. |
@@ -228,7 +235,9 @@ the resolved tree. The list is short, and every line should be defensible.
 | `class-variance-authority` | ^0.7.1 | Typed component variants. Arrives with shadcn. |
 | `clsx`, `tailwind-merge` | ^2.1.1 / ^3.6.0 | Conditional classes, with later Tailwind utilities correctly overriding earlier ones. The `cn()` helper. |
 | `tw-animate-css` | ^1.4.0 | The animation utilities shadcn's generated components reference. |
-| `@fontsource-variable/geist` | ^5.3.0 | Self-hosted typeface, so no third-party font request at runtime. |
+| `@fontsource-variable/geist` | ^5.3.0 | The interface typeface, self-hosted so there is no third-party font request at runtime. |
+| `@fontsource-variable/ubuntu-sans-mono` | ^5.3.0 | Notes only. A different face separates what the reviewer wrote from what the system found. |
+| `@fontsource/goldman` | ^5.3.0 | The wordmark, and nothing else. Only the 700 weight is imported, since that is the only one the mark uses. |
 
 ### Development
 
