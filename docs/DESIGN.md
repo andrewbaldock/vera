@@ -99,7 +99,13 @@ Read from the real `review_mock.json` — 34 pages, 25 issues (4 critical, 8 maj
 
 ## 5. Jane's flow
 
-> 📐 **Sketched:** [`wireframes/VERA_wireframes.svg`](wireframes/VERA_wireframes.svg) — the visual companion to this section, drawn before any code. ([live source](https://docs.google.com/drawings/d/1P1lXCZPaLolqYNq0aOk2XJNdWGl8UmqJt4W83rlUnVE/edit?usp=sharing))
+> 📐 **Sketched before any code.** ([live source](https://docs.google.com/drawings/d/1P1lXCZPaLolqYNq0aOk2XJNdWGl8UmqJt4W83rlUnVE/edit?usp=sharing) · [full size](wireframes/VERA_wireframes.svg) · [all sketches](wireframes/))
+
+![The Review Page, sketched before implementation](wireframes/VERA_wireframes.svg)
+
+The six layout shapes, drawn to relative scale so they can be compared rather than described — iPhone and iPad-portrait in the compact shape, iPad-landscape and desktop in the full one, with the 1024px breakpoint marked across the middle:
+
+![The two layout shapes, at six sizes](wireframes/VERA_layouts.svg)
 
 Jane opens her queue at `/documents` and picks *Annual Compliance Report - Northeast Region*.
 

@@ -3,10 +3,14 @@
 Drawn in Google Drawings **before** the implementation, to settle the layout and the flow
 rather than reverse-justify whatever the code ended up doing.
 
+![The Review Page, sketched before implementation](VERA_wireframes.svg)
+
 **Export:** [`VERA_wireframes.svg`](VERA_wireframes.svg)
 **Source (live):** https://docs.google.com/drawings/d/1P1lXCZPaLolqYNq0aOk2XJNdWGl8UmqJt4W83rlUnVE/edit?usp=sharing
 
 ## Layout shapes
+
+![The two layout shapes, at six sizes](VERA_layouts.svg)
 
 [`VERA_layouts.drawio`](VERA_layouts.drawio) — editable source, with [`VERA_layouts.svg`](VERA_layouts.svg) exported from it.
 

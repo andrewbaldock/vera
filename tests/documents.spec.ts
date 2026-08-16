@@ -101,6 +101,11 @@ test('the demo reset puts a submitted review back', async ({ page }) => {
   await expect(row).toContainText('Awaiting review')
   await expect(row).toContainText('must be fixed')
 
+  // And the address bar. `?submitted=` records an arrival, so leaving it behind
+  // means the URL describes a submission that no longer exists — reload it and
+  // the row plays its arrival animation for a document merely awaiting review.
+  await expect(page).toHaveURL(/\/documents$/)
+
   // Without the reset, whoever is evaluating the build gets one shot at the most
   // important interaction in it.
   await page.goto(`${REVIEW}?v=3`)

@@ -103,14 +103,14 @@ function summaryLabel(
 
 export function DocumentsPage() {
   const latest = REVIEW_DOCUMENT.versions[REVIEW_DOCUMENT.versions.length - 1]
-  const [params] = useSearchParams()
+  const [params, setParams] = useSearchParams()
 
   /**
    * The row that was just finished. Read once on mount rather than tracked from
    * the URL: the reward is for the arrival, and a reload should not replay it.
    * The parameter stays in the address bar, which makes the flow inspectable.
    */
-  const [justSubmitted] = useState(() => params.get('submitted'))
+  const [justSubmitted, setJustSubmitted] = useState(() => params.get('submitted'))
 
   // Status comes from the stored submission, not a hardcoded label: the list
   // has to be able to say "Submitted" for a review that already is. The version
@@ -125,6 +125,20 @@ export function DocumentsPage() {
   // On mount, and again whenever the demo reset clears the storage it reads.
   useEffect(() => readSubmittedVersion(), [readSubmittedVersion])
   const submitted = submittedVersion !== null
+
+  /**
+   * Reset puts the address bar back too. `?submitted=` is the record of an
+   * arrival, and once the submission it names is gone the URL describes
+   * something that did not happen — copy it, reload it, and the row plays its
+   * arrival animation for a document that is merely awaiting review. Replaced
+   * rather than pushed, so the back button does not walk into the same stale
+   * claim.
+   */
+  const resetDemo = useCallback(() => {
+    readSubmittedVersion()
+    setJustSubmitted(null)
+    setParams({}, { replace: true })
+  }, [readSubmittedVersion, setParams])
 
   /**
    * The version this row is about: the one you would land on, or the one that
@@ -209,7 +223,7 @@ export function DocumentsPage() {
           ))}
         </ul>
 
-          <DemoReset document={REVIEW_DOCUMENT} onReset={readSubmittedVersion} />
+          <DemoReset document={REVIEW_DOCUMENT} onReset={resetDemo} />
         </div>
       </div>
     </div>

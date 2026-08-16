@@ -47,9 +47,8 @@ export function DemoReset({
         Note for reviewers — not part of the product
       </p>
       <p className="mt-2 text-xs text-muted-foreground">
-        Every row but the first is a placeholder. Submitting is recorded on this device so a
-        submitted review still reads as submitted after a reload, which is what a real endpoint
-        would do — so clearing it is the only way to run the flow twice.
+        Every row but the first is a placeholder. Submitting is recorded on this device (in lieu
+        of a real endpoint); click below to reset the demo.
       </p>
       <button
         type="button"

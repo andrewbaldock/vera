@@ -88,9 +88,17 @@ repeats the other.
 
 - [`docs/DESIGN.md`](docs/DESIGN.md) — **why**: scope, flow, decisions, decision log
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — **how**: layers, data flow, the viewer, the token layer, testing, and the seams where this changes at scale
-- [`docs/wireframes/`](docs/wireframes/) — UX sketches and the two layout shapes, drawn before implementation
+- [`docs/wireframes/`](docs/wireframes/) — the UX sketches, drawn before implementation, and the two layout shapes at six sizes
 - [`docs/PRODUCTION.md`](docs/PRODUCTION.md) — what running this for real would take: the seams the build was shaped around, and the work it does not touch at all
 - [`docs/assignment.pdf`](docs/assignment.pdf) — the original brief
+
+## The sketches, before any of it
+
+Drawn in Google Drawings before the first component, to settle the layout on paper rather than
+reverse-justify whatever the code ended up doing. Kept unedited where the build diverged — they
+record intent, not a spec. [Full size and the layout shapes](docs/wireframes/).
+
+![The Review Page, sketched before implementation](docs/wireframes/VERA_wireframes.svg)
 
 ## How it's put together
 
