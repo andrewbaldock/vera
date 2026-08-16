@@ -103,8 +103,9 @@ repeats the other.
 ## The sketches, before any of it
 
 Drawn in Google Drawings before the first component, to settle the layout on paper rather than
-reverse-justify whatever the code ended up doing. Kept unedited where the build diverged — they
-record intent, not a spec. [Full size and the layout shapes](docs/wireframes/).
+reverse-justify whatever the code ended up doing. Kept unedited where the build diverged, so they
+still show what was intended before any code existed.
+[Full size and the layout shapes](docs/wireframes/).
 
 ![The Review Page, sketched before implementation](docs/wireframes/VERA_wireframes.svg)
 

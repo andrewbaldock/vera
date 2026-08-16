@@ -72,7 +72,7 @@ wants a file stating six findings were ignored. The product says **accepted as-i
 
 **A list of findings worked against a document is spreadsheet-shaped.** The issues list is an
 ARIA grid with a roving tabindex: one tab stop instead of fifty, arrow keys to walk the rows,
-`Enter` to open a page *without moving focus*. The pattern's actual use case, not a box ticked.
+`Enter` to open a page *without moving focus*. That is what the grid pattern exists for.
 
 **`canSubmit` takes a whole `Review`.** Not an array of issues. A filtered list, a hidden
 severity or a ticked checkbox cannot reach it, because handing it one is a type error

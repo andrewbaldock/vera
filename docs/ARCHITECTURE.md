@@ -251,7 +251,7 @@ Two suites, two runners, because they answer different questions.
 
 **jsdom has no layout engine.** It will report that a 900px panel fits in a 320px window, so
 the class of bug the layout suite exists to catch is the class jsdom cannot see. That is the
-argument for a browser here, not a preference.
+argument for a browser here.
 
 **No screenshot baselines.** WebKit and Chromium rasterize type differently, so baselines
 would need a set per engine and would churn on every UI change. Structure is what is invariant
