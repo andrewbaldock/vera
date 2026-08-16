@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 import { DocumentsPage } from '@/components/DocumentsPage'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ReviewPage } from '@/components/ReviewPage'
+import { UiScaleProvider } from '@/hooks/useUiScale'
 
 /**
  * Three routes: the queue, a review, and the viewer harness.
@@ -29,25 +30,31 @@ export default function App() {
     // else — content that flashes and then vanishes, with no console on a
     // tablet to say why.
     <ErrorBoundary>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Navigate to="/documents" replace />} />
-          <Route path="/documents" element={<DocumentsPage />} />
-          <Route path="/reviews/:documentId" element={<ReviewPage />} />
-          <Route
-            path="/demo"
-            element={
-              <Suspense
-                fallback={<p className="p-6 text-sm text-muted-foreground">Loading the harness…</p>}
-              >
-                <ReactPdfDemo />
-              </Suspense>
-            }
-          />
-          {/* Anything else is a typo, not a page. Send it somewhere real. */}
-          <Route path="*" element={<Navigate to="/documents" replace />} />
-        </Routes>
-      </BrowserRouter>
+      {/* Above the router: the size preference belongs to the whole app, and
+          the thumb strip reads the value rather than only the CSS. */}
+      <UiScaleProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Navigate to="/documents" replace />} />
+            <Route path="/documents" element={<DocumentsPage />} />
+            <Route path="/reviews/:documentId" element={<ReviewPage />} />
+            <Route
+              path="/demo"
+              element={
+                <Suspense
+                  fallback={
+                    <p className="p-6 text-sm text-muted-foreground">Loading the harness…</p>
+                  }
+                >
+                  <ReactPdfDemo />
+                </Suspense>
+              }
+            />
+            {/* Anything else is a typo, not a page. Send it somewhere real. */}
+            <Route path="*" element={<Navigate to="/documents" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </UiScaleProvider>
     </ErrorBoundary>
   )
 }

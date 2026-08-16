@@ -54,6 +54,17 @@ async function contrastReport(page: Page) {
     }
     // The verdict's own headline, which is the only text using this pair.
     result.ready = { onReadySurface: ratio(token('--ready-text'), token('--ready-surface')) }
+
+    // Secondary text. It carries the issue descriptions, which are the finding
+    // itself — "the cover page reads 03/10/2025 while page 3 reads 01/15/2024"
+    // — at 12px, so it is the smallest text in the app doing the most work.
+    // The muted fill is in the list because the viewer's ground is `muted/40`.
+    result.mutedForeground = Object.fromEntries(
+      (['--card', '--focus-tint', '--ready-surface', '--muted'] as const).map((surface) => [
+        surface,
+        ratio(token('--muted-foreground'), token(surface)),
+      ]),
+    )
     return result
   })
 }
@@ -82,5 +93,24 @@ for (const scheme of ['light', 'dark'] as const) {
       report.ready.onReadySurface,
       `the cleared verdict's headline on its own surface in ${scheme} mode`,
     ).toBeGreaterThanOrEqual(AA_NORMAL_TEXT)
+  })
+
+  test(`secondary text clears AA against every surface it sits on — ${scheme}`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: scheme })
+    await page.goto('/reviews/souj5sd12c8a3f')
+    await expect(page.getByRole('grid', { name: 'Issues' })).toBeVisible()
+
+    // shadcn's stock `--muted-foreground` shipped here at 4.27 on the focus
+    // tint in light mode, under the floor, and was only noticed by eye in dark
+    // mode where it passed. The severity check above did not cover it, so the
+    // one surface that failed was the one nobody measured.
+    const { mutedForeground } = await contrastReport(page)
+    for (const [surface, value] of Object.entries(mutedForeground)) {
+      expect(value, `--muted-foreground on ${surface} in ${scheme} mode`).toBeGreaterThanOrEqual(
+        AA_NORMAL_TEXT,
+      )
+    }
   })
 }

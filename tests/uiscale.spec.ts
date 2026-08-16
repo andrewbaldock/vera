@@ -1,0 +1,92 @@
+import { test, expect } from '@playwright/test'
+
+/**
+ * The interface size setting. Three stops applied as the root font size, which
+ * is what moves type and spacing together, since Tailwind sizes both in rem.
+ *
+ * What is worth asserting is the chain end to end: the menu writes a
+ * preference, the root font size changes, the preference survives a reload,
+ * and it is applied before the app mounts. The last one is the reason for the
+ * inline script in index.html, and it is invisible in a screenshot because the
+ * reflow it prevents is over in one frame.
+ *
+ * The document is checked too. It is measured in px from its panel, so it must
+ * not move when the interface does, and that separation is the whole reason
+ * this setting exists instead of telling people to use browser zoom.
+ */
+
+const REVIEW = '/reviews/doc-1'
+
+/** Percentages of a 16px browser default. Kept in step with index.css. */
+const ROOT_FONT_PX = {
+  compact: 14,
+  comfortable: 16,
+  large: 20,
+} as const
+
+function rootFontSize(page: import('@playwright/test').Page) {
+  return page.evaluate(() =>
+    parseFloat(getComputedStyle(document.documentElement).fontSize),
+  )
+}
+
+async function chooseSize(page: import('@playwright/test').Page, label: string) {
+  await page.getByRole('button', { name: /account and settings/i }).click()
+  await page.getByRole('menuitemradio', { name: label }).click()
+  // The menu closes and returns focus; without settling here the next
+  // measurement can race the class change.
+  await expect(page.getByRole('menuitemradio', { name: label })).toBeHidden()
+}
+
+test.describe('the interface size setting', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await page.goto(REVIEW)
+  })
+
+  test('ships at the middle stop', async ({ page }) => {
+    await expect.poll(() => rootFontSize(page)).toBe(ROOT_FONT_PX.comfortable)
+    await expect(page.locator('html')).toHaveAttribute('data-ui-scale', 'comfortable')
+  })
+
+  test('each stop moves the root font size', async ({ page }) => {
+    await chooseSize(page, 'Large')
+    await expect.poll(() => rootFontSize(page)).toBe(ROOT_FONT_PX.large)
+
+    await chooseSize(page, 'Compact')
+    await expect.poll(() => rootFontSize(page)).toBe(ROOT_FONT_PX.compact)
+  })
+
+  test('the choice survives a reload, and lands before the app mounts', async ({ page }) => {
+    await chooseSize(page, 'Large')
+
+    await page.reload({ waitUntil: 'commit' })
+    // Asserted at `commit`, before React has run. If this only passed after
+    // hydration the setting would be applied by the app, and every load at a
+    // non-default size would reflow the whole layout in front of the reader.
+    await expect(page.locator('html')).toHaveAttribute('data-ui-scale', 'large')
+  })
+
+  test('a junk stored value falls back instead of becoming a selector', async ({ page }) => {
+    await page.evaluate(() => localStorage.setItem('vera.uiScale', 'enormous'))
+    await page.reload({ waitUntil: 'commit' })
+    await expect(page.locator('html')).toHaveAttribute('data-ui-scale', 'comfortable')
+  })
+
+  test('the document does not scale with the interface', async ({ page }) => {
+    // Scoped to the viewer: the issues list carries `data-page` too, on the
+    // row for the finding on that page.
+    const page1 = page.locator('#document-panel [data-page="1"]')
+    await expect(page1).toBeVisible()
+    const before = await page1.boundingBox()
+
+    await chooseSize(page, 'Large')
+    await expect.poll(() => rootFontSize(page)).toBe(ROOT_FONT_PX.large)
+
+    // The document panel gets narrower, because the interface around it grew,
+    // so the page cannot be asserted identical. What must hold is that it did
+    // not grow with the type.
+    const after = await page1.boundingBox()
+    expect(after!.width).toBeLessThanOrEqual(before!.width)
+  })
+})

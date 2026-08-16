@@ -45,6 +45,13 @@
           pref === 'dark' ||
           (pref === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)
         if (dark) document.documentElement.classList.add('dark')
+        // Same reasoning, different symptom: the interface size is the root
+        // font size, so applying it after mount reflows the entire layout in
+        // front of the reader. Validated here because this value becomes an
+        // attribute selector.
+        var size = localStorage.getItem('vera.uiScale')
+        document.documentElement.dataset.uiScale =
+          size === 'compact' || size === 'large' ? size : 'comfortable'
       } catch (e) {}
     </script>
   </head>

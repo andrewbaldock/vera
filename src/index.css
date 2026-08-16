@@ -105,7 +105,13 @@
     --secondary: #f4f5fb;
     --secondary-foreground: #3f4bd6;
     --muted: #f5f6fa;
-    --muted-foreground: #6b7280;
+    /* Darker than shadcn's default, because this carries issue descriptions,
+       which are the finding itself and set at 12px. Measured against the four
+       grounds it lands on, the default read 4.83 on the card and 4.27 / 4.44 /
+       4.48 on the focus tint, the ready surface and the muted fill: under the
+       4.5 AA floor on three of the four. This clears 5.31 at worst while
+       staying 3.29 away from the foreground, so the hierarchy holds. */
+    --muted-foreground: #5c6373;
     --accent: #eef0fe;
     --accent-foreground: #3f4bd6;
     --destructive: oklch(0.577 0.245 27.325);
@@ -169,7 +175,12 @@
     --secondary: #1e2138;
     --secondary-foreground: #c3c9fb;
     --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
+    /* Lifted for the same reason as its light counterpart, and for one the
+       ratio alone does not show: this is a neutral gray on a blue-violet
+       tint, so no hue difference is helping it and it reads dimmer than the
+       number suggests. The default was 5.53 on the focus tint; this is 6.90,
+       and still 1.99 off the foreground. */
+    --muted-foreground: oklch(0.77 0 0);
     --accent: #252a4d;
     --accent-foreground: #c3c9fb;
     --destructive: oklch(0.704 0.191 22.216);
@@ -366,6 +377,34 @@
   html,
   body {
     @apply overscroll-none bg-background text-foreground;
+  }
+
+  /*
+    Interface size. Tailwind sizes type and spacing in rem, so these three
+    values move the whole interface: labels, padding, gaps and the 44px touch
+    minimum together.
+
+    Percentages, so a reader who has already raised their browser's default
+    font size keeps it and gets this on top. A px value would overrule them.
+
+    The document is untouched: its width is measured in px from the panel, and
+    it has its own zoom.
+
+    Applied by useUiScale, and by the inline script in index.html so the
+    layout does not reflow on load. `comfortable` is stated rather than left
+    to the default, so a missing attribute and the middle stop cannot render
+    differently.
+  */
+  html[data-ui-scale='compact'] {
+    font-size: 87.5%;
+  }
+
+  html[data-ui-scale='comfortable'] {
+    font-size: 100%;
+  }
+
+  html[data-ui-scale='large'] {
+    font-size: 125%;
   }
 
   html {

@@ -8,10 +8,10 @@ import type { CatalogDocument } from '@/lib/documents'
  * value the API can return and the page has to render it on a cold load, which
  * leaves whoever is evaluating this build able to submit only once.
  *
- * The reset lives here, labeled as a demo control, not in the row's overflow
- * menu: a "clear submission" item inside product chrome would read as an
- * un-submit feature, and the spec's flow has no reopened status and no arrow
- * back. Corrections happen by uploading a new version.
+ * The reset lives here, below the queue and marked as a demo control, not in
+ * the row's overflow menu: a "clear submission" item inside product chrome
+ * would read as an un-submit feature, and the spec's flow has no reopened
+ * status and no arrow back. Corrections happen by uploading a new version.
  */
 export function DemoReset({
   document,
@@ -38,23 +38,16 @@ export function DemoReset({
   }
 
   return (
-    // Visibly not the product: dashed, off to one side, and labeled as an aside
-    // to whoever is evaluating the build. A reset styled like product chrome
-    // would read as an un-submit feature.
-    <div className="mt-6 mb-2 rounded-lg border border-dashed px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-      <p className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase">
-        <FlaskConical className="size-3.5" aria-hidden />
-        Note for reviewers — not part of the product
-      </p>
-      <p className="mt-2 text-xs text-muted-foreground">
-        Every row but the first is a placeholder. Submitting is recorded on this device (in lieu
-        of a real endpoint); click below to reset the demo.
-      </p>
+    // Set apart from the queue by distance and by a dashed edge, so it reads as
+    // an aside to whoever is evaluating the build. A reset styled like product
+    // chrome would read as an un-submit feature.
+    <div className="mt-10 mb-2 flex justify-center pb-[max(1rem,env(safe-area-inset-bottom))]">
       <button
         type="button"
         onClick={reset}
-        className="mt-3 min-h-11 rounded-md border border-dashed px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground active:bg-accent focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none"
+        className="inline-flex min-h-11 items-center gap-1.5 rounded-md border border-dashed px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground active:bg-accent focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none"
       >
+        <FlaskConical className="size-3.5" aria-hidden />
         {justReset ? 'Demo data cleared' : 'Reset demo data'}
       </button>
     </div>

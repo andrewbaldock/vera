@@ -1,4 +1,14 @@
-import { Check, LogOut, Monitor, Moon, Sun, UserRound } from 'lucide-react'
+import {
+  AArrowDown,
+  AArrowUp,
+  ALargeSmall,
+  Check,
+  LogOut,
+  Monitor,
+  Moon,
+  Sun,
+  UserRound,
+} from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useTheme, type ThemePreference } from '@/hooks/useTheme'
+import { useUiScale, type UiScale } from '@/hooks/useUiScale'
 import { CURRENT_USER } from '@/lib/session'
 import type { ReviewUser } from '@/types/review'
 
@@ -26,12 +37,24 @@ const THEMES: { value: ThemePreference; label: string; icon: typeof Sun }[] = [
   { value: 'dark', label: 'Dark', icon: Moon },
 ]
 
+/**
+ * Three stops, and the middle one is the shipped default. "Comfortable" is the
+ * established word for the middle density in this kind of menu, which makes it
+ * the one a user has met before.
+ */
+const SIZES: { value: UiScale; label: string; icon: typeof Sun }[] = [
+  { value: 'compact', label: 'Compact', icon: AArrowDown },
+  { value: 'comfortable', label: 'Comfortable', icon: ALargeSmall },
+  { value: 'large', label: 'Large', icon: AArrowUp },
+]
+
 function initials(user: ReviewUser): string {
   return `${user.first_name.charAt(0)}${user.last_name.charAt(0)}`.toUpperCase()
 }
 
 export function UserMenu({ user = CURRENT_USER }: { user?: ReviewUser } = {}) {
   const { preference, setTheme } = useTheme()
+  const { scale, setScale } = useUiScale()
   const name = `${user.first_name} ${user.last_name}`
 
   return (
@@ -85,6 +108,32 @@ export function UserMenu({ user = CURRENT_USER }: { user?: ReviewUser } = {}) {
               <Icon className="size-4 text-muted-foreground" aria-hidden />
               <span className="flex-1">{label}</span>
               {preference === value && <Check className="size-4" aria-hidden />}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+
+        <DropdownMenuSeparator />
+
+        {/* Beside the theme, because both are answers to "how do I want to
+            look at this", and both belong to the device. The document has its
+            own zoom in the page bar: this moves the interface and leaves the
+            pages alone. */}
+        <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+          Text size
+        </DropdownMenuLabel>
+        <DropdownMenuRadioGroup
+          value={scale}
+          onValueChange={(value) => setScale(value as UiScale)}
+        >
+          {SIZES.map(({ value, label, icon: Icon }) => (
+            <DropdownMenuRadioItem
+              key={value}
+              value={value}
+              className="gap-2 ps-2 [&>span:first-child]:hidden"
+            >
+              <Icon className="size-4 text-muted-foreground" aria-hidden />
+              <span className="flex-1">{label}</span>
+              {scale === value && <Check className="size-4" aria-hidden />}
             </DropdownMenuRadioItem>
           ))}
         </DropdownMenuRadioGroup>
