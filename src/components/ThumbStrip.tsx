@@ -213,9 +213,9 @@ export function ThumbStrip({
               )}
             >
               {/*
-                The page number, which makes the strip a map rather than a
-                gradient. Smallest legible size, hidden when a segment is too
-                short to hold it: an unlabeled block beats a clipped digit.
+                The page number, so a segment can be read as a location.
+                Smallest legible size, hidden when a segment is too short to
+                hold it: an unlabeled block beats a clipped digit.
                 `tabular-nums` keeps the column aligned as digits change width.
               */}
               {segmentHeight >= 16 && (

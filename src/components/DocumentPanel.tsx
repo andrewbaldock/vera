@@ -28,7 +28,7 @@ import { cn } from '@/lib/utils'
  * says which, and opening a finding says what it actually is. Severity is
  * carried by a label as well as a color at every step.
  *
- * `z-10` is not arbitrary: react-pdf ships pdf.js's CSS, where `.textLayer` is
+ * `z-10` clears pdf.js's own layers. react-pdf ships its CSS, where `.textLayer` is
  * `z-index: 2` and `.annotationLayer` is `z-index: 3`. At equal z-index the
  * pages win on DOM order, so a scrolled-past page's invisible text layer sits
  * over the UI and eats every click.

@@ -15,8 +15,7 @@ import type { DocumentPage } from '@/types/review'
  * **Heights are reserved before anything paints.** Pages render asynchronously,
  * so an unreserved document is nearly zero pixels tall while it loads: scroll to
  * page 30 in that state and you land near the top, then watch the content grow
- * underneath you. The API's per-page `width`/`height` are what prevent that, so
- * they are navigation data rather than only thumb-strip data.
+ * underneath you. The API's per-page `width`/`height` are what prevent that.
  *
  * **Everything here measures against the scroll container, never the window.**
  * The shell is a fixed-height frame with scrolling inside panels, and the layout
