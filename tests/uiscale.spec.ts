@@ -73,6 +73,42 @@ test.describe('the interface size setting', () => {
     await expect(page.locator('html')).toHaveAttribute('data-ui-scale', 'comfortable')
   })
 
+  /**
+   * The thumb strip sizes itself from arithmetic, not from CSS, so it is the
+   * one part of the interface the root font size cannot move on its own. It
+   * reads the root size and puts a floor under its own scale instead.
+   */
+  test('the thumb strip trades the whole-document view for legible segments', async ({ page }) => {
+    const strip = page.locator('[role="slider"][aria-label="Document pages"]')
+    await expect(strip).toBeVisible()
+
+    const measure = () =>
+      strip.evaluate((el) => {
+        const list = el.querySelector('ol')!
+        const segment = list.children[0] as HTMLElement
+        const number = list.querySelector('span') as HTMLElement | null
+        return {
+          segmentHeight: segment.getBoundingClientRect().height,
+          scrolls: list.scrollHeight > list.clientHeight,
+          numberPx: number ? parseFloat(number.style.fontSize) : 0,
+        }
+      })
+
+    // At the shipped size the fit still wins on a 34-page document, so the
+    // strip stays a map of the whole thing and never scrolls. This is the
+    // assertion that keeps the floor from quietly changing v1.0 behaviour.
+    const before = await measure()
+    expect(before.scrolls).toBe(false)
+
+    await chooseSize(page, 'Large')
+    await expect.poll(() => rootFontSize(page)).toBe(ROOT_FONT_PX.large)
+    await expect.poll(async () => (await measure()).scrolls).toBe(true)
+
+    const after = await measure()
+    expect(after.segmentHeight).toBeGreaterThan(before.segmentHeight)
+    expect(after.numberPx).toBeGreaterThan(before.numberPx)
+  })
+
   test('the document does not scale with the interface', async ({ page }) => {
     // Scoped to the viewer: the issues list carries `data-page` too, on the
     // row for the finding on that page.

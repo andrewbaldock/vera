@@ -15,13 +15,30 @@ import { cn } from '@/lib/utils'
  * a piece of furniture.
  */
 
-const STEP = 2
+/**
+ * Left panel width as a percentage of the container, which is what the
+ * issues/document split wants. The thumb strip passes its own.
+ */
+const percentFromLeft = (clientX: number, bounds: DOMRect) =>
+  ((clientX - bounds.left) / bounds.width) * 100
 
 interface SplitterProps {
-  /** Width of the left panel, as a percentage of the split container. */
+  /** Whatever `measure` returns: a percentage by default, px for the strip. */
   value: number
-  onChange: (percent: number) => void
+  onChange: (next: number) => void
   containerRef: RefObject<HTMLDivElement | null>
+  /**
+   * Turns a pointer position into a value, so a right-anchored panel needs no
+   * branching in here — only its own arithmetic.
+   */
+  measure?: (clientX: number, bounds: DOMRect) => number
+  /**
+   * Arrow-key increment. **Signed**: a right-anchored panel passes a negative
+   * step so that pressing right still moves the line right, which makes that
+   * panel narrower. One number rather than a second "which way round" prop.
+   */
+  step?: number
+  label: string
   min?: number
   max?: number
   controls: string
@@ -32,6 +49,9 @@ export function Splitter({
   value,
   onChange,
   containerRef,
+  measure = percentFromLeft,
+  step = 2,
+  label,
   min = 20,
   max = 50,
   controls,
@@ -52,7 +72,7 @@ export function Splitter({
   function dragTo(clientX: number) {
     const bounds = containerRef.current?.getBoundingClientRect()
     if (!bounds || bounds.width === 0) return
-    onChange(clamp(((clientX - grabOffset.current - bounds.left) / bounds.width) * 100))
+    onChange(clamp(measure(clientX - grabOffset.current, bounds)))
   }
 
   function release(event: React.PointerEvent<HTMLDivElement>) {
@@ -63,8 +83,8 @@ export function Splitter({
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     const moves: Record<string, number> = {
-      ArrowLeft: value - STEP,
-      ArrowRight: value + STEP,
+      ArrowLeft: value - step,
+      ArrowRight: value + step,
       Home: min,
       End: max,
     }
@@ -79,7 +99,7 @@ export function Splitter({
       role="separator"
       tabIndex={0}
       aria-orientation="vertical"
-      aria-label="Resize issues panel"
+      aria-label={label}
       aria-controls={controls}
       aria-valuenow={Math.round(value)}
       aria-valuemin={min}

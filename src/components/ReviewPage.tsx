@@ -11,6 +11,14 @@ import { useReview } from '@/hooks/useReview'
 import { useDoneIssues } from '@/hooks/useDoneIssues'
 import { useIssueNotes } from '@/hooks/useIssueNotes'
 import { useScrollTracking } from '@/hooks/useScrollTracking'
+import { PanelLeftOpen } from 'lucide-react'
+import {
+  ISSUES_MAX,
+  ISSUES_MIN,
+  STRIP_MAX,
+  STRIP_MIN,
+  usePanelSizes,
+} from '@/hooks/usePanelSizes'
 import { DEFAULT_VERSION, REVIEW_DOCUMENT, versionOf } from '@/lib/documents'
 import {
   canSubmit,
@@ -46,9 +54,9 @@ const TAB_LABEL: Record<Tab, string> = {
   document: 'Document',
 }
 
-const DEFAULT_ISSUES_WIDTH = 32
 const DOCUMENT_PANEL_ID = 'document-panel'
 const ISSUES_PANEL_ID = 'issues-panel'
+const STRIP_ID = 'thumb-strip'
 
 export function ReviewPage() {
   /**
@@ -130,7 +138,7 @@ function ReviewShell({
   onVersionChange,
 }: ReviewShellProps) {
   const [tab, setTab] = useState<Tab>('issues')
-  const [issuesWidth, setIssuesWidth] = useState(DEFAULT_ISSUES_WIDTH)
+  const { panels, setIssuesWidth, setStripWidth, openStrip } = usePanelSizes()
   /**
    * One value, three views of it: the thumb strip marks it, the issues on it
    * tint in the list, and the status bar names them. One piece of state rather
@@ -254,8 +262,10 @@ function ReviewShell({
 
       <div
         ref={splitRef}
-        style={{ '--issues-width': `${issuesWidth}%` } as CSSProperties}
-        className="flex min-h-0 flex-1 overflow-hidden"
+        style={{ '--issues-width': `${panels.issues}%` } as CSSProperties}
+        // `relative` so a closed strip's pull tab can sit against the right
+        // edge without taking any width from the document.
+        className="relative flex min-h-0 flex-1 overflow-hidden"
       >
         <section
           id={ISSUES_PANEL_ID}
@@ -302,9 +312,12 @@ function ReviewShell({
 
         <Splitter
           className="hidden lg:block"
-          value={issuesWidth}
+          label="Resize issues panel"
+          value={panels.issues}
           onChange={setIssuesWidth}
           containerRef={splitRef}
+          min={ISSUES_MIN}
+          max={ISSUES_MAX}
           controls={ISSUES_PANEL_ID}
         />
 
@@ -326,13 +339,69 @@ function ReviewShell({
           />
         </main>
 
-        <ThumbStrip
-          className="hidden lg:flex"
-          pages={review.document.pages}
-          issuesByPage={issuesByPage}
-          focusedPage={focusedPage}
-          onSeek={scrubToPage}
-        />
+        {panels.stripOpen ? (
+          <>
+            {/*
+              Measured from the container's right edge, so the value is the
+              strip's own width and the document takes whatever is left. The
+              step is negative because this panel is on the other side of its
+              line: pressing right still moves the line right, which here means
+              a narrower strip.
+
+              Its minimum is 0 rather than the strip's own, so the strip can be
+              dragged shut. The snap back up to a legal width happens in
+              `setStripWidth`, which is also what decides that shut is shut.
+            */}
+            <Splitter
+              className="hidden lg:block"
+              label="Resize page strip"
+              value={panels.strip ?? STRIP_MIN}
+              onChange={setStripWidth}
+              measure={(clientX, bounds) => bounds.right - clientX}
+              step={-8}
+              min={0}
+              max={STRIP_MAX}
+              containerRef={splitRef}
+              controls={STRIP_ID}
+            />
+
+            <ThumbStrip
+              id={STRIP_ID}
+              className="hidden lg:flex"
+              pages={review.document.pages}
+              issuesByPage={issuesByPage}
+              focusedPage={focusedPage}
+              onSeek={scrubToPage}
+              width={panels.strip}
+              pdfUrl={review.document.pdf_url}
+            />
+          </>
+        ) : (
+          /*
+            Closed, the strip costs no width at all and leaves a pull tab over
+            the document's edge. Without a way back the only route to a control
+            you dragged shut is clearing site data, and a panel that can be lost
+            is a panel nobody dares to close.
+          */
+          <button
+            type="button"
+            onClick={openStrip}
+            className={cn(
+              'absolute top-1/2 right-0 z-20 hidden -translate-y-1/2 lg:flex',
+              'h-12 w-4 items-center justify-center rounded-l-md border border-r-0 bg-card text-muted-foreground shadow-md transition-colors',
+              'hover:w-5 hover:bg-accent hover:text-foreground active:bg-accent',
+              'focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none',
+              // The tab stays small; the target does not. Opened out to the
+              // left only, over the document, and only for a finger — under a
+              // cursor it would sit 24px over the page and take its clicks.
+              "after:absolute after:inset-y-0 after:right-0 after:content-['']",
+              'pointer-coarse:after:-left-6 pointer-coarse:after:-top-3 pointer-coarse:after:-bottom-3',
+            )}
+          >
+            <PanelLeftOpen className="size-3" aria-hidden />
+            <span className="sr-only">Show page strip</span>
+          </button>
+        )}
       </div>
 
       {/* Compact only. The blocking count sits directly against the button it is
