@@ -96,6 +96,7 @@ repeats the other.
 - [`docs/DESIGN.md`](docs/DESIGN.md) — **why**: scope, flow, decisions, decision log
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — **how**: layers, data flow, the viewer, the token layer, testing, and the seams where this changes at scale
 - [`docs/wireframes/`](docs/wireframes/) — the UX sketches, drawn before implementation, and the two layout shapes at six sizes
+- [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) — how this was built, and what in it required knowing something that isn't obvious
 - [`docs/PRODUCTION.md`](docs/PRODUCTION.md) — what running this for real would take: the seams the build was shaped around, and the work it does not touch at all
 - [`docs/assignment.pdf`](docs/assignment.pdf) — the original brief
 
