@@ -270,7 +270,7 @@ the resolved tree. The list is short, and every line should be defensible.
 | `pdfjs-dist` | 5.4.296 | The PDF engine. **Pinned exactly**, with no caret: the worker version must match what `react-pdf` loads or it throws at runtime. Declared rather than relied on via hoisting. |
 | `tailwindcss`, `@tailwindcss/vite` | ^4.3.3 | Styling, and the token layer the whole theme rests on. |
 | `radix-ui` | ^1.6.7 | Accessible behavior under the shadcn components: menus, focus management, dismissal. The part that is hard to write. |
-| `lucide-react` | ^1.31.0 | Icons. Also, as it happens, the icon set HomeVision's own site uses. |
+| `lucide-react` | ^1.31.0 | Icons. Also, as it happens, the icon set the platform's own site uses. |
 | `class-variance-authority` | ^0.7.1 | Typed component variants. Arrives with shadcn. |
 | `clsx`, `tailwind-merge` | ^2.1.1 / ^3.6.0 | Conditional classes, with later Tailwind utilities correctly overriding earlier ones. The `cn()` helper. |
 | `tw-animate-css` | ^1.4.0 | The animation utilities shadcn's generated components reference. |

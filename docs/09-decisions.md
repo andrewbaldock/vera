@@ -567,7 +567,7 @@ The fills are tuned to read as 8px marks. As 12px type they measure 4.77, 2.56 a
 
 **Over:** Shipping the UNDIRT codename; title case
 
-MIRA is set in capitals everywhere on HomeVision's site, so a sibling product rendered as "Vera" reads as a different kind of thing. Latin *verus*, true: MIRA finds the problems, VERA is where a person decides. The mark borrows their faceted construction rather than their shape: a cut slab with a triangle tucked under it, arms uneven so it reads as a check as well as a V.
+MIRA is set in capitals everywhere on the platform's site, so a sibling product rendered as "Vera" reads as a different kind of thing. Latin *verus*, true: MIRA finds the problems, VERA is where a person decides. The mark borrows their faceted construction rather than their shape: a cut slab with a triangle tucked under it, arms uneven so it reads as a check as well as a V.
 
 ### 49. Deployed to Vercel, not the existing Apache host
 
