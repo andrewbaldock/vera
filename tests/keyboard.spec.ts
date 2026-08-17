@@ -103,8 +103,10 @@ test('Space ticks the Done box without leaving the grid', async ({ page }) => {
   await expect(cell(page, 0, 2)).toBeChecked()
   await expect(cell(page, 0, 2)).toBeFocused()
   await expect(
-    page.getByRole('region', { name: 'Issues found' }).getByText('1 marked done'),
-  ).toBeVisible()
+    page
+      .getByRole('region', { name: 'Issues found' })
+      .getByRole('button', { name: /marked done/ }),
+  ).toHaveAccessibleName(/^1 marked done/)
 })
 
 /**

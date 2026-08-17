@@ -101,7 +101,9 @@ export function DocumentPanel({
           <span className="text-muted-foreground" aria-hidden>
             ·
           </span>
-          <span className="min-w-0 flex-1 truncate text-muted-foreground">
+          {/* The zoom control's width, reserved: the label truncates where it
+              begins rather than sliding under it. */}
+          <span className="min-w-0 flex-1 truncate pe-30 text-muted-foreground">
             {summary}
             {count > 0 && !expanded && (
               <span className="ms-1">— {issuesOnPage.map((issue) => issue.title).join(' · ')}</span>
@@ -116,16 +118,20 @@ export function DocumentPanel({
         </button>
 
         {/*
-          Centered in the bar rather than floating over the document. The bar's
-          middle is empty — the page number and its findings sit left, the
-          expand control right — and a control for the document reads better in
-          the strip of chrome above it than as an object lying on the page.
+          Laid over the row, between the label and the chevron.
+
+          The chevron is this row's own control and belongs on its edge, so the
+          zoom sits inside of it rather than pushing it inward. It cannot be
+          centred either: collapsed, the label grows to name every finding on
+          the page and would run underneath it, and a control the page text can
+          hide behind is worse placed than one that is off-centre. The label
+          reserves this width instead, so it truncates where the control begins.
 
           Outside the expand button, because nesting controls is invalid.
         */}
         <div
           className={cn(
-            'absolute inset-x-0 top-0 flex h-11 items-center justify-center gap-0.5',
+            'absolute inset-y-0 end-8 flex items-center gap-0.5',
             'pointer-events-none [&>*]:pointer-events-auto',
           )}
         >
@@ -187,7 +193,13 @@ export function DocumentPanel({
                     type="button"
                     onClick={() => toggleIssue(issue.id)}
                     aria-expanded={isOpen}
-                    className="flex min-h-11 w-full items-start gap-2 py-2 text-start"
+                    /*
+                      44px is a touch target, and this row's content needs 36.
+                      A fine pointer does not need the target, so it gets the
+                      row at the size the text actually is; anything coarse
+                      keeps the full 44.
+                    */
+                    className="flex min-h-11 w-full items-start gap-2 py-2 text-start pointer-fine:min-h-9"
                   >
                     <SeverityIcon severity={issue.severity} className="mt-1 shrink-0" />
                     <span className="min-w-0 flex-1">

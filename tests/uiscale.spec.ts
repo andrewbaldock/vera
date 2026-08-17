@@ -102,7 +102,10 @@ test.describe('the interface size setting', () => {
       strip.evaluate((el) => {
         const list = el.querySelector('ol')!
         const segment = list.children[0] as HTMLElement
-        const number = list.querySelector('span') as HTMLElement | null
+        // Selected by the inline size the component sets, not by being the
+        // first span in the list: the segment holds other spans, and which one
+        // comes first is not this test's subject.
+        const number = list.querySelector('span[style*="font-size"]') as HTMLElement | null
         return {
           segmentHeight: segment.getBoundingClientRect().height,
           scrolls: list.scrollHeight > list.clientHeight,

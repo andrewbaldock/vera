@@ -361,7 +361,15 @@ export function ThumbStrip({
       // itself and by a scrub reaching the edge, never by a finger: the bar is
       // hidden because it would be a scrollbar in a 44px column that nothing is
       // allowed to drag.
-      className="flex min-h-0 flex-1 flex-col items-center gap-0.5 overflow-y-auto scrollbar-none [&::-webkit-scrollbar]:hidden"
+      //
+      // The pixel of inline padding is what the focused segment's ring lives in.
+      // A segment is measured off this element and sized to fill it exactly, so
+      // with no padding the ring — a box-shadow, drawn outside the border box —
+      // lands outside the padding box this scroller clips at, and loses its
+      // outer pixel. Nothing else in the scale math has to change: the observer
+      // below reads `contentRect`, which excludes padding, so the segment keeps
+      // filling the column.
+      className="flex min-h-0 flex-1 flex-col items-center gap-0.5 overflow-y-auto px-px scrollbar-none [&::-webkit-scrollbar]:hidden"
     >
       {pages.map((page) => {
         const issues = issuesByPage.get(page.page_num) ?? []
@@ -372,9 +380,38 @@ export function ThumbStrip({
             style={{ width: page.width * scale, height: page.height * scale }}
             className={cn(
               'relative flex shrink-0 flex-col justify-start gap-px overflow-hidden rounded-xs border p-0.5',
-              isFocused ? 'border-focus-edge bg-focus-tint ring-1 ring-focus-edge' : 'bg-background',
+              isFocused
+                ? 'border-focus-edge bg-focus-tint ring-1 ring-focus-edge'
+                : 'bg-background',
             )}
           >
+            {/*
+              The tint alone stopped reading once the segments carried page
+              images: it is the segment's *background*, and a raster covers it,
+              leaving a 1px ring to say which page you are on. This washes the
+              image itself in the same token the issue rows use, so the page you
+              are on is one color wherever it appears.
+
+              Multiplied rather than laid over at a fraction of itself. A
+              translucent wash lightens the tint away from the token and hazes
+              the page underneath it in equal measure; multiplying leaves the
+              page's white paper at exactly the token and leaves its ink alone,
+              so the shade is right and the page still reads through it.
+
+              Normal blend in dark mode, where the token is dark enough that
+              multiplying it over a white page leaves a navy block with nothing
+              visible in it.
+
+              Above the raster and below the page number and the severity marks,
+              which both sit at `z-10` — the wash tints the page, not the marks
+              that have to stay legible over it.
+            */}
+            {isFocused && (
+              <span
+                className="pointer-events-none absolute inset-0 z-[5] bg-focus-tint mix-blend-multiply dark:bg-focus-tint/55 dark:mix-blend-normal"
+                aria-hidden
+              />
+            )}
             {withRasters && (
               <RasterPage pageNumber={page.page_num} width={Math.round(segmentWidth)} />
             )}
@@ -394,7 +431,11 @@ export function ThumbStrip({
                 // one, on a plate so it stays readable against any page.
                 className={cn(
                   'pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center leading-none font-medium tabular-nums',
-                  rasters ? 'bg-card/85 py-0.5 text-foreground' : 'text-muted-foreground',
+                  rasters ? 'py-0.5 text-foreground' : 'text-muted-foreground',
+                  // The plate takes the tint too when this is the page you are
+                  // on, so the segment reads as one highlighted block rather
+                  // than a tinted page with an untinted strip along its foot.
+                  rasters && (isFocused ? 'bg-focus-tint' : 'bg-card/85'),
                 )}
               >
                 {page.page_num}

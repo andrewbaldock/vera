@@ -32,15 +32,15 @@ async function markDone(page: Page, count: number) {
 test('there is no Done control until something is done', async ({ page }) => {
   await open(page)
   await expect(doneLozenge(page)).toHaveCount(0)
-  await expect(verdict(page).getByText(/marked done/)).toHaveCount(0)
 })
 
 test('marking issues done reports progress without changing what is blocking', async ({ page }) => {
   await open(page)
   await markDone(page, 4)
 
-  // Progress sits beside the verdict, never inside it.
-  await expect(verdict(page).getByText('4 marked done')).toBeVisible()
+  // Progress is the chip's own count. It is reported once: a second copy of
+  // the same number beside the verdict was removed for saying nothing new.
+  await expect(doneLozenge(page)).toHaveAccessibleName(/^4 marked done/)
   // And the verdict is untouched: four ticks changed nothing about what blocks.
   await expect(verdict(page).getByText('12 issues must be fixed')).toBeVisible()
   // Still blocked, so the available action is still a new version. Ticking
@@ -68,7 +68,7 @@ test('the Done lozenge hides and shows the rows it counts', async ({ page }) => 
 test('sorting by severity sinks the done ones', async ({ page }) => {
   await open(page)
   await markDone(page, 3)
-  await expect(verdict(page).getByText('3 marked done')).toBeVisible()
+  await expect(doneLozenge(page)).toHaveAccessibleName(/^3 marked done/)
 
   await page.getByRole('button', { name: 'Change sort order' }).click()
   await page.getByRole('menuitem', { name: 'Severity' }).click()
@@ -90,15 +90,15 @@ test('sorting by severity sinks the done ones', async ({ page }) => {
 test('the marks survive a reload but do not cross versions', async ({ page }) => {
   await open(page)
   await markDone(page, 2)
-  await expect(verdict(page).getByText('2 marked done')).toBeVisible()
+  await expect(doneLozenge(page)).toHaveAccessibleName(/^2 marked done/)
 
   await page.reload()
   await expect(list(page)).toBeVisible()
-  await expect(verdict(page).getByText('2 marked done')).toBeVisible()
+  await expect(doneLozenge(page)).toHaveAccessibleName(/^2 marked done/)
 
   // v3 is a different issue list entirely. A tick carried over from v2 would
   // claim a defect was handled when the new review never raised it.
   await page.goto(`${REVIEW}?v=3`)
   await expect(list(page)).toBeVisible()
-  await expect(verdict(page).getByText(/marked done/)).toHaveCount(0)
+  await expect(doneLozenge(page)).toHaveCount(0)
 })

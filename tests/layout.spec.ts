@@ -269,3 +269,119 @@ test('on a phone the severity chips stay on one row', async ({ page }) => {
   // which severity it is, and the chip's accessible name is unchanged.
   await expect(chips.getByRole('button').first()).toHaveAccessibleName(/4 Critical/)
 })
+
+/**
+ * "12 issues must be fixed" and "before you can submit" are one sentence. It
+ * shares a line where there is room, and where there is not the second half
+ * moves down whole — a break inside "before you can / submit" reads as a fault.
+ */
+test('the verdict never breaks mid-phrase', async ({ page }) => {
+  for (const width of [1600, 1280, 1100, 1024]) {
+    await page.setViewportSize({ width, height: 900 })
+    await page.goto('/reviews/souj5sd12c8a3f')
+    await expect(page.getByRole('grid', { name: 'Issues' })).toBeVisible()
+
+    // Located by its words rather than by position. The badge is wrapped
+    // together with the headline, so the phrase is no longer the second span
+    // in the paragraph and an index would silently measure the wrong one.
+    const pieces = await page
+      .getByText('before you can submit')
+      .evaluate((el) => el.getClientRects().length)
+    expect(pieces, `"before you can submit" split at ${width}px`).toBe(1)
+  }
+})
+
+/**
+ * The rosette is the mark of what the headline says, so it is part of that
+ * phrase and not a third thing beside it. As a sibling in the wrapping row it
+ * could be pushed onto a line of its own, leaving the badge stranded above the
+ * words it marks. Reported by Andrew, from a narrow panel.
+ */
+test('the verdict badge never wraps away from its headline', async ({ page }) => {
+  for (const width of [1600, 1280, 1024, 768, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 })
+    await page.goto('/reviews/souj5sd12c8a3f')
+    await expect(page.getByRole('grid', { name: 'Issues' })).toBeVisible()
+
+    const shares = await page
+      .locator('div[aria-live] p')
+      .first()
+      .evaluate((p) => {
+        const badge = p.querySelector('svg')!.getBoundingClientRect()
+        const headline = [...p.querySelectorAll('span')]
+          .find((s) => /must be fixed/.test(s.textContent ?? ''))!
+          .getBoundingClientRect()
+        // Overlapping vertical extents is the whole claim: they are on one line.
+        return badge.bottom > headline.top && badge.top < headline.bottom
+      })
+    expect(shares, `badge stranded on its own line at ${width}px`).toBe(true)
+  }
+})
+
+/**
+ * The chips give up padding, gaps and a size of type before they give up their
+ * row, and they measure the panel rather than the window — the splitter can
+ * take this panel to a fifth of a wide screen, where a viewport breakpoint says
+ * there is room for words that do not fit.
+ *
+ * Swept 1px at a time while this was written: the four chips need 405px of
+ * content roomy and 339px squeezed, and the two thresholds sit above both with
+ * room to spare. This asserts the ends and the two boundaries.
+ */
+test('the severity chips shrink before they wrap', async ({ page }) => {
+  await page.setViewportSize({ width: 1600, height: 900 })
+  await page.goto('/reviews/souj5sd12c8a3f')
+  await expect(page.getByRole('grid', { name: 'Issues' })).toBeVisible()
+
+  // The Done chip only exists once something is done, and four chips is the
+  // case that wraps. Six, to match what a reviewer would have ticked off.
+  const boxes = page.getByRole('checkbox', { name: /^Mark/ })
+  for (let i = 0; i < 6; i += 1) await boxes.nth(i).click()
+
+  const chips = page.locator('[aria-label="Severity breakdown"]')
+  await expect(chips.getByRole('button')).toHaveCount(4)
+
+  // Pinned from a stylesheet, which React's inline width cannot clobber on a
+  // re-render. Dragging the splitter is the honest gesture and far too slow to
+  // do at this resolution.
+  const pin = (px: number) =>
+    page.evaluate((w) => {
+      let style = document.getElementById('pin') as HTMLStyleElement | null
+      if (!style) {
+        style = document.createElement('style')
+        style.id = 'pin'
+        document.head.append(style)
+      }
+      style.textContent = `section[aria-label="Issues found"]{width:${w}px !important}`
+    }, px)
+
+  for (const width of [520, 464, 463, 400, 384, 383, 340, 300]) {
+    await pin(width)
+    const rows = await chips.evaluate(
+      (el) => new Set([...el.children].map((c) => Math.round(c.getBoundingClientRect().top))).size,
+    )
+    expect(rows, `chips wrapped at a ${width}px panel`).toBe(1)
+  }
+
+  // And the density actually steps, rather than the row surviving because the
+  // words were dropped early. 464 is the last roomy width, 384 the last with
+  // words at all.
+  const word = chips.getByText('Critical')
+  await pin(464)
+  await expect(word).toBeVisible()
+  expect(await chips.locator('button').first().evaluate((el) => getComputedStyle(el).fontSize)).toBe(
+    '14px',
+  )
+  await pin(463)
+  await expect(word).toBeVisible()
+  expect(await chips.locator('button').first().evaluate((el) => getComputedStyle(el).fontSize)).toBe(
+    '12px',
+  )
+  await pin(383)
+  await expect(word).toBeHidden()
+  // Still a 44px target at every one of those widths — the chips lose width,
+  // never height.
+  expect(
+    await chips.locator('button').first().evaluate((el) => el.getBoundingClientRect().height),
+  ).toBeGreaterThanOrEqual(44)
+})

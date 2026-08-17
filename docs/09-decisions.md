@@ -90,6 +90,10 @@ answer were always obvious.
 68. [The document scroller is a focus stop](#68-the-document-scroller-is-a-focus-stop)
 69. [On a phone the severity chips lose their words](#69-on-a-phone-the-severity-chips-lose-their-words)
 70. [No bottom bar on a phone](#70-no-bottom-bar-on-a-phone)
+71. [The verdict is one sentence, and never breaks mid-phrase](#71-the-verdict-is-one-sentence-and-never-breaks-mid-phrase)
+72. [A scroll container clips the ring you hang outside it](#72-a-scroll-container-clips-the-ring-you-hang-outside-it)
+73. [The severity chips shrink before they wrap, and they measure the panel](#73-the-severity-chips-shrink-before-they-wrap-and-they-measure-the-panel)
+74. [The verdict badge is part of the headline, not a third thing beside it](#74-the-verdict-badge-is-part-of-the-headline-not-a-third-thing-beside-it)
 
 ---
 
@@ -826,3 +830,75 @@ The trade this accepts: the upload control is on the issues tab only, because th
 Removing the bar removed the verdict's `compact` variant with it, since the bar was its only caller.
 
 This supersedes the reasoning in row 14. Asked for by Andrew, from a phone.
+
+---
+
+### 71. The verdict is one sentence, and never breaks mid-phrase
+
+**2026-08-17**
+
+**Decided:** **"12 issues must be fixed" and "before you can submit" share a line**, the second falling to its own line whole when there is no room. The separate done count is gone
+
+**Over:** The explanation on its own line always; letting it wrap wherever it lands
+
+Two lines were being spent on one sentence, and a count that was already on a chip a row below was taking the corner. Both are now recovered: the explanation joins the headline, and the corner is empty in the full layout and carries the upload control in the compact one.
+
+The wrap is the part worth naming. Left to normal text flow, a narrow panel breaks it as *"12 issues must be fixed before you can / submit"*, which reads as a rendering fault rather than a wrap. Making the two halves flex items instead of one text flow makes each indivisible, so the break can only land between them. Asserted across four widths in [`tests/layout.spec.ts`](../tests/layout.spec.ts).
+
+The done count keeps its number where it always was, on its own chip, whose accessible name still reads "4 marked done — hide them".
+
+---
+
+### 72. A scroll container clips the ring you hang outside it
+
+**2026-08-17**
+
+**Decided:** **One pixel of inline padding on the thumb strip's list**, so the focused segment's ring has somewhere to paint
+
+**Over:** Thickening the segment's border to 2px and dropping the ring
+
+Andrew reported the purple edge on the focused thumbnail cut off on its right side. The cause is three ordinary decisions meeting:
+
+- the list is `overflow-y-auto`, and CSS resolves an `overflow-x` of `visible` beside a non-`visible` `overflow-y` to `auto`, so it clips on the inline axis as well;
+- a segment is sized from `column.width`, which is the list's own `contentRect`, so it is *exactly* as wide as the box that clips it;
+- a Tailwind ring is a `box-shadow`, drawn outside the border box.
+
+The ring therefore had nowhere to land. Sub-pixel rounding of a fractional `contentRect` decides which side survives, which is why one edge looked deliberate and the other looked broken.
+
+`px-px` fixes it without touching the arithmetic, because `contentRect` excludes padding: the column reports itself 2px narrower, the segment still fills it exactly, and the ring gets a pixel inside the clip region. Measured after the change — the list's clip box spans 1261–1400 and the ring spans 1261–1262 and 1399–1400, inside on both sides.
+
+The rejected fix was cheaper to type and worse to look at. The segment carries `box-sizing: border-box` with an inline width, so a 2px border shrinks the padding box and nudges the absolutely positioned page raster by a pixel every time focus moves.
+
+---
+
+### 73. The severity chips shrink before they wrap, and they measure the panel
+
+**2026-08-17**
+
+**Decided:** **Two density steps on a container query** — `@max-[27rem]` takes the padding, the gaps and a size of type; `@max-[22rem]` takes the word
+
+**Over:** Hiding the word at a viewport breakpoint (what it did); shrinking the chips to 36px under a mouse
+
+Andrew: *"these pills should shrink before wrapping, they are tall and wrapping eats up space."* Four 44px chips wrapping to a second row costs the issues list about 52px, and they were wrapping while there was still slack in them.
+
+The word was hidden by `max-lg:hidden` — a **viewport** rule on a panel the splitter can drag to a fifth of the window. The viewport was answering a question nobody asked: it cut the words on every screen under 1024px, including ones where they fit, and kept them on every screen over it, including panels far too narrow to hold them. The panel is the thing with the width, so the panel is the thing to measure.
+
+Swept 1px at a time from 520 down to 300 to place the two thresholds, in both engines, which agreed to the pixel. The four chips need 405px of content roomy and 339px squeezed; the steps sit at 432 and 352, so neither boundary has a window where the words are still on and no longer fit. A first pass put the second step at 21rem and left a 3px gap where they wrapped — the sweep is what found it, and the reason the numbers are in the test.
+
+Height was left alone. `min-h-11` is a 44px touch target on every pointer; `pointer-fine:min-h-9` would have been the single biggest saving and is the one lever Andrew ruled out, so the chips lose width and never height.
+
+---
+
+### 74. The verdict badge is part of the headline, not a third thing beside it
+
+**2026-08-17**
+
+**Decided:** **The rosette and "12 issues must be fixed" are one flex item**
+
+**Over:** Leaving the badge a sibling in the wrapping row
+
+The row that [71](#71-the-verdict-is-one-sentence-and-never-breaks-mid-phrase) made unbreakable had three items in it, not two, and the third was the badge. So the rule held for the sentence and not for the mark: a narrow panel put the rosette alone on its own line with the words underneath it, which reads as a rendering fault for the same reason a mid-phrase break does.
+
+Grouping the badge with the headline gives the row back the two units the decision assumed it had. Asserted at six widths from 1600 down to 320 by whether the two boxes overlap vertically at all, which is the whole claim.
+
+That regrouping also moved the detail phrase out of second place among the paragraph's spans, where a test was locating it by index. It is found by its words now.

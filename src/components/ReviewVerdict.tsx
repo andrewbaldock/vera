@@ -122,22 +122,33 @@ export function ReviewVerdict({
     <div
       id={SUBMIT_BLOCKED_ID}
       aria-live="polite"
-      className={cn('border-b px-4 py-4', !blocked && 'bg-ready-surface', className)}
+      // A container, because everything below that has to decide how much room
+      // it has is deciding about *this panel*, which the splitter resizes, and
+      // not about the window.
+      className={cn('@container border-b px-4 py-4', !blocked && 'bg-ready-surface', className)}
     >
       {/*
-        Progress sits on the opposite edge from the verdict, not appended to it.
-        Ticking issues off changes nothing about what is blocking, so the two
-        counts share a line without reading as one sentence.
-      */}
-      {/*
-        Baseline where this row is two pieces of text, centred where it is text
-        against a button: aligning a 44px control on the headline's baseline
-        drops it, and the row opens a gap under the words to make room.
+        The verdict is one sentence in two registers: what is blocking, and what
+        it is blocking. They share a line and the second falls to its own line
+        whole when there is no room, because "12 issues must be fixed / before
+        you" broken mid-phrase reads as a fault rather than a wrap.
+
+        A wrapping flex row rather than one text flow: it makes each part an
+        indivisible unit, so the break can only ever land between them.
+
+        The badge is inside the first of those units and not a third one beside
+        them. As a sibling it was one more thing the row could wrap, and a
+        narrow panel put the rosette alone on a line with the words underneath
+        it — the mark of what the headline says, sitting nowhere near it.
+
+        The outer row centres below `lg` and aligns on the baseline above it —
+        a 44px control sitting on a headline's baseline drops, and opens a gap
+        under the words to make room.
       */}
       <div className="flex items-center justify-between gap-3 lg:items-baseline">
         <p
           className={cn(
-            'flex items-center gap-2 text-lg font-semibold tracking-tight text-balance',
+            'flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-lg font-semibold tracking-tight',
             !blocked && 'text-ready-text',
           )}
         >
@@ -147,26 +158,43 @@ export function ReviewVerdict({
             outline check is what the Done boxes use, and this line is a verdict
             on the whole document rather than another thing to tick.
           */}
-          {blocked ? (
-            /*
-              The same rosette as the cleared state, so the verdict is one badge
-              that changes its content rather than two unrelated icons. It takes
-              the color of the worst thing still outstanding, turning red to
-              amber as the criticals clear.
+          <span className="flex items-baseline gap-x-2">
+            {blocked ? (
+              /*
+                The same rosette as the cleared state, so the verdict is one badge
+                that changes its content rather than two unrelated icons. It takes
+                the color of the worst thing still outstanding, turning red to
+                amber as the criticals clear.
 
-              Filled from the *text* tokens, not the dot fills: the glyph is
-              white, and white on the amber dot is about 2:1. The darkened pair
-              exists for exactly this, and here it is a background rather than
-              the ink.
-            */
-            <BadgeAlert
-              className={cn('size-6 shrink-0 text-white', SEVERITY_BADGE_FILL[worstBlocking])}
-              aria-hidden
-            />
-          ) : (
-            <BadgeCheck className="size-6 shrink-0 fill-ready text-white" aria-hidden />
-          )}
-          {headline}
+                Filled from the *text* tokens, not the dot fills: the glyph is
+                white, and white on the amber dot is about 2:1. The darkened pair
+                exists for exactly this, and here it is a background rather than
+                the ink.
+              */
+              <BadgeAlert
+                className={cn(
+                  'size-6 shrink-0 self-center',
+                  'text-white',
+                  SEVERITY_BADGE_FILL[worstBlocking],
+                )}
+                aria-hidden
+              />
+            ) : (
+              <BadgeCheck
+                className="size-6 shrink-0 self-center fill-ready text-white"
+                aria-hidden
+              />
+            )}
+            <span>{headline}</span>
+          </span>
+          {/*
+            Cut below `lg`, where a line of the screen is worth more than the
+            words: there the headline states the fact and the control that
+            resolves it is on the same row.
+          */}
+          <span className="hidden text-sm font-normal text-muted-foreground lg:inline">
+            {detail}
+          </span>
         </p>
         {/*
           Below `lg` this corner carries the primary action instead of the done
@@ -175,25 +203,17 @@ export function ReviewVerdict({
           slot for it, and no bar along the bottom.
         */}
         {action && <div className="shrink-0 lg:hidden">{action}</div>}
-        {doneCount > 0 && (
-          <p className="hidden shrink-0 text-sm font-normal text-muted-foreground tabular-nums lg:block">
-            {doneCount} marked done
-          </p>
-        )}
-      </div>
-      {/*
-        Cut below `lg`, where a line of the screen is worth more than the words.
-        The headline states the fact and the control that resolves it is on the
-        same row, which carries the meaning without the sentence.
-      */}
-      <p className="mt-0.5 text-sm text-muted-foreground max-lg:hidden">{detail}</p>
 
+      </div>
       {/*
         The breakdown and the filter are the same control. The *number* never
         changes when a severity is hidden, only the opacity, so the summary keeps
         describing the document while the list shows a subset of it.
       */}
-      <ul aria-label="Severity breakdown" className="mt-1.5 flex flex-wrap gap-1.5 lg:mt-3">
+      <ul
+        aria-label="Severity breakdown"
+        className="mt-1.5 flex flex-wrap gap-1.5 @max-[27rem]:gap-1 lg:mt-3"
+      >
         {(Object.keys(counts) as Severity[]).map((severity) => {
           const isHidden = hidden?.has(severity) ?? false
           const label = `${counts[severity]} ${SEVERITY_LABEL[severity]}`
@@ -207,6 +227,10 @@ export function ReviewVerdict({
                 aria-label={isHidden ? `${label} — hidden, show them` : `${label} — hide them`}
                 className={cn(
                   'flex min-h-11 items-center gap-1.5 rounded-full border px-2.5 text-sm transition-opacity',
+                  // Narrow, a chip gives up its padding, its gaps and a size of
+                  // type before it gives up its row. See the Done chip below,
+                  // which has to match: they read as one row of controls.
+                  '@max-[27rem]:gap-1 @max-[27rem]:px-2 @max-[27rem]:text-xs',
                   'focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none',
                   onToggleSeverity && counts[severity] > 0
                     ? 'hover:bg-accent active:bg-accent'
@@ -217,14 +241,21 @@ export function ReviewVerdict({
                 <SeverityIcon severity={severity} />
                 <span className="font-medium tabular-nums">{counts[severity]}</span>
                 {/*
-                  Hidden below `lg`, where four of these wrap onto a second row
-                  and cost a phone half its list. The shape and the color still
-                  separate them, the row for each issue spells the word out
-                  anyway, and `aria-label` above is unchanged — so this is the
-                  sighted reader trading a word they can recover by scrolling
-                  for the space to do the scrolling in.
+                  The last thing to go, and it goes on the panel's width rather
+                  than the window's. This was `max-lg:hidden`, which cut the
+                  words on every screen under 1024px and kept them on every
+                  screen over it — but the splitter can take this panel down to
+                  a fifth of the window, so the viewport was answering a
+                  question nobody asked. Now the chips squeeze first, and the
+                  word is dropped only once squeezing has run out.
+
+                  When it does go, the shape and the color still separate them,
+                  the row for each issue spells the word out anyway, and the
+                  `aria-label` above is unchanged — so this is the sighted
+                  reader trading a word they can recover by scrolling for the
+                  space to do the scrolling in.
                 */}
-                <span className={cn(SEVERITY_TEXT[severity], 'max-lg:hidden')}>
+                <span className={cn(SEVERITY_TEXT[severity], '@max-[22rem]:hidden')}>
                   {SEVERITY_LABEL[severity]}
                 </span>
               </button>
@@ -245,6 +276,7 @@ export function ReviewVerdict({
               }
               className={cn(
                 'flex min-h-11 items-center gap-1.5 rounded-full border px-2.5 text-sm transition-opacity',
+                '@max-[27rem]:gap-1 @max-[27rem]:px-2 @max-[27rem]:text-xs',
                 'hover:bg-accent active:bg-accent',
                 'focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none',
                 hideDone && 'opacity-50',
@@ -252,7 +284,7 @@ export function ReviewVerdict({
             >
               <Check className="size-3.5 text-muted-foreground" aria-hidden />
               <span className="font-medium tabular-nums">{doneCount}</span>
-              <span className="text-muted-foreground max-lg:hidden">Done</span>
+              <span className="text-muted-foreground @max-[22rem]:hidden">Done</span>
             </button>
           </li>
         )}
