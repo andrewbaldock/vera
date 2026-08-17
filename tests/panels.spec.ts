@@ -5,7 +5,7 @@ import { test, expect, type Page } from '@playwright/test'
  *
  * The thumb strip has two behaviors and the switch between them is a user
  * drag, so the interesting assertions are on either side of that drag: a strip
- * nobody has touched still fits the whole document into its column, and one
+ * nobody has dragged still fits the whole document into its column, and one
  * that has been dragged sizes its pages from the width it was given.
  *
  * `null` meaning "never dragged" is the load-bearing part. A stored default
@@ -47,7 +47,7 @@ test.beforeEach(async ({ page }) => {
   await expect(page.locator(STRIP)).toBeVisible()
 })
 
-test('an untouched strip is a map of the whole document', async ({ page }) => {
+test('before anyone drags it, the strip maps the whole document', async ({ page }) => {
   const metrics = await stripMetrics(page)
   expect(metrics.width).toBe(44)
   expect(metrics.scrolls).toBe(false)
@@ -143,7 +143,7 @@ test('panel sizes survive a reload', async ({ page }) => {
 
 test('a reader who never drags is never switched into the resized behavior', async ({ page }) => {
   // Changing the other panel writes the record. The strip must still come back
-  // as untouched, rather than being pinned at whatever it happened to be.
+  // as never-dragged, rather than being pinned at whatever it happened to be.
   await dragBy(page, ISSUES_RESIZER, 60)
   await page.waitForTimeout(500)
   await page.reload()

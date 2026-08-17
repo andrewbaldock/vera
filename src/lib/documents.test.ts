@@ -39,11 +39,11 @@ describe('the demo catalog', () => {
     expect(payload.version).toBe(version)
   })
 
-  it('gives the two gate states the demo depends on', () => {
+  it('gives the two submission states the demo depends on', () => {
     const [blocked, resolved] = FIXTURES.map((f) => f.payload)
     if (!isReview(blocked) || !isReview(resolved)) throw new Error('fixtures are not reviews')
 
-    // The reason there are two: one shows the gate closed, one shows it open. If
+    // The reason there are two: one is blocked, one is clear to submit. If
     // they ever agree, the build can only demonstrate half the rule.
     expect(canSubmit(blocked)).toBe(false)
     expect(canSubmit(resolved)).toBe(true)

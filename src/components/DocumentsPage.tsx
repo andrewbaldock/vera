@@ -24,7 +24,7 @@ import type { ReviewStatus } from '@/types/review'
  * The documents list. **Not** the Documents Page from the spec's flow diagram,
  * which belongs to a teammate's ticket and would mean owning upload, filtering,
  * pagination and assignment. This is the smallest surface that gives the Review
- * Page somewhere to be opened from and returned to, so the gate is something a
+ * Page somewhere to be opened from and returned to, so submitting is something a
  * reviewer can exercise rather than a one-way trip.
  *
  * One row is live. The rest are inert and look inert: no link, no hover, no

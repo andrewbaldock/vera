@@ -4,7 +4,7 @@ import type { ReviewStatus } from '@/types/review'
  * The demo catalog. There is no documents endpoint: this page belongs to a
  * teammate's ticket and VERA owns the Review Page. This is the smallest list
  * that gives the review page somewhere to be opened from and returned to, so the
- * gate is demonstrable rather than a one-way trip.
+ * submit rule is demonstrable rather than a one-way trip.
  *
  * One document is real, with two versions behind it. The rest are inert and look
  * it: no link, no hover, muted. Not placeholders that look clickable, which
@@ -32,7 +32,7 @@ export interface CatalogDocument {
  * v2 is the supplied fixture, untouched. v3 is the same report after the
  * critical and major issues were resolved and it was uploaded again, the loop
  * the spec describes, which happens outside this app. v3 still carries minor
- * issues, so the open gate is a judgment call rather than a formality:
+ * issues, so a clean document still asks for a judgment call rather than a formality:
  * submitting means choosing to ignore them.
  */
 export const REVIEW_DOCUMENT: CatalogDocument = {

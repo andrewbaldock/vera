@@ -37,7 +37,7 @@ function review(issues: Issue[]): Review {
   }
 }
 
-describe('the gate', () => {
+describe('canSubmit', () => {
   it('treats critical and major as blocking, and minor as not', () => {
     expect(isBlocking(issue('a', 'critical', 1))).toBe(true)
     expect(isBlocking(issue('b', 'major', 1))).toBe(true)

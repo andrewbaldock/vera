@@ -77,7 +77,7 @@ interface ThumbStripProps {
   onSeek: (page: number) => void
   /**
    * Px width once the reader has dragged the strip, and `null` until they have.
-   * The null is the whole handover: untouched, the strip fits the document into
+   * The null is the whole handover: until it is dragged, the strip fits the document into
    * its column and stays a map of the whole thing. Dragged, width becomes the
    * thing that decides how big a page is, and the strip scrolls to hold them.
    */
@@ -176,7 +176,7 @@ export function ThumbStrip({
    * shipped at a hard-coded 8px, which was the specific thing a reader found
    * too small, and 8px did not move when anything else did.
    *
-   * The 1.6 multiplier reproduces the old 16px gate at the middle stop, so a
+   * The 1.6 multiplier reproduces the old 16px threshold at the middle stop, so a
    * segment that showed a number before still shows one. An unlabeled block
    * beats a clipped digit.
    */
@@ -431,7 +431,7 @@ export function ThumbStrip({
         // thirty-four you click, and the cursor should say which — the same
         // reasoning that gives the splitter `col-resize`.
         'group relative z-10 flex shrink-0 cursor-grab touch-none flex-col border-l bg-card select-none active:cursor-grabbing',
-        // 2.75rem, so an untouched strip still follows the interface size.
+        // 2.75rem, so a strip nobody has dragged still follows the interface size.
         width === null && 'w-11',
         'focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none',
         scrubbing && 'cursor-grabbing',

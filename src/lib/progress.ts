@@ -2,8 +2,8 @@ import type { Review } from '@/types/review'
 
 /**
  * The reviewer's own "I've handled this" marks. A private worklist and nothing
- * more: it never reaches `canSubmit`, and it cannot, because the gate takes a
- * whole `Review` and this is not part of one. If a checkbox could open the gate,
+ * more: it never reaches `canSubmit`, and it cannot, because that function takes a
+ * whole `Review` and this is not part of one. If a checkbox could allow submission,
  * someone could submit a defective mortgage file by lying to a checkbox.
  * Resolution is proven by a new version arriving clean, never by an assertion in
  * the UI.

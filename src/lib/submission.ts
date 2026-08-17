@@ -9,7 +9,7 @@ import type { Review } from '@/types/review'
  * a real endpoint.
  *
  * Keyed by review id and version. A new version is a new review to look at, and
- * inheriting the previous version's submission would show a gate as closed when
+ * inheriting the previous version's submission would report a document as submitted when
  * it isn't.
  */
 
@@ -40,7 +40,7 @@ export function readSubmission(review: Pick<Review, 'id' | 'version'>): Submissi
   } catch {
     // Safari in private browsing throws on localStorage, and a corrupt value
     // should not take the page down. An unsubmitted review is the safe default:
-    // it shows the gate, the state that asks for a decision.
+    // it shows the state that asks for a decision.
     return null
   }
 }

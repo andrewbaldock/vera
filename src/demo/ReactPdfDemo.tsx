@@ -16,7 +16,7 @@ import { useReview } from '@/hooks/useReview'
  *   4. We can tell which page is currently in view (status bar + strip).
  *
  * Three constraints come out of it, written up as "Three things the viewer harness
- * taught us" in docs/DESIGN.md:
+ * taught us" in OLDDOCS/DESIGN.md:
  *
  *   - Overlays must clear react-pdf's z-index 2/3, or invisible text layers
  *     silently swallow every click.

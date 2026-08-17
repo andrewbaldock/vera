@@ -98,7 +98,7 @@ export function ReviewAction({ review, submittable, onConfirm }: ReviewActionPro
 
   /**
    * Uploading a new version is available for as long as the review is open, not
-   * only while it is blocked. Spotting something after the gate opens is
+   * only while it is blocked. Spotting something after submission is available is
    * ordinary, and hiding the escape hatch the moment the document passes would
    * make the clean state feel like a trap.
    */
@@ -112,7 +112,7 @@ export function ReviewAction({ review, submittable, onConfirm }: ReviewActionPro
       <AlertDialog open={open} onOpenChange={(next) => !busy && setOpen(next)}>
       <AlertDialogTrigger asChild>
         {/* 44px, because shadcn's default is 32: under the touch minimum, on the
-            one control this whole page exists to gate. */}
+            one control this whole page exists to protect. */}
         <Button className={cn('min-h-11')}>Submit review</Button>
       </AlertDialogTrigger>
       <AlertDialogContent>

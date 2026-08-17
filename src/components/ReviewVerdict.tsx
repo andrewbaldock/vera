@@ -13,7 +13,7 @@ import type { Submission } from '@/lib/submission'
  * the moment someone hides the minors. The summary has to account for issues the
  * list isn't showing.
  *
- * It also reads correctly when the gate is open. A build that can only say
+ * It also reads correctly when nothing is blocking. A build that can only say
  * "12 issues must be fixed" is overfitted to the mock it was handed.
  */
 

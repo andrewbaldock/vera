@@ -14,12 +14,12 @@ import {
  * states are not theater.
  *
  * Which fixture to load is a *version*, not a query string. Not `?fixture=clean`:
- * the supplied mock can only demonstrate the blocked half of the gate, and two
+ * the supplied mock can only demonstrate the blocked half of the rule, and two
  * versions of one document show the other half without a demo-only param. v2 is
  * the supplied review, v3 the same report re-uploaded with the blockers
  * resolved.
  *
- * The gate never consults any of this. `canSubmit` reads the review's issues and
+ * The submit rule never consults any of this. `canSubmit` reads the review's issues and
  * nothing else; a different version just gives it different issues.
  */
 
@@ -40,7 +40,7 @@ export interface UseReview {
   /** Records the submission and flips the review's status. One-way. */
   submit: () => void
   /**
-   * Undoes it, for the documents list, so the gate can be demonstrated more than
+   * Undoes it, for the documents list, so submission can be demonstrated more than
    * once. Not a product feature: there is no reopened status in the enum and no
    * un-submit in the spec's flow.
    */

@@ -17,7 +17,7 @@ import type { Review } from '@/types/review'
  * mean owning file handling, virus scanning, format validation and the version
  * bump.
  *
- * A blocked state with no visible next step makes the gate look like a dead end
+ * A blocked state with no visible next step looks like a dead end
  * when it is a loop, so the control opens the real conversation and stops at the
  * boundary. The drop zone is disabled and the dialog says whose screen this is,
  * rather than pretending this app owns the flow.

@@ -35,14 +35,14 @@ Deployed so it can be opened on a real phone or iPad (try landscape mode!).
 Uploading and fixing are other screens in the brief's flow. This one decides whether the
 document can go.
 
-![VERA in light mode, with browser find running across the whole document](screenshot-review-light.png)
+![VERA in use — working down the issues list while the document follows, the page strip tracking alongside](docs/assets/screens/vera.gif)
 
-![VERA in dark mode, showing the page status bar and the thumb strip readout](screenshot-review-dark.png)
+![VERA with browser find running across the whole document](docs/assets/screens/review-light.png)
 
-Whole-document **⌘F works**, which is why the viewer mounts every page's text layer. Both shots
-are the same build; the theme is a user setting.
+Whole-document **⌘F works**, which is why the viewer mounts every page's text layer. The
+animation is dark mode and the still is light; the theme is a user setting.
 
-![VERA on an iPhone and an iPad](docs/mobile.png)
+![VERA on an iPhone and an iPad](docs/assets/screens/mobile.png)
 
 ---
 
@@ -91,16 +91,22 @@ bunx playwright install chromium webkit
 
 | | |
 |---|---|
-| [`docs/DESIGN.md`](docs/DESIGN.md) | **Why** — scope, flow, every decision and what was rejected, ending in a decision log |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | **How** — layers and which way dependencies point, data flow, the single-writer rule, the viewer's internals, the token layer, the seams |
-| [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) | How this was built, and what in it required knowing something that isn't obvious |
-| [`docs/PRODUCTION.md`](docs/PRODUCTION.md) | What running this for real would take, and the work it deliberately does not touch |
-| [`docs/wireframes/`](docs/wireframes/) | The UX sketches, drawn before implementation, and the two layout shapes at six sizes |
+| [`docs/01-product.md`](docs/01-product.md) | What this is, who it's for, scope in and out, and the acceptance criteria |
+| [`docs/02-design.md`](docs/02-design.md) | Why it looks and behaves like this — flows, the two layout shapes, the visual system |
+| [`docs/03-architecture.md`](docs/03-architecture.md) | How the code is organised — data flow, state ownership, the viewer, the seams |
+| [`docs/04-process.md`](docs/04-process.md) | How it was built, what was actually hard, and where AI helped |
+| [`docs/05-testing.md`](docs/05-testing.md) | What the two suites prove, and what isn't covered |
+| [`docs/06-accessibility.md`](docs/06-accessibility.md) | The standard aimed at, how it's verified, and the honest gaps |
+| [`docs/07-production.md`](docs/07-production.md) | What shipping this for real would require |
+| [`docs/08-roadmap.md`](docs/08-roadmap.md) | Known limits and deliberate deferrals |
+| [`docs/09-decisions.md`](docs/09-decisions.md) | Every decision, what it was chosen over, and why |
+| [`docs/assets/wireframes/`](docs/assets/wireframes/) | The UX sketches, drawn before implementation, and the two layout shapes at six sizes |
 | [`RELEASES.md`](RELEASES.md) | What changed in each version |
 | [`docs/assignment.pdf`](docs/assignment.pdf) | The original brief |
+| [`.claude/skills/depurple/`](.claude/skills/depurple/SKILL.md) | A prose-and-claims check that came out of rewriting the docs |
 
-Read DESIGN.md to understand the product, ARCHITECTURE.md to understand the code. Neither
-repeats the other.
+Read 01 and 02 to understand the product, 03 to understand the code. Decisions live in
+`09-decisions.md` so the narrative docs can stay short and none of them repeats another.
 
 ### Routes
 
@@ -122,9 +128,9 @@ The running build names itself in the account menu and at
 Drawn in Google Drawings before the first component, to settle the layout on paper rather than
 reverse-justify whatever the code ended up doing. Kept unedited where the build diverged, so
 they still show what was intended before any code existed.
-[Full size and the layout shapes](docs/wireframes/).
+[Full size and the layout shapes](docs/assets/wireframes/).
 
-![The Review Page, sketched before implementation](docs/wireframes/VERA_wireframes.svg)
+![The Review Page, sketched before implementation](docs/assets/wireframes/VERA_wireframes.svg)
 
 ## How it's put together
 
@@ -157,22 +163,23 @@ Two suites, because they answer different questions.
 
 **`bun test` — the rules.** `canSubmit`, the severity counts, issue numbering that has to stay
 attached to its issue when the list is re-sorted, and the payload guard. Pure functions, no
-DOM, milliseconds. 32 tests.
+DOM, milliseconds.
 
-**`bun run test:layout` — everything a browser has to answer, in Chromium and WebKit.** Nine
-spec files, 244 tests:
+**`bun run test:layout` — everything a browser has to answer, in Chromium and WebKit.** Over
+250 tests, across these specs:
 
 | Spec | What it holds down |
 |---|---|
 | `layout` | Twelve real viewports from a 320px iPhone SE to 1920px — no horizontal overflow, the page itself never scrolls, each width renders the correct shape *and not the other one*, exactly one primary action visible and on screen, every touch target over 44px. Then a sweep from 320 to 1920 in 40px steps, because a fixed matrix sails past the 1007px disaster. |
 | `viewer` | Every page's text layer mounted so browser find can reach the whole document, canvases actually windowed, clicking an issue scrolling the document, the page staying put when the window crosses the breakpoint, the end of the scroll reporting the last page, the phone path where the seek is made against a panel that has no layout yet, and both screens rendering on a browser with no `URL.parse` — the API a pdf.js dependency needs and Safari only shipped in 18.4. |
-| `submit` | Both halves of the gate: blocked offers upload rather than a dead submit, open asks for confirmation naming what is being accepted, and a submitted review reads as submitted on a cold load. |
-| `done` | The worklist reports progress without moving the gate, hides and shows its own rows, sinks under severity sort, and never crosses versions. |
+| `submit` | Both halves of the submit rule: blocked offers upload rather than a dead submit, open asks for confirmation naming what is being accepted, and a submitted review reads as submitted on a cold load. |
+| `done` | The worklist reports progress without changing what is blocking, hides and shows its own rows, sinks under severity sort, and never crosses versions. |
 | `documents` | The queue, the version switch surviving a reload, and the placeholders being inert. |
 | `keyboard` | The issue grid driven entirely from the keyboard: arrows across all three columns, Enter seeking the document without moving the list, Space ticking Done. |
 | `contrast` | Severity text and secondary text measured against every surface they sit on, in both themes, against the 4.5:1 AA floor. |
 | `uiscale` | The three text sizes: each moves the root font size, the choice survives a reload and lands *before* the app mounts, junk in storage falls back, and the document does not scale with the interface. |
-| `panels` | The splitter and the thumb strip: an untouched strip maps the whole document, a dragged one sizes pages from its width, it closes and reopens, and every size survives a reload. |
+| `panels` | The splitter, and the thumb strip resizing, closing and reopening — with every size surviving a reload |
+| `axe` | An automated WCAG A/AA rule scan of both routes in both themes, and of the confirmation dialog while open. It cannot tell you whether a page makes sense to listen to — that is still a person with a screen reader. |
 
 No screenshot baselines: WebKit and Chromium rasterize type differently, so baselines would
 need a set each and would churn on every change. Structure is what's invariant.
@@ -216,7 +223,7 @@ day, by people doing careful work.
 **The honest limitation:** a rendered PDF is not accessible. pdf.js paints to a canvas with a
 selectable text layer over it, which is good enough for search and selection but not a
 substitute for a tagged document. No client-side work fixes that; it belongs to whatever
-produces the PDF. Stated plainly in [`docs/DESIGN.md`](docs/DESIGN.md) rather than glossed.
+produces the PDF. Stated plainly in [`docs/02-design.md`](docs/02-design.md) rather than glossed.
 
 ## Data
 
@@ -301,7 +308,7 @@ achieve UI harmony.
 
 The splitter and the thumb strip are authored here, since Radix has no such primitives:
 additions to the system following its conventions rather than gaps in it. Full reasoning and the
-alternatives rejected are in [`docs/DESIGN.md`](docs/DESIGN.md).
+alternatives rejected are in [`docs/09-decisions.md`](docs/09-decisions.md).
 
 ## License
 

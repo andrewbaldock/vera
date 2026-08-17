@@ -2,7 +2,7 @@ import type { Issue, Review, Severity } from '@/types/review'
 
 /**
  * The rules of the product, as pure functions over the review data. Kept out of
- * any component so the gate can be reasoned about and tested on its own.
+ * any component so the submit rule can be reasoned about and tested on its own.
  */
 
 /** Critical and major must be resolved before submitting. Minor may be ignored. */
@@ -17,7 +17,7 @@ export function blockingIssues(issues: Issue[]): Issue[] {
 }
 
 /**
- * The gate. Derived from the review data alone, never from anything the user
+ * The submit rule. Derived from the review data alone, never from anything the user
  * asserts in the UI. Resolution happens outside this app: the user regenerates
  * the document in their own system and uploads a new version, so the only proof
  * an issue was fixed is a new review that no longer reports it. This must never
