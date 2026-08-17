@@ -6,8 +6,8 @@ import type { Severity } from '@/types/review'
  * A shape per severity, pointing the way the severity does: critical escalates,
  * minor de-escalates, major sits between them.
  *
- * Shape rather than a coloured dot, so the ranking survives greyscale and
- * colour-blindness without depending on the text label beside it. The label is
+ * Shape rather than a colored dot, so the ranking survives grayscale and
+ * color-blindness without depending on the text label beside it. The label is
  * still there — this is a second channel, not a replacement for the first.
  *
  * Drawn in a 16-unit box whatever the rendered size, so the three read as one

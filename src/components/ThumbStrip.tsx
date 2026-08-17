@@ -388,7 +388,7 @@ export function ThumbStrip({
               <span
                 style={{ fontSize: numberHeight }}
                 // Sits at the foot of the segment, because the severity marks
-                // stack down from the head of it. Centred, the two land on each
+                // stack down from the head of it. Centered, the two land on each
                 // other, which was invisible while the number was 8px and is
                 // not once it is legible. Over the page image, once there is
                 // one, on a plate so it stays readable against any page.
@@ -404,7 +404,7 @@ export function ThumbStrip({
               Lifted out of the flow and onto the page image. As flex items the
               marks sat under it: the image is an absolutely positioned child,
               which paints over static siblings, and a `z-index` on a static
-              flex item was not enough to bring 4px of colour back out from
+              flex item was not enough to bring 4px of color back out from
               under a full-bleed canvas. Positioned, they are unambiguously on
               top, and they keep stacking from the head of the segment.
             */}

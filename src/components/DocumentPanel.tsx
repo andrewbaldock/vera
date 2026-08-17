@@ -116,7 +116,7 @@ export function DocumentPanel({
         </button>
 
         {/*
-          Centred in the bar rather than floating over the document. The bar's
+          Centered in the bar rather than floating over the document. The bar's
           middle is empty — the page number and its findings sit left, the
           expand control right — and a control for the document reads better in
           the strip of chrome above it than as an object lying on the page.

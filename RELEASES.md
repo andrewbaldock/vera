@@ -7,60 +7,60 @@ at [`/version.json`](https://vera.andrewbaldock.com/version.json).
 
 ## v1.1.0 — 2026-08-16
 
-**Making it readable.** Someone reviewing VERA found the interface type too
-small. Browser zoom is the wrong tool for that — it scales the document along
-with the interface. This release separates the two.
+**Making it readable for everyone.**
+
+- A beta tester found the interface type too small. This release adds: a UI text
+  size, PDF zoom, and a thumbnail strip you can widen into actual thumbnails.
+- Rewrote the developer documentation to derobotize it.
 
 **Added**
 
-- A text size setting in the account menu: Compact, Comfortable, Large. It scales
+- **Text size setting** in the account menu — Compact, Comfortable, Large. Scales
   labels, spacing and touch targets together, and leaves the document alone.
-- Zoom on the document, up to 4×. Controls in the centre of the page bar, or a
-  pinch. The percentage between them returns the document to fit, as does a
-  double-tap. Zoomed pages pan sideways.
-- The page strip resizes and closes — drag its edge, or drag it shut and reopen
-  it from the tab. Where you leave it is remembered.
-- Real page images in the strip, at every width.
-- A page counter over the document while you scroll.
-- Severity has a shape as well as a colour: critical points up, minor points
-  down, major is a disc between them.
-- The build version, in the account menu and at `/version.json`.
+- **Document zoom** up to 4×, from controls in the center of the page bar or a
+  pinch. Click the percentage or double-tap to return to fit. Zoomed pages pan
+  sideways.
+- **Resizable thumbnail strip.** Drag its edge, or drag it shut and reopen it
+  from the tab. Where you leave it is remembered.
+- **Real page images** in the strip, at every width.
+- **A page counter** over the document while you scroll.
+- **Severity shapes** — critical points up, minor points down, major is a disc.
+- **The build version**, in the account menu and at `/version.json`.
 
 **Changed**
 
 - The strip used to shrink its pages to fit any document into its column, so a
   long document became a thread of slivers. It now has a floor and scrolls below
   it. At 34 pages it looks exactly as it did.
-- Page numbers in the strip follow the text size setting. They were fixed at 8px,
-  which is the specific thing that was too small.
+- Strip page numbers follow the text size setting. They were fixed at 8px, which
+  is the specific thing that was too small.
 - The findings under the page bar are set one size larger.
+- More contrast on the focused row, in both themes.
 
 **Fixed**
 
 - Secondary text failed the WCAG AA contrast floor in light mode on three of the
   four surfaces it sits on — 4.27:1 against a highlighted row, against a 4.5
-  minimum. It carries the issue descriptions. Reported as a dark mode problem,
-  where it passed at 5.53 and still read badly.
+  minimum. Reported as a dark mode problem, where it passed at 5.53 and still
+  read badly.
 - Severity marks in the strip painted underneath the page numbers.
 - The strip's page readout pointed at the wrong segment once the strip scrolled.
-- Browser find matched the app's own readouts: searching for `100` landed on the
-  zoom control, `34` on the page counter. Both are drawn as generated content now.
+- Browser find matched the app's own readouts — `100` hit the zoom control, `34`
+  the page counter. Both are generated content now.
 
 **Notes**
 
-Two decisions from the first build are reversed here. Pinch-to-zoom was cut on
-cost, and the cost was real — zoom reaches into the reserved page heights and
-into the measurement that decides which page you are reading. Page images were
-declined because a picture that small is unreadable, which is true of the picture
-and beside the point of it: a cover sheet, a table and a photo page are three
-different shapes even as a smear.
-
-Every push now runs lint, types, the production build and both test suites across
-Chromium and WebKit, including an accessibility scan. `main` deploys only if all
-of it passed.
-
-The documentation is rewritten, from four long files into a numbered set, with
-every decision the build has made collected in one place.
+- **Two decisions from the first build are reversed.** Pinch-to-zoom was cut on
+  cost, and the cost was real: zoom reaches into the reserved page heights and
+  into the measurement that decides which page you are reading. Page images were
+  declined because a picture that small is unreadable — true of the picture and
+  beside the point of it, since a cover sheet, a table and a photo page are three
+  different shapes even as a smear.
+- **CI.** Every push runs lint, types, the production build and both test suites
+  across Chromium and WebKit, including an accessibility scan. `main` deploys
+  only if all of it passed.
+- **Docs.** Four long files became a numbered set, with every decision the build
+  has made collected in one place.
 
 ---
 

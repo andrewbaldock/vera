@@ -36,6 +36,19 @@ export default defineConfig({
   retries: 1,
   reporter: process.env.CI ? 'github' : [['list']],
 
+  /**
+   * Five seconds is the default and is plenty on a laptop. It is not on a shared
+   * CI runner, which serves these tests from the Vite dev server on one worker:
+   * whichever test reaches a route first pays for transforming its whole module
+   * graph, pdf.js included, before anything renders. That cost lands on one
+   * arbitrary test per run, which is why CI kept failing somewhere new each time
+   * on a suite that is green everywhere else.
+   *
+   * Raised only under CI, so a genuine hang still surfaces quickly in
+   * development rather than taking fifteen seconds to say so.
+   */
+  expect: { timeout: process.env.CI ? 15_000 : 5_000 },
+
   use: {
     baseURL: 'http://localhost:1337',
     trace: 'on-first-retry',

@@ -108,7 +108,7 @@ test.describe('the interface size setting', () => {
 
     // At the shipped size the fit still wins on a 34-page document, so the
     // strip stays a map of the whole thing and never scrolls. This is the
-    // assertion that keeps the floor from quietly changing v1.0 behaviour.
+    // assertion that keeps the floor from quietly changing v1.0 behavior.
     const before = await measure()
     expect(before.scrolls).toBe(false)
 

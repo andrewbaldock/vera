@@ -34,7 +34,7 @@ export function Wordmark({ symbol = <VeraMark />, className }: WordmarkProps) {
         // Goldman is already a wide, squared letterform and 0.18em pushed the
         // four characters apart far enough to stop reading as one word.
         // The gradient is painted through the glyphs, so the mark carries the
-        // brand colour without a swatch sitting behind it. Both stops are
+        // brand color without a swatch sitting behind it. Both stops are
         // tokens: a component naming a hex is the thing the token layer exists
         // to prevent.
         className="bg-linear-to-br from-wordmark-from to-wordmark-to bg-clip-text font-[family-name:var(--font-wordmark)] text-[15px] font-bold tracking-[0.12em] text-transparent uppercase"

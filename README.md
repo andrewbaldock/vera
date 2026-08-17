@@ -93,7 +93,7 @@ bunx playwright install chromium webkit
 |---|---|
 | [`docs/01-product.md`](docs/01-product.md) | What this is, who it's for, scope in and out, and the acceptance criteria |
 | [`docs/02-design.md`](docs/02-design.md) | Why it looks and behaves like this — flows, the two layout shapes, the visual system |
-| [`docs/03-architecture.md`](docs/03-architecture.md) | How the code is organised — data flow, state ownership, the viewer, the seams |
+| [`docs/03-architecture.md`](docs/03-architecture.md) | How the code is organized — data flow, state ownership, the viewer, the seams |
 | [`docs/04-process.md`](docs/04-process.md) | How it was built, what was actually hard, and where AI helped |
 | [`docs/05-testing.md`](docs/05-testing.md) | What the two suites prove, and what isn't covered |
 | [`docs/06-accessibility.md`](docs/06-accessibility.md) | The standard aimed at, how it's verified, and the honest gaps |

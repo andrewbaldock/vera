@@ -146,7 +146,7 @@
 
     /* The wordmark's gradient. It starts at the primary the rest of the app
        already uses and travels to a deeper violet, so the mark reads as the
-       richest thing on screen without introducing a colour the product does not
+       richest thing on screen without introducing a color the product does not
        otherwise own. Only the wordmark uses it. */
     --wordmark-from: #5865f3;
     --wordmark-to: #8b32d9;

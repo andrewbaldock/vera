@@ -90,7 +90,7 @@ So the full shape is a touch layout that also has a pointer, and every control i
 
 **Pinch-to-zoom zooms the document, not the app.** It was cut from the first build on cost, and the cost was real: zoom changes every reserved page height and the reading-line measurement that decides which page is in view. Both had to be handled, and both were. On a trackpad the same gesture does the same thing, so hovering the document and pinching magnifies the pages rather than the interface.
 
-A gesture cannot be the only way in, so the same zoom has controls in the centre of the page bar: `−`, the percentage, `+`. The percentage is itself a button and returns the document to fit, which is the shape zoom controls take in map and document software. They sit in the bar rather than floating on the page because the bar is where this view's chrome already lives, and its middle was empty.
+A gesture cannot be the only way in, so the same zoom has controls in the center of the page bar: `−`, the percentage, `+`. The percentage is itself a button and returns the document to fit, which is the shape zoom controls take in map and document software. They sit in the bar rather than floating on the page because the bar is where this view's chrome already lives, and its middle was empty.
 
 A useful side effect of drawing the line at 1024: **rotating an iPad switches between the two designs.** That is the clearest possible demonstration that the full shape is a design in its own right and not the compact one stretched.
 
@@ -255,7 +255,7 @@ Three faces, three jobs.
 
 ### Color
 
-**No component ever names a colour.** Every one reads a token, and the tokens are defined once per theme. That is what lets severity be defined in one place and consumed by the three surfaces that render it — list rows, the page status bar, and the thumb strip — without them drifting apart.
+**No component ever names a color.** Every one reads a token, and the tokens are defined once per theme. That is what lets severity be defined in one place and consumed by the three surfaces that render it — list rows, the page status bar, and the thumb strip — without them drifting apart.
 
 Severity is product vocabulary, so it lives in the token layer with everything else. It needs **two** roles rather than one, and the reason is measured: the fills are tuned to read as 8px marks, and the same values set as 12px type measure 4.77, 2.56 and 3.63 against white. Two of the three fail the 4.5:1 AA floor outright, amber badly. So the words use their own darkened tokens, which clear 5.8 or better, and a test measures it against both surfaces in both themes rather than asserting it in a comment.
 

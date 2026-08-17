@@ -1,6 +1,6 @@
 # Architecture
 
-**Purpose:** how the code is organised and where to change it.
+**Purpose:** how the code is organized and where to change it.
 **Audience:** an engineer picking this up cold.
 **Read time:** 8 minutes.
 **Last reviewed:** 2026-08-16

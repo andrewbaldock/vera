@@ -126,7 +126,7 @@ worker, and React unmounts the whole tree.
 Two things came out of it. The API is polyfilled with the spec's own contract — `new URL`,
 returning `null` instead of throwing — so nothing downstream can tell the difference. And the
 app gained an **error boundary**, which it had not had at all: without one, any uncaught error
-takes the entire tree down to a bare background colour, and on a tablet there is no console to
+takes the entire tree down to a bare background color, and on a tablet there is no console to
 open. It shows the error rather than swallowing it, which is the right trade for a build
 someone else runs on hardware I do not have.
 

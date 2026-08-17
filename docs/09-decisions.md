@@ -497,7 +497,7 @@ Both fixtures share one PDF, and two differently-named properties with byte-iden
 
 **Over:** Keeping an `aria-disabled` submit; showing upload only while blocked
 
-A control labelled with an action it will not carry out is wrong every time it renders, and disabling it only makes it quieter about being wrong. This supersedes the `aria-disabled` decision below: not having an unavailable control beats explaining one. It stays visible once nothing is blocking because someone may decide to fix the minors after all, and withdrawing the escape hatch the moment a document passes makes the clean state feel like a trap. It disappears only on submission, when there is nothing left to re-upload for. Outlined rather than filled throughout, because submitting is the goal and this is the fallback; icon-only below `lg`, where the bottom bar is already carrying the verdict and the primary action.
+A control labeled with an action it will not carry out is wrong every time it renders, and disabling it only makes it quieter about being wrong. This supersedes the `aria-disabled` decision below: not having an unavailable control beats explaining one. It stays visible once nothing is blocking because someone may decide to fix the minors after all, and withdrawing the escape hatch the moment a document passes makes the clean state feel like a trap. It disappears only on submission, when there is nothing left to re-upload for. Outlined rather than filled throughout, because submitting is the goal and this is the fallback; icon-only below `lg`, where the bottom bar is already carrying the verdict and the primary action.
 
 ### 42. The upload dialog is inert
 
@@ -677,7 +677,7 @@ Fitting the whole document into a fixed column is right for 34 pages and wrong f
 
 **Over:** A fixed 44px strip; persisting nothing
 
-Until it is dragged, the strip fits the document into its column and stays a map. Dragged, width decides how big a page is, up to 140px. Dragged shut it costs no width at all and leaves a pull tab, because a panel that cannot be dismissed is always in the way on a laptop. Sizes persist to `vera.panels`, device-scoped, written on change and never on mount — `strip: null` means *never dragged*, and a stored default would switch every reader into the resized behaviour on their first visit.
+Until it is dragged, the strip fits the document into its column and stays a map. Dragged, width decides how big a page is, up to 140px. Dragged shut it costs no width at all and leaves a pull tab, because a panel that cannot be dismissed is always in the way on a laptop. Sizes persist to `vera.panels`, device-scoped, written on change and never on mount — `strip: null` means *never dragged*, and a stored default would switch every reader into the resized behavior on their first visit.
 
 ### 60. Page images in the strip, at every width
 
@@ -737,7 +737,7 @@ Vercel's integration deploys whatever was pushed, green or not, and the point of
 
 **Over:** Leaving the rule-level claims asserted only in prose; running every rule axe ships
 
-Roles, names and keyboard paths were already asserted, but "nothing is carried by colour alone" and "every icon-only control has an accessible name" were claims a reader had to take on trust. This turns them into something CI enforces on every push. Scoped to `wcag2a` / `wcag2aa` / `wcag21aa` rather than the full rule set, because the extras are largely best-practice advisories and a suite that fails on advice is one people learn to ignore. `.react-pdf__Document` is excluded: it is third-party canvas output whose inaccessibility is a known limitation with a server-side fix, and scanning it would report the same unfixable finding forever. It found one thing immediately — a 3.37:1 contrast failure on the submit button — which turned out to be axe reading a background 96% of the way through a fade, so the suite waits for finite animations to finish before scanning. Proposed by Claude Code; the floor, not the ceiling, since no rule scan can say whether a page makes sense to listen to.
+Roles, names and keyboard paths were already asserted, but "nothing is carried by color alone" and "every icon-only control has an accessible name" were claims a reader had to take on trust. This turns them into something CI enforces on every push. Scoped to `wcag2a` / `wcag2aa` / `wcag21aa` rather than the full rule set, because the extras are largely best-practice advisories and a suite that fails on advice is one people learn to ignore. `.react-pdf__Document` is excluded: it is third-party canvas output whose inaccessibility is a known limitation with a server-side fix, and scanning it would report the same unfixable finding forever. It found one thing immediately — a 3.37:1 contrast failure on the submit button — which turned out to be axe reading a background 96% of the way through a fade, so the suite waits for finite animations to finish before scanning. Proposed by Claude Code; the floor, not the ceiling, since no rule scan can say whether a page makes sense to listen to.
 
 ---
 
@@ -745,7 +745,7 @@ Roles, names and keyboard paths were already asserted, but "nothing is carried b
 
 **2026-08-16**
 
-**Decided:** **`−` / percentage / `+` centred in the page bar**, the percentage resetting to fit, both readouts drawn as generated content
+**Decided:** **`−` / percentage / `+` centered in the page bar**, the percentage resetting to fit, both readouts drawn as generated content
 
 **Over:** The gesture alone; a control floating over the bottom-right of the document
 
