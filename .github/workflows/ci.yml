@@ -83,7 +83,7 @@ jobs:
       - run: bun install --frozen-lockfile
 
       - name: Pull Vercel environment
-        run: bunx vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+        run: bunx vercel pull --yes --environment=production --scope baldrocks-projects --token="$VERCEL_TOKEN"
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
@@ -93,7 +93,7 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy
-        run: bunx vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+        run: bunx vercel deploy --prebuilt --prod --scope baldrocks-projects --token="$VERCEL_TOKEN"
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
