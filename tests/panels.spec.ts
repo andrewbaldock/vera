@@ -36,10 +36,19 @@ function stripMetrics(page: Page) {
  * hook's debounce and hoping. A fixed wait racing a timer is a test that passes
  * until the machine is busy.
  */
-async function storageWritten(page: Page) {
-  await expect
-    .poll(() => page.evaluate(() => localStorage.getItem('vera.panels')))
-    .not.toBeNull()
+const stored = (page: Page) => page.evaluate(() => localStorage.getItem('vera.panels'))
+
+/**
+ * The write is debounced by 300ms, so a reload straight after a drag can read
+ * the layout as it was before it.
+ *
+ * Waiting for the key to merely exist is not enough once a test drags twice:
+ * the first drag creates it, and the second one is still in the debounce when
+ * the poll returns. `since` is the value read before the drag being waited on,
+ * so what this actually waits for is that drag reaching storage.
+ */
+async function storageWritten(page: Page, since: string | null = null) {
+  await expect.poll(() => stored(page)).not.toBe(since)
 }
 
 /** Drags a separator by an x offset, in the pointer events it listens for. */
@@ -142,13 +151,15 @@ test('a closed strip stays closed across a reload', async ({ page }) => {
 
 test('panel sizes survive a reload', async ({ page }) => {
   await dragBy(page, STRIP_RESIZER, -60)
+  await storageWritten(page)
+  const afterStrip = await stored(page)
   await dragBy(page, ISSUES_RESIZER, 120)
 
   const strip = (await stripMetrics(page)).width
   const issues = Math.round((await page.locator('#issues-panel').boundingBox())!.width)
   expect(strip).toBeGreaterThan(44)
 
-  await storageWritten(page)
+  await storageWritten(page, afterStrip)
   await page.reload()
   await expect(page.locator(STRIP)).toBeVisible()
 
