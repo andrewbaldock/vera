@@ -45,8 +45,8 @@ import type { DocumentPage } from '@/types/review'
  * **So the fit has a floor under it**, and the floor is what the interface size
  * setting moves. Below the floor the strip stops shrinking and starts
  * scrolling, which is the trade: the whole document at a glance, or segments
- * you can read. At 34 pages the fit wins at every size but Large, so the
- * minimap is unchanged for this fixture until someone asks for bigger type.
+ * you can read. The app always passes a width, so this is the path taken when a
+ * caller gives none — the fit, with the floor under it.
  *
  * The floor is in rem, so it follows the size setting with no preference
  * plumbed in. Changing the setting changes the root font size, which changes

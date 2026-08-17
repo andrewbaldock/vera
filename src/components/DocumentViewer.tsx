@@ -573,6 +573,17 @@ export function DocumentViewer({
       <div
         ref={scrollRef}
         data-scroller="document"
+        /*
+          A focus stop, because this scrolls and a scrollable area a keyboard
+          cannot reach is one a keyboard user cannot read. Tab lands here and
+          the arrow keys, Page Up/Down, Home and End then work — all native, no
+          key handler. It is labelled because it is a stop on the tab order and
+          "group" alone tells a screen-reader user nothing about what they have
+          landed on.
+        */
+        tabIndex={0}
+        role="group"
+        aria-label="Document pages, scrollable"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={(event) => {

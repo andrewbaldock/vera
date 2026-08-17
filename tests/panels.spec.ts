@@ -73,13 +73,12 @@ test.beforeEach(async ({ page }) => {
   await expect(page.locator(STRIP)).toBeVisible()
 })
 
-test('before anyone drags it, the strip maps the whole document', async ({ page }) => {
+test('the strip opens wide enough to read, before anyone touches it', async ({ page }) => {
   const metrics = await stripMetrics(page)
-  expect(metrics.width).toBe(44)
-  expect(metrics.scrolls).toBe(false)
-  // Segments do not fill the column while the fit is in charge. This is the
-  // measurement that says width is not yet driving anything.
-  expect(metrics.segmentWidth).toBeLessThan(metrics.width * 0.6)
+  expect(metrics.width).toBe(100)
+  // The pages fill the column they were given rather than floating in it, which
+  // is the measurement that says the default width is driving their size.
+  expect(metrics.segmentWidth).toBeGreaterThan(metrics.width * 0.8)
 })
 
 test('dragging the strip hands sizing over to its width', async ({ page }) => {
@@ -124,7 +123,7 @@ test('dragging the strip shut leaves a way back', async ({ page }) => {
   await expect(page.locator(STRIP)).toBeVisible()
 })
 
-test('reopening comes back at a width you can grab', async ({ page }) => {
+test('reopening comes back at the default width', async ({ page }) => {
   await dragBy(page, STRIP_RESIZER, -70)
   expect((await stripMetrics(page)).width).toBeGreaterThan(44)
 
@@ -133,10 +132,10 @@ test('reopening comes back at a width you can grab', async ({ page }) => {
 
   await page.getByRole('button', { name: 'Show page strip' }).click()
   await expect(page.locator(STRIP)).toBeVisible()
-  // Not the width it had before the closing drag: that gesture passes through
-  // every width on the way down and each one is recorded. What matters is that
-  // it never comes back as a sliver too narrow to grab again.
-  expect((await stripMetrics(page)).width).toBeGreaterThanOrEqual(44)
+  // Deliberately not the width it was closed at. Closing *is* a drag to the
+  // minimum, so restoring that would reopen the strip as the sliver it became
+  // on the way down.
+  expect((await stripMetrics(page)).width).toBe(100)
 })
 
 test('a closed strip stays closed across a reload', async ({ page }) => {
@@ -164,21 +163,28 @@ test('panel sizes survive a reload', async ({ page }) => {
   await expect(page.locator(STRIP)).toBeVisible()
 
   expect((await stripMetrics(page)).width).toBe(strip)
-  const issuesAfter = Math.round((await page.locator('#issues-panel').boundingBox())!.width)
-  expect(Math.abs(issuesAfter - issues)).toBeLessThanOrEqual(2)
+
+  // Polled, not read once. The strip's width is a pixel value and the issues
+  // split is a percentage of what is left over, so they land on different
+  // frames — a single read taken between them measures a layout that is still
+  // restoring. What matters is where it settles.
+  await expect
+    .poll(async () => {
+      const width = Math.round((await page.locator('#issues-panel').boundingBox())!.width)
+      return Math.abs(width - issues)
+    })
+    .toBeLessThanOrEqual(2)
 })
 
-test('a reader who never drags is never switched into the resized behavior', async ({ page }) => {
+test('a reader who never drags the strip gets the default width', async ({ page }) => {
   // Changing the other panel writes the record. The strip must still come back
-  // as never-dragged, rather than being pinned at whatever it happened to be.
+  // at its default, rather than being pinned at whatever it happened to be.
   await dragBy(page, ISSUES_RESIZER, 60)
   await storageWritten(page)
   await page.reload()
   await expect(page.locator(STRIP)).toBeVisible()
 
-  const metrics = await stripMetrics(page)
-  expect(metrics.width).toBe(44)
-  expect(metrics.scrolls).toBe(false)
+  expect((await stripMetrics(page)).width).toBe(100)
 })
 
 test('a stored width outside the allowed range is discarded', async ({ page }) => {
@@ -188,7 +194,5 @@ test('a stored width outside the allowed range is discarded', async ({ page }) =
   await page.reload()
   await expect(page.locator(STRIP)).toBeVisible()
 
-  const metrics = await stripMetrics(page)
-  expect(metrics.width).toBe(44)
-  expect(metrics.scrolls).toBe(false)
+  expect((await stripMetrics(page)).width).toBe(100)
 })

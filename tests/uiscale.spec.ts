@@ -88,9 +88,13 @@ test.describe('the interface size setting', () => {
   /**
    * The thumb strip sizes itself from arithmetic, not from CSS, so it is the
    * one part of the interface the root font size cannot move on its own. It
-   * reads the root size and puts a floor under its own scale instead.
+   * reads the root size directly instead.
+   *
+   * Its segments are sized by the strip's width, which now has a default wide
+   * enough that the rem floor never binds — so the size setting moves the page
+   * numbers on the segments rather than the segments themselves.
    */
-  test('the thumb strip trades the whole-document view for legible segments', async ({ page }) => {
+  test('the thumb strip page numbers follow the interface size', async ({ page }) => {
     const strip = page.locator('[role="slider"][aria-label="Document pages"]')
     await expect(strip).toBeVisible()
 
@@ -106,19 +110,18 @@ test.describe('the interface size setting', () => {
         }
       })
 
-    // At the shipped size the fit still wins on a 34-page document, so the
-    // strip stays a map of the whole thing and never scrolls. This is the
-    // assertion that keeps the floor from quietly changing v1.0 behavior.
+    // The default width is past the point where 34 pages fit the column, so the
+    // strip scrolls from the start rather than shrinking them to a thread.
     const before = await measure()
-    expect(before.scrolls).toBe(false)
+    expect(before.scrolls).toBe(true)
 
     await chooseSize(page, 'Large')
     await expect.poll(() => rootFontSize(page)).toBe(ROOT_FONT_PX.large)
-    await expect.poll(async () => (await measure()).scrolls).toBe(true)
+    await expect.poll(async () => (await measure()).numberPx).toBeGreaterThan(before.numberPx)
 
-    const after = await measure()
-    expect(after.segmentHeight).toBeGreaterThan(before.segmentHeight)
-    expect(after.numberPx).toBeGreaterThan(before.numberPx)
+    // The segments do not move with it: their size comes from the strip's
+    // width, and the reader sets that by dragging.
+    expect((await measure()).segmentHeight).toBe(before.segmentHeight)
   })
 
   test('the document does not scale with the interface', async ({ page }) => {

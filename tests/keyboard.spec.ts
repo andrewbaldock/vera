@@ -106,3 +106,21 @@ test('Space ticks the Done box without leaving the grid', async ({ page }) => {
     page.getByRole('region', { name: 'Issues found' }).getByText('1 marked done'),
   ).toBeVisible()
 })
+
+/**
+ * The document scroller is a scrollable area, and one a keyboard cannot reach
+ * is one a keyboard user cannot read past the first screen. Caught by the axe
+ * rule scan as `scrollable-region-focusable`; asserted here as the behavior it
+ * actually protects.
+ */
+test('the document can be scrolled from the keyboard', async ({ page }) => {
+  await open(page)
+  const scroller = page.locator('[data-scroller="document"]')
+
+  await scroller.focus()
+  await expect(scroller).toBeFocused()
+
+  const before = await scroller.evaluate((el) => el.scrollTop)
+  await page.keyboard.press('PageDown')
+  await expect.poll(() => scroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(before)
+})

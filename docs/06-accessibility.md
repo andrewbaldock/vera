@@ -43,6 +43,8 @@ Every interactive region follows a named pattern rather than an invented one.
 | Dialogs | `Esc` dismisses, focus trapped, focus returned | Radix, underneath shadcn |
 | Skip link | First stop in the tab order | — |
 
+**The document itself is a focus stop.** Tab reaches the scroll container and the arrow keys, Page Up/Down, Home and End scroll it from there. Without that the pages past the first screen were mouse-only, which the rule scan caught and nothing else had.
+
 Asserted in [`tests/keyboard.spec.ts`](../tests/keyboard.spec.ts) rather than claimed here.
 
 Two decisions that belong together.

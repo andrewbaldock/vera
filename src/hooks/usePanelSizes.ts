@@ -5,11 +5,10 @@ import { useCallback, useEffect, useRef, useState } from 'react'
  * want a screen divided depends on the screen, and dragging a laptop's split
  * onto a 27" monitor helps nobody.
  *
- * Written on change and never on mount, following the scroll-tracking rule. It
- * matters more here: `strip` is `null` until the reader has actually dragged
- * the thumb strip, and that null is what keeps the strip a minimap by default.
- * An effect keyed on the value would stamp a width in on first render and
- * silently switch every reader into the resized behavior.
+ * Written on change and never on mount, following the scroll-tracking rule: a
+ * reader who has never touched a splitter has no stored layout, so the defaults
+ * here stay free to move without every existing visitor being pinned to the old
+ * ones.
  *
  * Debounced, because a splitter reports on every pointer move and localStorage
  * is synchronous. The value on screen is live; only the record of it waits.
@@ -32,6 +31,17 @@ export const STRIP_MIN = 44
 export const STRIP_MAX = 140
 
 /**
+ * The width the strip has before anyone touches it, and the width it comes back
+ * at when it is reopened.
+ *
+ * Wide enough that a page image is a shape you can tell from its neighbours,
+ * which is the whole reason the images are there. The minimum is a legal touch
+ * target rather than a legible one, so starting there asks every reader to
+ * discover the resize before the strip is worth looking at.
+ */
+export const STRIP_DEFAULT = 100
+
+/**
  * Drag it narrower than this and it closes instead of becoming a sliver. A
  * strip between 1px and the touch minimum is the one state that is no use to
  * anybody: too narrow to read, too narrow to grab, still taking room.
@@ -40,22 +50,19 @@ export const STRIP_COLLAPSE_AT = 22
 
 export interface PanelSizes {
   issues: number
-  /** Null until dragged. See above — this is load-bearing, not laziness. */
+  /**
+   * Px. Nullable because `ThumbStrip` still accepts "no width given" and fits
+   * the document into its column instead; the app itself always has a number.
+   */
   strip: number | null
   /**
-   * Separate from `strip` so that closing a strip nobody ever resized reopens
-   * it as the minimap it was, rather than pinning it at a width.
-   *
-   * ponytail: reopening restores whatever width the strip last held, which
-   * after dragging it shut is the minimum — the drag passes through every width
-   * on its way down and each one is recorded. Restoring the width it had before
-   * the gesture began needs the splitter to report on release as well as on
-   * move; worth adding if anyone minds.
+   * Separate from `strip` so that whether the strip is showing and how wide it
+   * is stay independent questions.
    */
   stripOpen: boolean
 }
 
-const DEFAULTS: PanelSizes = { issues: ISSUES_DEFAULT, strip: null, stripOpen: true }
+const DEFAULTS: PanelSizes = { issues: ISSUES_DEFAULT, strip: STRIP_DEFAULT, stripOpen: true }
 
 function inRange(value: unknown, min: number, max: number): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max
@@ -122,7 +129,16 @@ export function usePanelSizes() {
     [update],
   )
 
-  const openStrip = useCallback(() => update({ stripOpen: true }), [update])
+  /**
+   * Reopening comes back at the default rather than at the last width, because
+   * the only way to close the strip is to drag it shut — and that drag passes
+   * through every width on the way down, so the last width recorded is the
+   * minimum. Restoring that would reopen it as the sliver it was closed to.
+   */
+  const openStrip = useCallback(
+    () => update({ stripOpen: true, strip: STRIP_DEFAULT }),
+    [update],
+  )
 
   return { panels, setIssuesWidth, setStripWidth, openStrip }
 }

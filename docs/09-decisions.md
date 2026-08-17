@@ -86,6 +86,8 @@ answer were always obvious.
 
 65. [An automated accessibility rule scan, scoped to WCAG A and AA](#65-an-automated-accessibility-rule-scan-scoped-to-wcag-a-and-aa)
 66. [Zoom controls in the page bar, and readouts that browser find cannot match](#66-zoom-controls-in-the-page-bar-and-readouts-that-browser-find-cannot-match)
+67. [The thumbnail strip opens at 100px](#67-the-thumbnail-strip-opens-at-100px)
+68. [The document scroller is a focus stop](#68-the-document-scroller-is-a-focus-stop)
 
 ---
 
@@ -677,7 +679,7 @@ Fitting the whole document into a fixed column is right for 34 pages and wrong f
 
 **Over:** A fixed 44px strip; persisting nothing
 
-Until it is dragged, the strip fits the document into its column and stays a map. Dragged, width decides how big a page is, up to 140px. Dragged shut it costs no width at all and leaves a pull tab, because a panel that cannot be dismissed is always in the way on a laptop. Sizes persist to `vera.panels`, device-scoped, written on change and never on mount — `strip: null` means *never dragged*, and a stored default would switch every reader into the resized behavior on their first visit.
+The strip opens at 100px, wide enough that a page image is a shape you can tell from its neighbours. Width decides how big a page is, from a 44px touch target up to 140px, and the strip scrolls when its pages no longer fit. Dragged shut it costs no width at all and leaves a pull tab, because a panel that cannot be dismissed is always in the way on a laptop; reopening returns it to 100px rather than to the width it was closed at, since closing *is* a drag to the minimum. Sizes persist to `vera.panels`, device-scoped, written on change and never on mount, so a reader who has touched nothing is not pinned to an old default.
 
 ### 60. Page images in the strip, at every width
 
@@ -754,3 +756,31 @@ A pinch is not available to a mouse or a keyboard, so zoom needed controls. They
 That put two numbers about the interface inside the DOM the reader searches: `⌘F 100` matched the zoom control and `34` matched the page counter. Whole-document search is the first acceptance criterion in the brief, so both are drawn with `content: attr(data-readout)`, which find cannot reach. The value stays in one place in the markup, and screen readers get the same number from a label beside it.
 
 Andrew placed the controls, after rejecting the floating version and a first pass at the styling; Claude Code proposed the generated-content readouts, and the reset on the percentage.
+
+---
+
+### 67. The thumbnail strip opens at 100px
+
+**2026-08-17**
+
+**Decided:** **The strip opens at 100px**, and returns there when reopened
+
+**Over:** Fitting the whole document into the column until someone drags it; reopening at the width it was closed at
+
+The strip used to start with no width of its own and shrink the document to fit its column, which on a long document is a thread of slivers nobody can read. Now it opens at a width where a page image is a shape you can tell from its neighbours, which is the reason the images are there at all.
+
+Reopening returns to the same 100px rather than to the last width, because closing *is* a drag to the minimum: the gesture passes through every width on the way down and each one is recorded, so restoring the last one would reopen the strip as the sliver it was closed to.
+
+One consequence, stated because it reverses part of row 58: the interface size setting no longer changes the segments. Their size comes from the strip's width, and 100px is past the point where the rem floor binds. The page numbers on them still follow the setting. Asked for by Andrew.
+
+### 68. The document scroller is a focus stop
+
+**2026-08-17**
+
+**Decided:** **`tabIndex={0}`, `role="group"` and a label** on the document's scroll container
+
+**Over:** Leaving it pointer-only; adding a key handler of our own
+
+A keyboard user could reach every control on the page and not the document, because the element that scrolls it was not focusable — so the pages below the first screen were unreachable without a mouse. Found by the axe rule scan as `scrollable-region-focusable`, which is the kind of thing a rule scan is for: it had been true since the viewer was built and nobody had noticed.
+
+A focus stop is the whole fix. Arrow keys, Page Up/Down, Home and End are native browser behavior once an element is focused, so no key handler is involved. It carries a label because it is now a stop on the tab order, and a bare group announces nothing about what the reader has landed on. Asserted in [`tests/keyboard.spec.ts`](../tests/keyboard.spec.ts).
