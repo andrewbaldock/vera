@@ -141,7 +141,7 @@
     --severity-critical-text: oklch(0.505 0.196 27.3);
     --severity-major-text: oklch(0.505 0.115 62);
     --severity-minor-text: oklch(0.495 0.018 260);
-    --focus-tint: #dde0f3;
+    --focus-tint: #ebedff;
     --focus-edge: #5865f3;
 
     /* The wordmark's gradient. It starts at the primary the rest of the app
