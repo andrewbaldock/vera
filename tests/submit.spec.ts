@@ -21,6 +21,20 @@ async function open(page: Page, url: string) {
   await expect(page.getByRole('grid', { name: 'Issues' })).toBeVisible()
 }
 
+/**
+ * Submitting lands on the queue, and the queue starts rendering a cover page per
+ * row. Navigating out of that while pdf.js is still working crashed WebKit on CI
+ * — `page.goto: WebKit encountered an internal error`, a browser-process fault
+ * rather than a failed assertion. Waiting for the queue to finish gives the
+ * navigation a settled page to leave from.
+ */
+async function backToReview(page: Page, url: string) {
+  await expect(page).toHaveURL(/\/documents/)
+  // The cover pages are the pdf.js work — wait for one to have painted.
+  await expect(page.locator('canvas').first()).toBeVisible()
+  await page.goto(url)
+}
+
 const submitButton = (page: Page) =>
   page.getByRole('button', { name: 'Submit review' }).filter({ visible: true })
 
@@ -123,9 +137,7 @@ test.describe('once nothing is blocking', () => {
     await open(page, CLEAN)
     await submitButton(page).click()
     await page.getByRole('alertdialog').getByRole('button', { name: 'Submit review' }).click()
-    await expect(page).toHaveURL(/\/documents/)
-
-    await page.goto(CLEAN)
+    await backToReview(page, CLEAN)
     await expect(verdict(page).getByText('Submitted')).toBeVisible()
     await expect(verdict(page).getByText(/accepted as-is/)).toBeVisible()
     // Gone, not disabled. The page has answered its own question.
@@ -136,8 +148,7 @@ test.describe('once nothing is blocking', () => {
     await open(page, CLEAN)
     await submitButton(page).click()
     await page.getByRole('alertdialog').getByRole('button', { name: 'Submit review' }).click()
-    await expect(page).toHaveURL(/\/documents/)
-    await page.goto(CLEAN)
+    await backToReview(page, CLEAN)
     await expect(verdict(page).getByText('Submitted')).toBeVisible()
 
     // The case that matters: status: 'submitted' is a value the API can return,

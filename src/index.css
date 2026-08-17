@@ -140,8 +140,8 @@
     --severity-minor: oklch(0.62 0.02 260);
     --severity-critical-text: oklch(0.505 0.196 27.3);
     --severity-major-text: oklch(0.505 0.115 62);
-    --severity-minor-text: oklch(0.505 0.018 260);
-    --focus-tint: #eef0fe;
+    --severity-minor-text: oklch(0.495 0.018 260);
+    --focus-tint: #dde0f3;
     --focus-edge: #5865f3;
 
     /* The wordmark's gradient. It starts at the primary the rest of the app
@@ -218,7 +218,7 @@
     --severity-critical-text: oklch(0.79 0.15 22);
     --severity-major-text: oklch(0.85 0.12 75);
     --severity-minor-text: oklch(0.75 0.018 260);
-    --focus-tint: #232848;
+    --focus-tint: #2f355d;
     --focus-edge: #7c86f7;
 
     /* Lifted for a dark ground: the light pair goes muddy against near-black. */
