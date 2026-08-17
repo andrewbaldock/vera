@@ -137,7 +137,7 @@ What no suite covers, checked by hand:
 - A keyboard-only pass: tab from the top, reach the document via the skip link, drive the issue
   grid, open and dismiss the confirmation.
 - The iPad, rotated across the breakpoint.
-- The iPhone Simulator, for the bottom bar against the home indicator.
+- The iPhone Simulator, for the safe-area insets against the home indicator.
 - A submit, end to end, then a demo reset.
 
 **To add:** a VoiceOver pass. It belongs on this list and is not on it yet.

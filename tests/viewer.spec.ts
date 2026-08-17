@@ -150,7 +150,12 @@ test.describe('resizing across the breakpoint', () => {
     // Scoped to main and case-insensitive: the issues panel also says "Page 7"
     // in each row's meta line, and the status bar's capitals come from CSS.
     await expect(page.locator('main').getByText(/page 7/i).first()).toBeVisible()
-    await expect(page.locator('.react-pdf__Page__canvas').first()).toBeVisible()
+    // The same allowance the first paint gets: changing the viewport changes
+    // every page's width, so this is pdf.js rasterising the window again rather
+    // than revealing something already drawn.
+    await expect(page.locator('.react-pdf__Page__canvas').first()).toBeVisible({
+      timeout: 20_000,
+    })
     const canvases = await page.locator('.react-pdf__Page__canvas').count()
     expect(canvases).toBeGreaterThan(0)
   })

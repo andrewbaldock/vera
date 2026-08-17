@@ -88,6 +88,8 @@ answer were always obvious.
 66. [Zoom controls in the page bar, and readouts that browser find cannot match](#66-zoom-controls-in-the-page-bar-and-readouts-that-browser-find-cannot-match)
 67. [The thumbnail strip opens at 100px](#67-the-thumbnail-strip-opens-at-100px)
 68. [The document scroller is a focus stop](#68-the-document-scroller-is-a-focus-stop)
+69. [On a phone the severity chips lose their words](#69-on-a-phone-the-severity-chips-lose-their-words)
+70. [No bottom bar on a phone](#70-no-bottom-bar-on-a-phone)
 
 ---
 
@@ -784,3 +786,43 @@ One consequence, stated because it reverses part of row 58: the interface size s
 A keyboard user could reach every control on the page and not the document, because the element that scrolls it was not focusable — so the pages below the first screen were unreachable without a mouse. Found by the axe rule scan as `scrollable-region-focusable`, which is the kind of thing a rule scan is for: it had been true since the viewer was built and nobody had noticed.
 
 A focus stop is the whole fix. Arrow keys, Page Up/Down, Home and End are native browser behavior once an element is focused, so no key handler is involved. It carries a label because it is now a stop on the tab order, and a bare group announces nothing about what the reader has landed on. Asserted in [`tests/keyboard.spec.ts`](../tests/keyboard.spec.ts).
+
+---
+
+### 69. On a phone the severity chips lose their words
+
+**2026-08-17**
+
+**Decided:** **Below `lg`, the chips are an icon and a count**, the panel drops its explanatory line, and the bottom bar stops repeating the headline
+
+**Over:** Shrinking the chips below a 44px touch target; leaving the phone layout as it was
+
+At 320px the four chips wrapped onto a second row and the chrome took 352px of a 700px screen, so the issues list — the thing the screen is for — got half of it. Measured before changing anything, because "feels cramped" is not a number.
+
+Three cuts, none of which removes information from the app:
+
+- The word goes off the chip. Severity still reads by shape and by color, every row in the list below spells it out, and the chip's `aria-label` is untouched, so a screen reader hears "4 Critical — hide them" exactly as before.
+- The panel drops "before you can submit". The bottom bar is on screen at the same time saying the same sentence.
+- The bar drops the headline while the issues tab is showing, since the panel above it is stating the verdict. On the document tab the panel is hidden, so the bar states it in full.
+
+The chips keep their 44px height throughout: the height is a touch target, and the width was the problem. Chrome falls to 280px and the list goes from 50% of the screen to 60%. Asked for by Andrew, from a phone.
+
+---
+
+### 70. No bottom bar on a phone
+
+**2026-08-17**
+
+**Decided:** **The compact bottom bar is gone.** The upload control moves into the corner of the issues panel, where the done count used to sit
+
+**Over:** Keeping a bar that repeated the verdict; a floating action button
+
+The bar existed to carry the verdict and the primary action within thumb reach. Once the panel above it stopped doubling the same sentence there was nothing left in it but a fragment — "before you can submit" over a button — which reads as a leftover rather than a statement. It also cost 61px of a screen whose whole problem is room.
+
+The action takes the corner the done count had, and the count goes: it is already on its own chip a row below, and two of the same number on one screen is one too many. The full layout is untouched — the action stays in the app header there, and the done count stays in the corner.
+
+The trade this accepts: the upload control is on the issues tab only, because that is where the panel is. Switching tabs to reach it is one tap, and the tab bar is directly above.
+
+Removing the bar removed the verdict's `compact` variant with it, since the bar was its only caller.
+
+This supersedes the reasoning in row 14. Asked for by Andrew, from a phone.

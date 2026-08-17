@@ -102,8 +102,8 @@ for (const viewport of VIEWPORTS) {
     test('the shell owns the height, so the page itself does not scroll', async ({ page }) => {
       await gotoReview(page)
       const { scrollHeight, innerHeight } = await pageMetrics(page)
-      // The panels scroll. The document must not, or the bottom bar walks off
-      // the bottom of an iPhone and takes the submit button with it.
+      // The panels scroll. The document must not, or the chrome walks off the
+      // bottom of an iPhone and takes the tab bar with it.
       expect(scrollHeight).toBeLessThanOrEqual(innerHeight + 1)
     })
 
@@ -125,9 +125,9 @@ for (const viewport of VIEWPORTS) {
     test('shows exactly one primary action, fully on screen', async ({ page }) => {
       await gotoReview(page)
 
-      // One in the header for the full shape, one in the bottom bar for the
-      // compact one. Never both, never neither: this is the control the whole
-      // page exists to protect.
+      // One in the app header for the full shape, one in the verdict panel's
+      // corner for the compact one. Never both, never neither: this is the
+      // control the whole page exists to protect.
       const visible = await primaryAction(page).filter({ visible: true }).all()
       expect(visible).toHaveLength(1)
 
@@ -243,4 +243,29 @@ test.describe('every width in between', () => {
       expect(stripVisible, `full shape at ${width}px`).toBe(width >= BREAKPOINT)
     }
   })
+})
+
+/**
+ * A phone gives the issues list whatever the chrome above and below it does not
+ * take. The severity chips were the worst offender: at 320px the words wrapped
+ * them onto a second row and cost the list a tenth of the screen.
+ */
+test('on a phone the severity chips stay on one row', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 700 })
+  await page.goto('/reviews/souj5sd12c8a3f')
+  await expect(page.getByRole('grid', { name: 'Issues' })).toBeVisible()
+
+  const chips = page.locator('[aria-label="Severity breakdown"]')
+  const rows = await chips.evaluate(
+    (el) => new Set([...el.children].map((c) => Math.round(c.getBoundingClientRect().top))).size,
+  )
+  expect(rows).toBe(1)
+
+  // Still a legal touch target, which is the reason they cannot simply shrink.
+  const height = await chips.locator('button').first().evaluate((el) => el.getBoundingClientRect().height)
+  expect(height).toBeGreaterThanOrEqual(44)
+
+  // The words are gone from the chips, not from the app: every row still says
+  // which severity it is, and the chip's accessible name is unchanged.
+  await expect(chips.getByRole('button').first()).toHaveAccessibleName(/4 Critical/)
 })

@@ -397,7 +397,7 @@
   /*
     The shell is a fixed-height app frame, so the page itself never scrolls.
     Without this, iOS still rubber-bands the whole thing when a drag starts on
-    the header, the view switcher or the bottom bar, which reads as the app
+    the header or the view switcher, which reads as the app
     coming loose from the screen.
   */
   html,

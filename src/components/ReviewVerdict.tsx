@@ -17,20 +17,17 @@ import type { Submission } from '@/lib/submission'
  * "12 issues must be fixed" is overfitted to the mock it was handed.
  */
 
-/**
- * The id `aria-describedby` on the submit button points at. Carried by the panel
- * verdict only, never the compact bar: both render at once (CSS hides one), and
- * two elements sharing an id is invalid HTML that resolves the description to
- * whichever comes first in the document. The panel version is also the fuller
- * statement.
- */
+/** The id `aria-describedby` on the submit button points at. */
 const SUBMIT_BLOCKED_ID = 'submit-blocked'
 
 interface ReviewVerdictProps {
   review: Review
   submission?: Submission | null
-  /** The compact bottom bar has one line to work with, not four. */
-  compact?: boolean
+  /**
+   * The primary action, shown in this panel below `lg`. In the full layout it
+   * lives in the app header, which the compact shape has no room for.
+   */
+  action?: React.ReactNode
   /** Severities currently hidden from the list. */
   hidden?: ReadonlySet<Severity>
   onToggleSeverity?: (severity: Severity) => void
@@ -53,7 +50,7 @@ function submittedOn(submission: Submission | null | undefined): string | null {
 export function ReviewVerdict({
   review,
   submission,
-  compact = false,
+  action,
   hidden,
   onToggleSeverity,
   doneCount = 0,
@@ -78,15 +75,6 @@ export function ReviewVerdict({
     const on = submittedOn(submission)
     // The headline already says "Submitted"; this line is the when and the who.
     const summary = [on, submission?.by].filter(Boolean).join(' · ') || 'Awaiting processing'
-
-    if (compact) {
-      return (
-        <p aria-live="polite" className={cn('min-w-0 flex-1 text-sm', className)}>
-          <span className="font-semibold">Submitted</span>{' '}
-          <span className="text-muted-foreground">{on ?? 'for processing'}</span>
-        </p>
-      )
-    }
 
     return (
       <div id={SUBMIT_BLOCKED_ID} aria-live="polite" className={cn('border-b px-4 py-4', className)}>
@@ -130,15 +118,6 @@ export function ReviewVerdict({
       ? `${counts.minor} minor ${counts.minor === 1 ? 'issue' : 'issues'} can be accepted`
       : 'No issues found'
 
-  if (compact) {
-    return (
-      <p aria-live="polite" className={cn('min-w-0 flex-1 text-sm', className)}>
-        <span className="font-semibold">{headline}</span>{' '}
-        <span className="text-muted-foreground">{detail}</span>
-      </p>
-    )
-  }
-
   return (
     <div
       id={SUBMIT_BLOCKED_ID}
@@ -150,7 +129,12 @@ export function ReviewVerdict({
         Ticking issues off changes nothing about what is blocking, so the two
         counts share a line without reading as one sentence.
       */}
-      <div className="flex items-baseline justify-between gap-3">
+      {/*
+        Baseline where this row is two pieces of text, centred where it is text
+        against a button: aligning a 44px control on the headline's baseline
+        drops it, and the row opens a gap under the words to make room.
+      */}
+      <div className="flex items-center justify-between gap-3 lg:items-baseline">
         <p
           className={cn(
             'flex items-center gap-2 text-lg font-semibold tracking-tight text-balance',
@@ -184,20 +168,32 @@ export function ReviewVerdict({
           )}
           {headline}
         </p>
+        {/*
+          Below `lg` this corner carries the primary action instead of the done
+          count. The count is already on its own chip a row below, and the
+          action has nowhere else to go: the compact shape has no app header
+          slot for it, and no bar along the bottom.
+        */}
+        {action && <div className="shrink-0 lg:hidden">{action}</div>}
         {doneCount > 0 && (
-          <p className="shrink-0 text-sm font-normal text-muted-foreground tabular-nums">
+          <p className="hidden shrink-0 text-sm font-normal text-muted-foreground tabular-nums lg:block">
             {doneCount} marked done
           </p>
         )}
       </div>
-      <p className="mt-0.5 text-sm text-muted-foreground">{detail}</p>
+      {/*
+        Cut below `lg`, where a line of the screen is worth more than the words.
+        The headline states the fact and the control that resolves it is on the
+        same row, which carries the meaning without the sentence.
+      */}
+      <p className="mt-0.5 text-sm text-muted-foreground max-lg:hidden">{detail}</p>
 
       {/*
         The breakdown and the filter are the same control. The *number* never
         changes when a severity is hidden, only the opacity, so the summary keeps
         describing the document while the list shows a subset of it.
       */}
-      <ul aria-label="Severity breakdown" className="mt-3 flex flex-wrap gap-1.5">
+      <ul aria-label="Severity breakdown" className="mt-1.5 flex flex-wrap gap-1.5 lg:mt-3">
         {(Object.keys(counts) as Severity[]).map((severity) => {
           const isHidden = hidden?.has(severity) ?? false
           const label = `${counts[severity]} ${SEVERITY_LABEL[severity]}`
@@ -220,7 +216,17 @@ export function ReviewVerdict({
               >
                 <SeverityIcon severity={severity} />
                 <span className="font-medium tabular-nums">{counts[severity]}</span>
-                <span className={SEVERITY_TEXT[severity]}>{SEVERITY_LABEL[severity]}</span>
+                {/*
+                  Hidden below `lg`, where four of these wrap onto a second row
+                  and cost a phone half its list. The shape and the color still
+                  separate them, the row for each issue spells the word out
+                  anyway, and `aria-label` above is unchanged — so this is the
+                  sighted reader trading a word they can recover by scrolling
+                  for the space to do the scrolling in.
+                */}
+                <span className={cn(SEVERITY_TEXT[severity], 'max-lg:hidden')}>
+                  {SEVERITY_LABEL[severity]}
+                </span>
               </button>
             </li>
           )
@@ -246,7 +252,7 @@ export function ReviewVerdict({
             >
               <Check className="size-3.5 text-muted-foreground" aria-hidden />
               <span className="font-medium tabular-nums">{doneCount}</span>
-              <span className="text-muted-foreground">Done</span>
+              <span className="text-muted-foreground max-lg:hidden">Done</span>
             </button>
           </li>
         )}

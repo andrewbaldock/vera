@@ -70,7 +70,7 @@ There are exactly two layouts. Not three.
 
 | Shape | Applies | What it is |
 |---|---|---|
-| **Compact** (`< lg`) | Every phone, **every iPad in portrait up to 1024**, every Stage Manager and Split View window, and a narrow desktop browser | One thing at a time behind a segmented control — **Issues / Document**. Verdict and submit merge into one bottom bar. No thumb strip, no resizer. |
+| **Compact** (`< lg`) | Every phone, **every iPad in portrait up to 1024**, every Stage Manager and Split View window, and a narrow desktop browser | One thing at a time behind a segmented control — **Issues / Document**. The verdict panel carries the upload control in its corner. No bottom bar, no thumbnail strip, no resizer. |
 | **Full** (`≥ lg`, 1024px) | Every iPad in landscape, the 13" iPad **in portrait**, and every desktop | The sketch: issues panel and viewer side by side with a draggable resizer, thumb strip down the viewer edge, full metadata in the header. |
 
 **Why 1024 rather than 768.** The full shape carries two controls the compact shape does without, the resizer and the thumb strip, and both need room to be operated. At 768 an issues panel wide enough to read leaves a document column too narrow to. The rule is about *the window*, not the device, which is what makes the Stage Manager case correct without special-casing it.
@@ -123,7 +123,7 @@ Drawn at phone width because that is where it is tightest, but this is the layou
 
 Five decisions are baked into that:
 
-**The verdict and the submit button merge into one bottom bar.** A 390-point-wide screen can't afford separate chrome for each, and the merge is also *better than the desktop arrangement*. The blocking count sits directly against the button it is blocking, which is the plainest statement of acceptance criterion #3, and the bottom of the screen is both thumb reach and where iOS puts primary actions.
+**The verdict panel carries the upload control.** It sits in the corner the done count has in the full layout, on the row with the blocking headline — so the count that blocks submission and the control that resolves it are on one line, which is the plainest statement of acceptance criterion #3. This replaced a bottom bar that repeated the headline and cost 61px of a screen whose whole problem is room; the trade is that the control is on the issues tab only, one tap from the other.
 
 **The nav bar collapses to a back chevron, a truncated title and an overflow.** Version, uploaded-at and assigned user move behind the `⋯`, being reference data you consult rather than act on, so they lose the fight for vertical space.
 
@@ -131,7 +131,7 @@ Five decisions are baked into that:
 
 **The thumb strip is dropped here, not miniaturized.** Not for want of touch targets, since as a scrub control it works fine under a thumb. It is dropped because it costs *width*, and it is the third of three redundant routes to a page: the list and the status bar both survive without it. A cramped horizontal version would be worse than its absence.
 
-**A segmented control, not a bottom tab bar.** Two views is not a tab bar's job, and the bottom edge is already carrying the verdict and the submit button.
+**A segmented control, not a bottom tab bar.** Two views is not a tab bar's job — a tab bar is for the top level of an app, and this is one screen showing one of two things.
 
 #### iOS specifics that actually bite
 

@@ -257,7 +257,7 @@ The shape is decided **entirely in CSS**, at 1024px.
 
 ```
 < 1024px   compact   one view at a time behind a view switcher,
-                     verdict and submit merged into one bottom bar
+                     upload sits in the verdict panel's corner
 ≥ 1024px   full      split view, draggable splitter, thumb strip,
                      metadata inline in the header
 ```

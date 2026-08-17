@@ -236,8 +236,8 @@ function ReviewShell({
         onVersionChange={onVersionChange}
       />
 
-      {/* Compact only. Two views is not a tab bar's job, and the bottom edge is
-          already carrying the verdict and the submit button. */}
+      {/* Compact only. Two views is not a tab bar's job, so this is the only
+          thing in it. */}
       <div role="tablist" aria-label="View" className="flex shrink-0 gap-1 border-b bg-card p-1.5 lg:hidden">
         {(Object.keys(TAB_LABEL) as Tab[]).map((value) => (
           <button
@@ -286,6 +286,7 @@ function ReviewShell({
             doneCount={done.size}
             hideDone={hideDone}
             onToggleDone={() => setHideDone((previous) => !previous)}
+            action={primaryAction}
             className="shrink-0"
           />
           {/* The panel owns its own scroller, one level down: the sort toolbar
@@ -409,13 +410,6 @@ function ReviewShell({
         )}
       </div>
 
-      {/* Compact only. The blocking count sits directly against the button it is
-          blocking, and the bottom of the screen is both thumb reach and where
-          iOS puts primary actions. */}
-      <div className="flex shrink-0 items-center gap-3 border-t bg-card px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] lg:hidden">
-        <ReviewVerdict review={review} submission={submission} compact />
-        {primaryAction}
-      </div>
     </div>
   )
 }
