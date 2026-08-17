@@ -57,6 +57,27 @@ const SCROLL_END_SUPPORTED = typeof window !== 'undefined' && 'onscrollend' in w
 const COUNTER_IDLE_MS = 1100
 
 /**
+ * Zoom bounds. One is fit-to-panel, which is where it opens and what a
+ * double-tap returns to. Four is the point past which a Letter page at this
+ * panel's width is wider than any phone can usefully pan across.
+ */
+const ZOOM_MIN = 1
+const ZOOM_MAX = 4
+
+/** Below this much movement a two-finger touch is a scroll, not a pinch. */
+const PINCH_DEADZONE = 0.02
+
+/** Two taps closer together than this, and near enough, mean "reset". */
+const DOUBLE_TAP_MS = 300
+const DOUBLE_TAP_SLOP_PX = 30
+
+function distance(a: { clientX: number; clientY: number }, b: typeof a) {
+  return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY)
+}
+
+const clampZoom = (value: number) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, value))
+
+/**
  * How many pages either side of the one you are reading get a canvas. A
  * full-width page canvas is roughly 10 MB at devicePixelRatio 2, so painting all
  * 34 approaches 350 MB, and iOS Safari discards tabs for less. The text layer is
@@ -125,11 +146,78 @@ export function DocumentViewer({
    */
   const [scrolling, setScrolling] = useState(false)
   const idleTimer = useRef(0)
+  /**
+   * Committed zoom, and the live scale a pinch is currently showing.
+   *
+   * Two values rather than one because they cost different things. Committed
+   * zoom changes `pageWidth`, which re-renders every nearby page at the new
+   * size: crisp, and far too slow to do on every frame of a gesture. The live
+   * scale is a CSS transform on the pages already painted, which costs nothing
+   * and is what the finger follows. The transform is thrown away and the real
+   * width applied the moment the fingers lift.
+   */
+  const [zoom, setZoom] = useState(1)
+  const [pinchScale, setPinchScale] = useState(1)
+  /** Active touches, by pointer id, so a pinch can be told from a scroll. */
+  const touches = useRef(new Map<number, { clientX: number; clientY: number }>())
+  const pinch = useRef<{ startDistance: number; startZoom: number } | null>(null)
+  const lastTap = useRef({ time: 0, x: 0, y: 0 })
+  /**
+   * Where to land after a zoom. Committed zoom changes every reserved height,
+   * so the scroll offset that meant "page 14" before means something else
+   * after. Captured before the change and restored once the new layout exists.
+   */
+  const anchor = useRef<{ page: number; offset: number } | null>(null)
   // Kept here rather than lifted: this is the viewer's own rendering concern,
   // and the parent's focusedPage is about what the *rest of the app* highlights.
   const [nearPage, setNearPage] = useState(pages[0]?.page_num ?? 1)
 
-  const pageWidth = Math.max(0, Math.min(available - PAGE_GUTTER * 2, MAX_PAGE_WIDTH))
+  /** Fit-to-panel, before any zoom. Zoom multiplies it. */
+  const fitWidth = Math.max(0, Math.min(available - PAGE_GUTTER * 2, MAX_PAGE_WIDTH))
+  const pageWidth = fitWidth * zoom
+
+  /**
+   * A canvas costs the square of the zoom, so the window narrows as it opens.
+   * At 4x a single page is sixteen times the pixels it was, and the constant
+   * that was safe for seven pages at 1x would be 112 pages' worth of memory.
+   */
+  const canvasWindow = Math.max(1, Math.round(CANVAS_WINDOW / zoom))
+
+  /**
+   * Remembers which page is where, so a zoom can put it back. Called before the
+   * committed zoom changes, read after the layout it invalidated has been redone.
+   */
+  function captureAnchor() {
+    const scroller = scrollRef.current
+    const index = pages.findIndex((page) => page.page_num === nearPage)
+    const element = pageRefs.current[index]
+    if (!scroller || !element) return
+    anchor.current = {
+      page: nearPage,
+      offset: element.getBoundingClientRect().top - scroller.getBoundingClientRect().top,
+    }
+  }
+
+  function applyZoom(next: number) {
+    const value = clampZoom(next)
+    if (value === zoom) return
+    captureAnchor()
+    setZoom(value)
+  }
+
+  // Put the anchored page back where it was. Layout effect, so it happens
+  // before the browser paints and the document never appears to jump.
+  useLayoutEffect(() => {
+    const target = anchor.current
+    const scroller = scrollRef.current
+    if (!target || !scroller || pageWidth <= 0) return
+    anchor.current = null
+    const index = pages.findIndex((page) => page.page_num === target.page)
+    const element = pageRefs.current[index]
+    if (!element) return
+    scroller.scrollTop +=
+      element.getBoundingClientRect().top - scroller.getBoundingClientRect().top - target.offset
+  }, [pageWidth, pages])
 
   // Measured because the panel is resizable: the splitter changes this width at
   // will, and every reserved height depends on it.
@@ -241,6 +329,82 @@ export function DocumentViewer({
     }
   }, [pages, onPageInView])
 
+  /**
+   * Trackpad pinch, which the platform reports as a wheel event with `ctrlKey`
+   * set. Attached by hand rather than with `onWheel` because it has to be
+   * non-passive: without `preventDefault` the browser zooms the entire app,
+   * which is the thing the reader was trying to avoid by pinching the document.
+   */
+  useEffect(() => {
+    const scroller = scrollRef.current
+    if (!scroller) return
+    const onWheel = (event: WheelEvent) => {
+      if (!event.ctrlKey && !event.metaKey) return
+      event.preventDefault()
+      // Exponential, so a given amount of finger travel is the same proportion
+      // of zoom whether you are at 1x or at 3x.
+      applyZoom(zoom * Math.exp(-event.deltaY / 180))
+    }
+    scroller.addEventListener('wheel', onWheel, { passive: false })
+    return () => scroller.removeEventListener('wheel', onWheel)
+    // Everything the handler closes over. Left off, the listener keeps an old
+    // zoom and every pinch starts again from wherever the first one did.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zoom, nearPage, pages])
+
+  function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    if (event.pointerType !== 'touch') return
+    touches.current.set(event.pointerId, { clientX: event.clientX, clientY: event.clientY })
+    const points = [...touches.current.values()]
+    if (points.length === 2) {
+      pinch.current = { startDistance: distance(points[0], points[1]), startZoom: zoom }
+      captureAnchor()
+    }
+  }
+
+  function handlePointerMove(event: React.PointerEvent<HTMLDivElement>) {
+    if (event.pointerType !== 'touch' || !touches.current.has(event.pointerId)) return
+    touches.current.set(event.pointerId, { clientX: event.clientX, clientY: event.clientY })
+
+    const gesture = pinch.current
+    const points = [...touches.current.values()]
+    if (!gesture || points.length !== 2 || gesture.startDistance === 0) return
+
+    const ratio = distance(points[0], points[1]) / gesture.startDistance
+    if (Math.abs(ratio - 1) < PINCH_DEADZONE) return
+    // The transform is relative to what is already painted, so it is the target
+    // zoom over the committed one.
+    setPinchScale(clampZoom(gesture.startZoom * ratio) / zoom)
+  }
+
+  function endPointer(event: React.PointerEvent<HTMLDivElement>) {
+    if (event.pointerType !== 'touch') return
+    const gesture = pinch.current
+    touches.current.delete(event.pointerId)
+    if (!gesture || touches.current.size > 0) return
+
+    pinch.current = null
+    // Hand the transform's scale over to a real re-render at the new width.
+    setPinchScale(1)
+    setZoom((previous) => clampZoom(previous * pinchScale))
+  }
+
+  /** Double-tap anywhere on the document returns it to fit. */
+  function handlePointerUpTap(event: React.PointerEvent<HTMLDivElement>) {
+    if (event.pointerType !== 'touch' || touches.current.size > 1 || pinch.current) return
+    const now = event.timeStamp
+    const previous = lastTap.current
+    const near =
+      Math.abs(event.clientX - previous.x) < DOUBLE_TAP_SLOP_PX &&
+      Math.abs(event.clientY - previous.y) < DOUBLE_TAP_SLOP_PX
+    if (now - previous.time < DOUBLE_TAP_MS && near && zoom !== 1) {
+      applyZoom(1)
+      lastTap.current = { time: 0, x: 0, y: 0 }
+      return
+    }
+    lastTap.current = { time: now, x: event.clientX, y: event.clientY }
+  }
+
   /** Seeking scrolls. The reading line then decides what the focused page is. */
   useEffect(() => {
     if (appliedSeek.current === seek.nonce) return
@@ -312,15 +476,49 @@ export function DocumentViewer({
     <div className={cn('relative flex min-h-0 flex-1 flex-col', className)}>
       <div
         ref={scrollRef}
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-muted/40"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={(event) => {
+          handlePointerUpTap(event)
+          endPointer(event)
+        }}
+        onPointerCancel={endPointer}
+        // `pan-x pan-y` keeps one-finger scrolling native and takes pinch away
+        // from the browser, which would otherwise zoom the whole app. That is
+        // the distinction the reader is making with the gesture: this document,
+        // not this page.
+        // Both axes named separately rather than `overflow-auto`: the layout
+        // suite selects this element by its vertical-scroll class, which is the
+        // honest description of what it is when nothing is zoomed.
+        className="min-h-0 flex-1 touch-pan-x touch-pan-y overflow-x-auto overflow-y-auto overscroll-contain bg-muted/40"
       >
+        {/*
+          The pinch transform lives on a wrapper, because `<Document>` takes no
+          style of its own. `will-change` keeps the scaling on the compositor,
+          which is the whole reason a gesture uses a transform rather than the
+          real width.
+        */}
+        <div
+          style={
+            pinchScale === 1
+              ? undefined
+              : {
+                  transform: `scale(${pinchScale})`,
+                  transformOrigin: 'top center',
+                  willChange: 'transform',
+                }
+          }
+        >
         <Document
           file={url}
           onLoadSuccess={() => setPagesMounted(true)}
           loading={<ViewerMessage>Loading the document…</ViewerMessage>}
           error={<ViewerMessage>The document could not be displayed.</ViewerMessage>}
           noData={<ViewerMessage>No document to display.</ViewerMessage>}
-          className="flex flex-col items-center gap-6 py-6"
+          // `min-w-max` so a page wider than the panel can be panned to rather
+          // than clipped: centring a flex item that overflows puts its left edge
+          // out of reach.
+          className="flex min-w-max flex-col items-center gap-6 py-6"
         >
         {pages.map((page, index) => (
           <div
@@ -348,7 +546,7 @@ export function DocumentViewer({
                 // Find needs the text layer everywhere; memory needs the canvas
                 // only near the viewport.
                 renderMode={
-                  Math.abs(page.page_num - nearPage) <= CANVAS_WINDOW ? 'canvas' : 'none'
+                  Math.abs(page.page_num - nearPage) <= canvasWindow ? 'canvas' : 'none'
                 }
                 loading=""
               />
@@ -356,6 +554,7 @@ export function DocumentViewer({
           </div>
         ))}
         </Document>
+        </div>
       </div>
 
       {/*
