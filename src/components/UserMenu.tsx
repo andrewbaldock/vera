@@ -137,6 +137,16 @@ export function UserMenu({ user = CURRENT_USER }: { user?: ReviewUser } = {}) {
             </DropdownMenuRadioItem>
           ))}
         </DropdownMenuRadioGroup>
+
+        <DropdownMenuSeparator />
+
+        {/* Which build this is. A deployed link that cannot say what it is
+            turns every "is that fixed yet?" into a guess on both sides. The
+            same two facts are at /version.json for checking without a browser. */}
+        <p className="px-2 py-1.5 text-xs text-muted-foreground tabular-nums">
+          VERA v{__APP_VERSION__}{' '}
+          <span className="opacity-70">({__BUILD_SHA__})</span>
+        </p>
       </DropdownMenuContent>
     </DropdownMenu>
   )

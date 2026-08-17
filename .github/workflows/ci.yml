@@ -1,0 +1,107 @@
+name: CI
+
+# Every push and every pull request. The suites are the strongest evidence in
+# this repo that the thing works; leaving them to be run by hand means the
+# evidence is only as good as somebody's memory.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    name: lint · types · unit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install --frozen-lockfile
+
+      - name: Lint
+        run: bun run lint
+
+      # `bun run build` is `tsc -b && vite build`, so this is the typecheck and
+      # the production build in one. Running `tsc --noEmit` instead would pass
+      # on things the real build rejects.
+      - name: Typecheck and build
+        run: bun run build
+
+      - name: Unit tests
+        run: bunx vitest run
+
+  browser:
+    name: layout · a11y · viewer
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install --frozen-lockfile
+
+      # Chromium and WebKit only, matching playwright.config. WebKit is the one
+      # that matters here: the bug that took the app down on an iPad was a
+      # Safari API gap, and Chromium could not have found it.
+      - name: Install browsers
+        run: bunx playwright install --with-deps chromium webkit
+
+      - name: Browser tests
+        run: bun run test:layout
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  deploy:
+    name: deploy to production
+    # Both suites, and only from main. Vercel's own Git integration is
+    # deliberately not connected: it deploys whatever was pushed, green or not,
+    # and the point of having 244 browser tests is that they get to vote.
+    needs: [check, browser]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      # fetch-depth 0 so `git rev-parse` has real history: the build stamps the
+      # commit into the app and into /version.json.
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install --frozen-lockfile
+
+      - name: Pull Vercel environment
+        run: bunx vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build
+        run: bunx vercel build --prod --token="$VERCEL_TOKEN"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy
+        run: bunx vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+      # Proves the deploy that just went out is the commit that triggered it,
+      # rather than reporting success because the upload returned 200.
+      - name: Verify the live build is this commit
+        run: |
+          sleep 10
+          LIVE=$(curl -fsS https://vera.andrewbaldock.com/version.json | grep -o '"sha": *"[^"]*"' | cut -d'"' -f4)
+          echo "live=$LIVE expected=${GITHUB_SHA:0:7}"
+          test "$LIVE" = "${GITHUB_SHA:0:7}"
