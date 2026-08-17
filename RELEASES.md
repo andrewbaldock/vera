@@ -8,51 +8,59 @@ at [`/version.json`](https://vera.andrewbaldock.com/version.json).
 ## v1.1.0 — 2026-08-16
 
 **Making it readable.** Someone reviewing VERA found the interface type too
-small, and browser zoom turned out to be the wrong tool for it: zoom scales the
-document along with the interface, so the pages you could already read get
-bigger too. This release separates the two, and then fixes everything that
-separation exposed.
+small. Browser zoom is the wrong tool for that — it scales the document along
+with the interface. This release separates the two.
 
 **Added**
 
-- A text size setting in the account menu — Compact, Comfortable, Large. It
-  scales the whole interface: labels, spacing and touch targets together. The
-  document is deliberately unaffected.
-- The page strip can be resized, and closed. Drag its edge to make the pages
-  bigger, or drag it shut and reopen it from the tab at the edge of the
-  document. Where you leave it is remembered.
+- A text size setting in the account menu: Compact, Comfortable, Large. It scales
+  labels, spacing and touch targets together, and leaves the document alone.
+- Zoom on the document, up to 4×. Controls in the centre of the page bar, or a
+  pinch. The percentage between them returns the document to fit, as does a
+  double-tap. Zoomed pages pan sideways.
+- The page strip resizes and closes — drag its edge, or drag it shut and reopen
+  it from the tab. Where you leave it is remembered.
 - Real page images in the strip, at every width.
-- A page counter that appears over the document while you scroll and fades out
-  when you stop.
+- A page counter over the document while you scroll.
+- Severity has a shape as well as a colour: critical points up, minor points
+  down, major is a disc between them.
 - The build version, in the account menu and at `/version.json`.
 
 **Changed**
 
-- The page strip used to shrink its pages to fit any document into its column,
-  which meant a long document got a thread of unreadable slivers. It now has a
-  floor: below it the strip scrolls instead of shrinking. At the shipped size a
-  34-page document looks exactly as it did.
-- Page numbers in the strip follow the text size setting. They were fixed at
-  8px, which is the specific thing that was too small.
+- The strip used to shrink its pages to fit any document into its column, so a
+  long document became a thread of slivers. It now has a floor and scrolls below
+  it. At 34 pages it looks exactly as it did.
+- Page numbers in the strip follow the text size setting. They were fixed at 8px,
+  which is the specific thing that was too small.
+- The findings under the page bar are set one size larger.
 
 **Fixed**
 
 - Secondary text failed the WCAG AA contrast floor in light mode on three of the
-  four surfaces it sits on — 4.27:1 against a highlighted row, where 4.5 is the
-  minimum. It carries the issue descriptions, which are the finding itself.
-  Reported as a dark mode problem, where it passed at 5.53 and still read badly.
-- Severity marks in the strip were painting underneath the page numbers.
+  four surfaces it sits on — 4.27:1 against a highlighted row, against a 4.5
+  minimum. It carries the issue descriptions. Reported as a dark mode problem,
+  where it passed at 5.53 and still read badly.
+- Severity marks in the strip painted underneath the page numbers.
 - The strip's page readout pointed at the wrong segment once the strip scrolled.
+- Browser find matched the app's own readouts: searching for `100` landed on the
+  zoom control, `34` on the page counter. Both are drawn as generated content now.
 
 **Notes**
 
-Page images in the strip reverse a decision recorded in the original build,
-which declined them on the grounds that a picture that small is unreadable.
-That is true of the picture and beside the point of it: a cover sheet, a table
-and a photo page are three different shapes even as a smear.
+Two decisions from the first build are reversed here. Pinch-to-zoom was cut on
+cost, and the cost was real — zoom reaches into the reserved page heights and
+into the measurement that decides which page you are reading. Page images were
+declined because a picture that small is unreadable, which is true of the picture
+and beside the point of it: a cover sheet, a table and a photo page are three
+different shapes even as a smear.
 
-The repo now runs its own tests. Every push checks lint, types, the production
-build, 32 unit tests and 244 browser tests across Chromium and WebKit.
+Every push now runs lint, types, the production build and both test suites across
+Chromium and WebKit, including an accessibility scan. `main` deploys only if all
+of it passed.
+
+The documentation is rewritten, from four long files into a numbered set, with
+every decision the build has made collected in one place.
 
 ---
 

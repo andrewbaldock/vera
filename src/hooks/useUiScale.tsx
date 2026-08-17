@@ -8,16 +8,18 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
  * what separates this from browser zoom, which scales the rendered document
  * along with everything else. Someone who can read the pages and cannot read
  * the labels wants only one of the two to move, so the document keeps its own
- * zoom control and is untouched by this.
+ * zoom controls in the page bar and is untouched by this.
  *
  * The stops are percentages of the browser's own default, so a reader who has
  * already raised their base font size keeps that and gets this on top. A `px`
  * value here would quietly overrule them.
  *
- * A context, where `useTheme` is a bare hook. The theme is consumed only by
- * CSS, so two components each holding a copy of the preference still agree.
- * This value is read in JS by the thumb strip, which sizes its segments from
- * it, so a change made in the menu has to reach it.
+ * A context rather than a bare hook like `useTheme`, though today the account
+ * menu is its only consumer. The thumb strip needs the same number and does
+ * *not* take it from here — it reads the root font size directly, inside the
+ * observer it already runs, which is cheaper than a subscription. If anything
+ * ever needs the preference itself rather than its effect, this is where it
+ * comes from.
  *
  * Device-scoped, for the same reason as the theme: how large you want the type
  * depends on the screen you are looking at.

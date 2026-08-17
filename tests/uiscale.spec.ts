@@ -57,14 +57,26 @@ test.describe('the interface size setting', () => {
     await expect.poll(() => rootFontSize(page)).toBe(ROOT_FONT_PX.compact)
   })
 
-  test('the choice survives a reload, and lands before the app mounts', async ({ page }) => {
+  test('the choice survives a reload', async ({ page }) => {
+    await chooseSize(page, 'Large')
+    await page.reload()
+    await expect.poll(() => rootFontSize(page)).toBe(ROOT_FONT_PX.large)
+  })
+
+  test('the size lands before any script runs', async ({ page }) => {
     await chooseSize(page, 'Large')
 
-    await page.reload({ waitUntil: 'commit' })
-    // Asserted at `commit`, before React has run. If this only passed after
-    // hydration the setting would be applied by the app, and every load at a
-    // non-default size would reflow the whole layout in front of the reader.
-    await expect(page.locator('html')).toHaveAttribute('data-ui-scale', 'large')
+    // Every script blocked, so React never mounts and the hook never runs. What
+    // is left is the inline script in index.html, which is the only thing that
+    // can set the attribute — and the only thing that can set it *before first
+    // paint*, which is the point. Without this the test passes either way:
+    // `toHaveAttribute` retries for five seconds, React mounts inside that
+    // window, and the provider's effect writes the attribute anyway.
+    await page.route('**/*.js', (route) => route.abort())
+    await page.goto(REVIEW, { waitUntil: 'commit' })
+
+    const applied = await page.evaluate(() => document.documentElement.dataset.uiScale)
+    expect(applied, 'set by the inline script, with no JS bundle at all').toBe('large')
   })
 
   test('a junk stored value falls back instead of becoming a selector', async ({ page }) => {

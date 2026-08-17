@@ -1,5 +1,5 @@
 import { blockingIssues, countBySeverity } from '@/lib/review'
-import { SeverityDot } from '@/components/severity'
+import { SeverityIcon } from '@/components/severity'
 import { SEVERITY_BADGE_FILL, SEVERITY_LABEL, SEVERITY_TEXT } from '@/lib/severity'
 import { cn } from '@/lib/utils'
 import { BadgeAlert, BadgeCheck, Check, CheckCircle2 } from 'lucide-react'
@@ -218,7 +218,7 @@ export function ReviewVerdict({
                   isHidden && 'opacity-50',
                 )}
               >
-                <SeverityDot severity={severity} />
+                <SeverityIcon severity={severity} />
                 <span className="font-medium tabular-nums">{counts[severity]}</span>
                 <span className={SEVERITY_TEXT[severity]}>{SEVERITY_LABEL[severity]}</span>
               </button>

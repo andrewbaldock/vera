@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ArrowDownWideNarrow, Check, MoreVertical, StickyNote } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { SeverityDot } from '@/components/severity'
+import { SeverityIcon } from '@/components/severity'
 import { SEVERITY_LABEL, SEVERITY_TEXT } from '@/lib/severity'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -350,7 +350,7 @@ export function IssuesPanel({
 
       {/* The panel scrolls from here down, so the scrollbar starts below the
           toolbar instead of running alongside it. */}
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+      <div data-scroller="issues" className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         {issues.length === 0 && (
           <p className="px-4 py-8 text-center text-sm text-muted-foreground">
             {totalCount === 0
@@ -415,7 +415,7 @@ export function IssuesPanel({
               {onFocusedPage && (
                 <span className="absolute inset-y-0 left-0 w-[3px] bg-focus-edge" aria-hidden />
               )}
-              <SeverityDot severity={issue.severity} className="mt-1.5" />
+              <SeverityIcon severity={issue.severity} className="mt-1.5" />
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-medium">
                   {/*

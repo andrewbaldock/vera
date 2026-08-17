@@ -27,8 +27,8 @@ They answer different questions.
 |---|---|---|
 | **Covers** | the rules and the payload guard | layout, shapes, touch targets, the viewer |
 | **Where** | no DOM at all | real Chromium and WebKit |
-| **Count** | 3 files | 10 specs, over 250 tests |
-| **Speed** | ~0.2s | ~60s locally, ~12m in CI |
+| **Scope** | the rules and the payload guard | layout, shapes, targets, the viewer, a11y |
+| **Speed** | instant | about a minute locally, longer in CI |
 
 **jsdom has no layout engine.** It will report that a 900px panel fits in a 320px window, so the
 class of bug the layout suite exists to catch is the class jsdom cannot see. That is the argument
@@ -49,12 +49,11 @@ button, 44px targets.
 
 ### Browser — layout and interaction
 
-The root README carries the same table with a sentence on each; this is the short
-form.
+The root README carries the same table with a sentence on each; this is the short form.
 
 | Spec | Holds down |
 |---|---|
-| `layout` | Twelve viewports plus a 320→1920 sweep: no horizontal overflow, the correct shape at each width, one primary action, 44px targets |
+| `layout` | Twelve viewports plus a 320→1920 sweep: no horizontal overflow, the correct shape at each width, one primary action. Touch targets are measured separately, at phone width |
 | `viewer` | Text layers everywhere so find reaches the whole document, canvases actually windowed, seeking, and both screens rendering without `URL.parse` |
 | `submit` | Both halves of the rule: blocked offers upload, clear asks for confirmation, submitted reads as submitted on a cold load |
 | `done` | The worklist reports progress without changing what is blocking, and never crosses versions |
@@ -72,9 +71,9 @@ the one control the whole review ends with.
 
 **The contrast spec, after the fact.** Secondary text shipped at 4.27:1 in light mode against a
 highlighted row, under the AA floor. It was reported to me as a dark-mode problem, where it
-measures 5.53 and passes. Writing the check meant measuring every text token on every surface it
-lands on, in both themes, which is the only reason the failing one was the one nobody had
-complained about.
+measures 5.53 and passes. Writing the check meant measuring it on every surface it lands
+on, in both themes, which is the only reason the failing one was the one nobody had complained
+about.
 
 ---
 
@@ -108,13 +107,15 @@ designs rather than one stretched.
 - **Android.** WebKit and Chromium cover the engines, but no physical Android device has been
   used.
 - **The zoom gesture.** Pinch is exercised by hand rather than by the suite — synthesising a
-  two-finger gesture in Playwright tests the synthesiser more than the app.
+  two-finger gesture in Playwright tests the synthesiser more than the app. The controls in the
+  page bar reach the same state and are covered, including the stops at both ends, the anchoring
+  of the page you were reading, and the platform canvas limit at full zoom.
 
 ## Running them
 
 ```sh
-bun test              # rules, ~0.2s
-bun run test:layout   # browsers, ~60s
+bun test                 # the rules
+bun run test:layout      # the browsers
 bun run test:layout:ui   # stepping through a failure
 ```
 
@@ -124,7 +125,7 @@ The browser suite needs its engines once:
 bunx playwright install chromium webkit
 ```
 
-**CI runs all of it on every push** — lint, types, the production build, both suites — and
+**CI runs all of it on every push to `main` and every pull request** — lint, types, the production build, both suites — and
 `main` deploys only if all of it passed, then re-reads `/version.json` to confirm the live build
 is that commit.
 

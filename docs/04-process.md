@@ -12,7 +12,7 @@ It began with a sketch, and researching the state of the Art in PDF display.
 ## Design before code
 
 The design document was opened before the first component and updated as the code moved, not written
-afterward to describe what happened. It ended in a decision log of fifty-six rows, each naming the
+afterward to describe what happened. It ended in a decision log of fifty-six rows, since grown, each naming the
 alternatives rejected, so an absence reads as a decision rather than an oversight. Reversals
 stayed in as superseded rows rather than being edited away.
 
@@ -149,7 +149,7 @@ lender accepts about hardware it issued.
 
 **oxlint** rather than ESLint, purely on speed: it finishes fast enough to run without thinking about it.
 
-**GitHub Actions** runs all of it on every push, and deploys from `main` only if it passed — see [05-testing.md](05-testing.md).
+**GitHub Actions** runs all of it on `main` and on every pull request, and deploys only if it passed — see [05-testing.md](05-testing.md).
 
 ## AI pair programming, stated plainly
 

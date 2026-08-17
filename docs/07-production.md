@@ -31,22 +31,17 @@ The answer is then a search UI over `pdf.js`'s extracted text, which [the decisi
 declined *because the platform already had one*; that reasoning inverts the moment virtualization
 takes the platform's away.
 
-**The thumb strip needs a floor and a scroll, and today has neither.** Its one scale factor is
-`min((columnHeight − gaps) / totalPageHeight, columnWidth / widestPage)`, and that factor
-multiplies width as well as height — which is what makes a Legal page render visibly taller than
-the Letter pages around it, and is the property worth keeping. The cost is that a long document
-shrinks the miniature in *both* directions. Measured against an 800px column of Letter pages:
-34 pages gives a 21.6 × 16.7px segment, 45 drops it under the 16px at which page numbers stop
-rendering, 100 gives 6.0 × 4.6px, and 200 gives 2.0 × 1.6px — a thread down a 44px column. A
-hundred-page appraisal is not exotic, so this is a real ceiling rather than a theoretical one.
+**The thumb strip's ceiling is raised, not removed.** Its scale is
+`max(fit, floor)`, where the fit is
+`min((columnHeight − gaps) / totalPageHeight, columnWidth / widestPage)` and the floor is a
+minimum segment height in rem. Below the floor the strip scrolls rather than shrinking further,
+and it scrolls *itself* — driven by the focused page, with a scrub near an edge advancing it —
+because a `touch-action: none` scrub surface has no gesture left for the user to scroll with.
 
-The fix is a minimum segment height with the overflow scrolled, but not scrolled *by the user*:
-the strip is a `touch-action: none` scrub surface, so a finger drag already means "scrub" and
-there is no gesture left to scroll with. A strip that scrolls under a mouse and not under a
-thumb fails on the control built specifically for thumbs. It has to scroll itself, driven by the
-focused page, with scrubbing near an edge advancing it — and the scrub-to-page mapping stops
-being a straight measurement against visible segments once part of the strip is off-screen.
-Left undone deliberately: the fixture is 34 pages, and the arithmetic is correct for it.
+What is still true at scale: the strip mounts one element per page, so a two-hundred-page
+document is two hundred DOM nodes and, once page images are on, two hundred lazily-rendered
+canvases behind a windowing constant that does not yet exist for the strip the way it does for
+the viewer. That is the work a real page count would need.
 
 **Submit becomes a mutation, with two paths this build does not have.** Today it writes to
 `localStorage` and plays a fixed sequence: `SUBMITTING_MS` 1500 plus `LANDED_MS` 1200, 2.7 seconds
@@ -139,9 +134,8 @@ requirements.
 
 ### Delivery and quality
 
-**CI already exists**, and is the one row in this section that has moved from Part 2 to Part 1
-since this document was written. Every push runs lint, types, the production build, the unit suite and over 250
-browser tests across Chromium and WebKit; `main` deploys only if all of it passed,
+**CI already exists**, so this row belongs in Part 1 and is here only because the rest of the
+section is about what is missing. Every push to `main` and every pull request runs lint, types, the production build, both suites across Chromium and WebKit; `main` deploys only if all of it passed,
 then re-reads `/version.json` to confirm the live build is that commit rather than trusting a
 200. The build names itself in the app and at that endpoint.
 

@@ -20,24 +20,24 @@ answer were always obvious.
 
 
 1. [Vite + React + TypeScript](#1-vite-react-typescript)
-2. [~~Hand-rolled components + CSS tokens on main; a second branch on a component …](#2-hand-rolled-components-css-tokens-on-main-a-second-branch-on)
+2. [~~Hand-rolled components + CSS tokens on main; a second branch on a component …](#2-hand-rolled-components-css-tokens-on-main-a-second-branch-on-a-component)
 3. [Scope: no in-browser fixing, no real backend, no versioning](#3-scope-no-in-browser-fixing-no-real-backend-no-versioning)
 4. [VERA does no uploading](#4-vera-does-no-uploading)
-5. [Continuous-scroll PDF viewer, all pages and text layers mounted](#5-continuous-scroll-pdf-viewer-all-pages-and-text-layers-mount)
+5. [Continuous-scroll PDF viewer, all pages and text layers mounted](#5-continuous-scroll-pdf-viewer-all-pages-and-text-layers-mounted)
 6. [react-pdf as the renderer, wrapping Mozilla's pdf.js](#6-react-pdf-as-the-renderer-wrapping-mozillas-pdfjs)
-7. [Issues list sorts by page order by default, with a severity sort available](#7-issues-list-sorts-by-page-order-by-default-with-a-severity-s)
+7. [Issues list sorts by page order by default, with a severity sort available](#7-issues-list-sorts-by-page-order-by-default-with-a-severity-sort-available)
 8. [Simulated re-upload is a stretch goal, built last](#8-simulated-re-upload-is-a-stretch-goal-built-last)
 9. [Checkboxes feed the simulator, never canSubmit](#9-checkboxes-feed-the-simulator-never-cansubmit)
 10. [Submit asks for confirmation naming the unresolved minors](#10-submit-asks-for-confirmation-naming-the-unresolved-minors)
-11. [Render the terminal submitted state in place; label it "Submitted"](#11-render-the-terminal-submitted-state-in-place-label-it-submit)
+11. [Render the terminal submitted state in place; label it "Submitted"](#11-render-the-terminal-submitted-state-in-place-label-it-submitted)
 12. [No un-submit / mark-for-re-review](#12-no-un-submit-mark-for-re-review)
 13. [Thumb strip down the viewer edge](#13-thumb-strip-down-the-viewer-edge)
-14. [Page-margin markers, numbered in page order, labeled with the real issue title…](#14-page-margin-markers-numbered-in-page-order-labeled-with-the)
+14. [Page-margin markers, numbered in page order, labeled with the real issue title…](#14-page-margin-markers-numbered-in-page-order-labeled-with-the-real-issue-title)
 15. [Scroll restore across reloads](#15-scroll-restore-across-reloads)
 16. [Accessibility in scope, including resizer keyboard support](#16-accessibility-in-scope-including-resizer-keyboard-support)
 17. [shadcn/ui + Tailwind from the start (Radix underneath)](#17-shadcnui-tailwind-from-the-start-radix-underneath)
-18. [Mobile-first: phone layout is the base, split view is an enhancement at lg](#18-mobile-first-phone-layout-is-the-base-split-view-is-an-enhan)
-19. [Page wrappers get their height reserved from the API's page dimensions before …](#19-page-wrappers-get-their-height-reserved-from-the-apis-page-d)
+18. [Mobile-first: phone layout is the base, split view is an enhancement at lg](#18-mobile-first-phone-layout-is-the-base-split-view-is-an-enhancement-at-lg)
+19. [Page wrappers get their height reserved from the API's page dimensions before …](#19-page-wrappers-get-their-height-reserved-from-the-apis-page-dimensions-before)
 20. [Current page is measured against a reading line, not observed](#20-current-page-is-measured-against-a-reading-line-not-observed)
 21. [Every overlay sits above z-index: 3](#21-every-overlay-sits-above-z-index-3)
 22. [Scroll is smooth, but honors prefers-reduced-motion](#22-scroll-is-smooth-but-honors-prefers-reduced-motion)
@@ -48,12 +48,12 @@ answer were always obvious.
 27. [The thumb strip is one scrub control, not 34 buttons](#27-the-thumb-strip-is-one-scrub-control-not-34-buttons)
 28. [One focusedPage, three views of it](#28-one-focusedpage-three-views-of-it)
 29. [SUPERSEDED](#29-superseded)
-30. [The thumb strip's scale factor is computed in JS from a measured column, not e…](#30-the-thumb-strips-scale-factor-is-computed-in-js-from-a-measu)
-31. [The verdict is a component that takes the whole review, never a list of issues](#31-the-verdict-is-a-component-that-takes-the-whole-review-never)
+30. [The thumb strip's scale factor is computed in JS from a measured column, not e…](#30-the-thumb-strips-scale-factor-is-computed-in-js-from-a-measured-column-not-e)
+31. [The verdict is a component that takes the whole review, never a list of issues](#31-the-verdict-is-a-component-that-takes-the-whole-review-never-a-list-of-issues)
 32. [Theme is a user setting](#32-theme-is-a-user-setting)
-33. [The payload is validated at the boundary, not asserted with as Review](#33-the-payload-is-validated-at-the-boundary-not-asserted-with-a)
+33. [The payload is validated at the boundary, not asserted with as Review](#33-the-payload-is-validated-at-the-boundary-not-asserted-with-as-review)
 34. [Two test suites, two runners](#34-two-test-suites-two-runners)
-35. [The compact layout hides the inactive view with display: none, so find-on-page…](#35-the-compact-layout-hides-the-inactive-view-with-display-none)
+35. [The compact layout hides the inactive view with display: none, so find-on-page…](#35-the-compact-layout-hides-the-inactive-view-with-display-none-so-find-on-page)
 36. [PWA ships display: browser](#36-pwa-ships-display-browser)
 37. [The product says minor findings are accepted, never ignored](#37-the-product-says-minor-findings-are-accepted-never-ignored)
 38. [React Router, and /documents exists as a stub](#38-react-router-and-documents-exists-as-a-stub)
@@ -61,11 +61,11 @@ answer were always obvious.
 40. [Two versions of one document replace ?fixture=clean](#40-two-versions-of-one-document-replace-fixtureclean)
 41. [Blocked, the page does not offer submit](#41-blocked-the-page-does-not-offer-submit)
 42. [The upload dialog is inert](#42-the-upload-dialog-is-inert)
-43. [Submitting is a sequence: confirm → Submitting… → Submitted → the queue](#43-submitting-is-a-sequence-confirm-submitting-submitted-the-qu)
+43. [Submitting is a sequence: confirm → Submitting… → Submitted → the queue](#43-submitting-is-a-sequence-confirm-submitting-submitted-the-queue)
 44. [A Done checkbox per issue, scoped to review + version](#44-a-done-checkbox-per-issue-scoped-to-review-version)
-45. [The severity counts are also the filter, and the count never changes](#45-the-severity-counts-are-also-the-filter-and-the-count-never)
-46. [Sorting rearranges rows and never renumbers them; severity sort sinks done rows](#46-sorting-rearranges-rows-and-never-renumbers-them-severity-so)
-47. [Severity words get their own text tokens, separate from the fills](#47-severity-words-get-their-own-text-tokens-separate-from-the-f)
+45. [The severity counts are also the filter, and the count never changes](#45-the-severity-counts-are-also-the-filter-and-the-count-never-changes)
+46. [Sorting rearranges rows and never renumbers them; severity sort sinks done rows](#46-sorting-rearranges-rows-and-never-renumbers-them-severity-sort-sinks-done-rows)
+47. [Severity words get their own text tokens, separate from the fills](#47-severity-words-get-their-own-text-tokens-separate-from-the-fills)
 48. [VERA is the product name, always in capitals](#48-vera-is-the-product-name-always-in-capitals)
 49. [Deployed to Vercel, not the existing Apache host](#49-deployed-to-vercel-not-the-existing-apache-host)
 50. [Scroll tracking is a setting, default on](#50-scroll-tracking-is-a-setting-default-on)
@@ -75,16 +75,17 @@ answer were always obvious.
 54. [The queue row says why, not just what](#54-the-queue-row-says-why-not-just-what)
 55. [Each row shows its cover page, as a stack of paper](#55-each-row-shows-its-cover-page-as-a-stack-of-paper)
 56. [No pinch-to-zoom](#56-no-pinch-to-zoom)
-57. [Three interface text sizes, as a user setting scaling the root font size](#57-three-interface-text-sizes-as-a-user-setting-scaling-the-roo)
-58. [A floor under the thumb strip's scale, and the strip scrolls below it](#58-a-floor-under-the-thumb-strips-scale-and-the-strip-scrolls-b)
+57. [Three interface text sizes, as a user setting scaling the root font size](#57-three-interface-text-sizes-as-a-user-setting-scaling-the-root-font-size)
+58. [A floor under the thumb strip's scale, and the strip scrolls below it](#58-a-floor-under-the-thumb-strips-scale-and-the-strip-scrolls-below-it)
 59. [The thumb strip resizes and closes, and panel sizes persist](#59-the-thumb-strip-resizes-and-closes-and-panel-sizes-persist)
 60. [Page images in the strip, at every width](#60-page-images-in-the-strip-at-every-width)
 61. [Pinch-to-zoom the document](#61-pinch-to-zoom-the-document)
-62. [Secondary text gets its own contrast floor, measured in a test](#62-secondary-text-gets-its-own-contrast-floor-measured-in-a-tes)
-63. [The build names itself, in the account menu and at /version.json](#63-the-build-names-itself-in-the-account-menu-and-at-versionjso)
+62. [Secondary text gets its own contrast floor, measured in a test](#62-secondary-text-gets-its-own-contrast-floor-measured-in-a-test)
+63. [The build names itself, in the account menu and at /version.json](#63-the-build-names-itself-in-the-account-menu-and-at-versionjson)
 64. [CI runs the suites and gates the deploy](#64-ci-runs-the-suites-and-gates-the-deploy)
 
 65. [An automated accessibility rule scan, scoped to WCAG A and AA](#65-an-automated-accessibility-rule-scan-scoped-to-wcag-a-and-aa)
+66. [Zoom controls in the page bar, and readouts that browser find cannot match](#66-zoom-controls-in-the-page-bar-and-readouts-that-browser-find-cannot-match)
 
 ---
 
@@ -146,7 +147,7 @@ Native CMD+F only finds text in the DOM. Whole-document search is an acceptance 
 
 **Over:** Raw `pdfjs-dist`; commercial SDKs (Nutrient/PSPDFKit, Apryse)
 
-`pdf.js` is the only serious open engine: Mozilla-owned, in Firefox, ~53k stars, since 2011, ~23M weekly downloads. `react-pdf` is a thin, maintained React binding over it (npm since 2014, v10, ~5M weekly) that adds no rendering of its own, so I get the heavy-hitter engine and skip writing the text-layer/worker glue. Raw `pdfjs-dist` = re-inventing a solved binding; commercial SDKs = annotation/licensing overkill for a read-only screen.
+`pdf.js` is the only serious open engine: Mozilla-owned, shipped inside Firefox, Apache-2.0, and maintained continuously since 2011. `react-pdf` is a long-lived, maintained React binding over it that adds no rendering of its own, so I get the heavy-hitter engine and skip writing the text-layer/worker glue. Raw `pdfjs-dist` = re-inventing a solved binding; commercial SDKs = annotation/licensing overkill for a read-only screen.
 
 ### 7. Issues list sorts by page order by default, with a severity sort available
 
@@ -726,7 +727,7 @@ A deployed link that cannot say which build it is turns every "is that fixed yet
 
 **Over:** Vercel's own Git integration; deploying by hand
 
-Vercel's integration deploys whatever was pushed, green or not, and the point of having 244 browser tests is that they get to vote. Every push runs lint, types, the production build and both suites across Chromium and WebKit; `main` deploys only if all of it passed, then re-reads `/version.json` to confirm the live build is that commit rather than trusting a 200.
+Vercel's integration deploys whatever was pushed, green or not, and the point of having the suites is that they get to vote. Every push to `main` and every pull request runs lint, types, the production build and both suites across Chromium and WebKit; `main` deploys only if all of it passed, then re-reads `/version.json` to confirm the live build is that commit rather than trusting a 200.
 
 ### 65. An automated accessibility rule scan, scoped to WCAG A and AA
 
@@ -737,3 +738,19 @@ Vercel's integration deploys whatever was pushed, green or not, and the point of
 **Over:** Leaving the rule-level claims asserted only in prose; running every rule axe ships
 
 Roles, names and keyboard paths were already asserted, but "nothing is carried by colour alone" and "every icon-only control has an accessible name" were claims a reader had to take on trust. This turns them into something CI enforces on every push. Scoped to `wcag2a` / `wcag2aa` / `wcag21aa` rather than the full rule set, because the extras are largely best-practice advisories and a suite that fails on advice is one people learn to ignore. `.react-pdf__Document` is excluded: it is third-party canvas output whose inaccessibility is a known limitation with a server-side fix, and scanning it would report the same unfixable finding forever. It found one thing immediately — a 3.37:1 contrast failure on the submit button — which turned out to be axe reading a background 96% of the way through a fade, so the suite waits for finite animations to finish before scanning. Proposed by Claude Code; the floor, not the ceiling, since no rule scan can say whether a page makes sense to listen to.
+
+---
+
+### 66. Zoom controls in the page bar, and readouts that browser find cannot match
+
+**2026-08-16**
+
+**Decided:** **`−` / percentage / `+` centred in the page bar**, the percentage resetting to fit, both readouts drawn as generated content
+
+**Over:** The gesture alone; a control floating over the bottom-right of the document
+
+A pinch is not available to a mouse or a keyboard, so zoom needed controls. They were floating over the corner of the document first, and read as an object lying on the page. The page bar's middle was empty — the page number and its findings sit left, the expand control right — so they went there, where the rest of this view's chrome already is.
+
+That put two numbers about the interface inside the DOM the reader searches: `⌘F 100` matched the zoom control and `34` matched the page counter. Whole-document search is the first acceptance criterion in the brief, so both are drawn with `content: attr(data-readout)`, which find cannot reach. The value stays in one place in the markup, and screen readers get the same number from a label beside it.
+
+Andrew placed the controls, after rejecting the floating version and a first pass at the styling; Claude Code proposed the generated-content readouts, and the reset on the percentage.

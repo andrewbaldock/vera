@@ -352,6 +352,21 @@
   }
 }
 
+/*
+  Readouts drawn as generated content, so browser find cannot match them.
+
+  Whole-document search is acceptance criterion #1, and the viewer's own chrome
+  sits inside the same DOM the reader is searching — so `⌘F 100` would land on
+  the zoom control and `34` on the page counter, both of which are the app
+  talking about itself rather than anything in the document. Generated content
+  is not searchable, which is exactly the property wanted here.
+
+  The value lives in `data-readout` so it is still one place in the markup.
+*/
+.readout::after {
+  content: attr(data-readout);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

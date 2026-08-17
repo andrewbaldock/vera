@@ -29,13 +29,13 @@ Deployed so it can be opened on a real phone or iPad (try landscape mode!).
   app a **burndown assistant**.
 - Submitting a review that meets the criteria shows a dialog confirming they really want to go
   ahead with minor issues accepted as-is, runs the submission, and returns them to the list to
-  see their document settle in "success-blue" for a moment. (The demo is resettable, to clear
+  see their document settle in indigo for a moment. (The demo is resettable, to clear
   the submitted state.)
 
 Uploading and fixing are other screens in the brief's flow. This one decides whether the
 document can go.
 
-![VERA in use — working down the issues list while the document follows, the page strip tracking alongside](docs/assets/screens/vera.gif)
+![VERA in use — working down the issues list, ticking findings done and leaving a note, while the document follows and the page strip tracks alongside](docs/assets/screens/vera.gif)
 
 ![VERA with browser find running across the whole document](docs/assets/screens/review-light.png)
 
@@ -73,7 +73,7 @@ it the server fails loudly instead of quietly moving. Works on mobile simulators
 | `bun run dev` | Dev server with hot reload on port 1337 |
 | `bun run build` | Typecheck **and** production build into `dist/` |
 | `bun run preview` | Serve the production build locally |
-| `bun test` | Unit tests for the product rules (vitest, ~0.2s) |
+| `bun test` | Unit tests for the product rules (vitest) |
 | `bun run test:layout` | Layout tests in real browsers (Playwright) |
 | `bun run lint` | oxlint |
 | `bun run test:watch` | The unit tests, re-running on change |
@@ -165,12 +165,12 @@ Two suites, because they answer different questions.
 attached to its issue when the list is re-sorted, and the payload guard. Pure functions, no
 DOM, milliseconds.
 
-**`bun run test:layout` — everything a browser has to answer, in Chromium and WebKit.** Over
-250 tests, across these specs:
+**`bun run test:layout` — everything a browser has to answer, in Chromium and WebKit**, across
+these specs:
 
 | Spec | What it holds down |
 |---|---|
-| `layout` | Twelve real viewports from a 320px iPhone SE to 1920px — no horizontal overflow, the page itself never scrolls, each width renders the correct shape *and not the other one*, exactly one primary action visible and on screen, every touch target over 44px. Then a sweep from 320 to 1920 in 40px steps, because a fixed matrix sails past the 1007px disaster. |
+| `layout` | Twelve real viewports from a 320px iPhone SE to 1920px — no horizontal overflow, the page itself never scrolls, each width renders the correct shape *and not the other one*, exactly one primary action visible and on screen, and a separate pass measuring every touch target against 44px at phone width. Then a sweep from 320 to 1920 in 40px steps, because a fixed matrix sails past the 1007px disaster. |
 | `viewer` | Every page's text layer mounted so browser find can reach the whole document, canvases actually windowed, clicking an issue scrolling the document, the page staying put when the window crosses the breakpoint, the end of the scroll reporting the last page, the phone path where the seek is made against a panel that has no layout yet, and both screens rendering on a browser with no `URL.parse` — the API a pdf.js dependency needs and Safari only shipped in 18.4. |
 | `submit` | Both halves of the submit rule: blocked offers upload rather than a dead submit, open asks for confirmation naming what is being accepted, and a submitted review reads as submitted on a cold load. |
 | `done` | The worklist reports progress without changing what is blocking, hides and shows its own rows, sinks under severity sort, and never crosses versions. |
@@ -189,7 +189,7 @@ mobile emulation will not reproduce `dvh` against the real toolbar, safe-area in
 momentum scrolling. Testing on the iOS Simulator, and on a real iOS device hooked up to
 Safari's remote debugger, remains the mobile Safari truth.
 
-**CI runs all of it on every push** — lint, types, the production build, both suites across
+**CI runs all of it on every push to `main` and every pull request** — lint, types, the production build, both suites across
 Chromium and WebKit — and deploys from `main` only if all of it passed.
 
 ## Accessibility
@@ -197,7 +197,8 @@ Chromium and WebKit — and deploys from `main` only if all of it passed.
 Treated as foundational and mandatory. It's a compliance tool in a regulated industry, used all
 day, by people doing careful work.
 
-- **Severity is never carried by color alone.** Rows pair the dot with a text label; in the
+- **Severity is never carried by color alone.** Each level has its own shape — critical points
+  up, minor points down, major is a disc between them — and rows pair it with the word. In the
   thumb strip, where a narrow segment has no room for words, the marks differ in *thickness* as
   well as hue, so they survive grayscale.
 - **Text size is a setting**, three stops in the account menu. It scales the interface and
@@ -216,9 +217,11 @@ day, by people doing careful work.
   Hover is layered on top as an enhancement only.
 - **Touch targets are 44px**, Apple's HIG number and also WCAG 2.1's AAA target size. WCAG 2.2's
   AA minimum is only 24px; exceeding it is a decision about a one-way submit with no undo. It is
-  asserted in the layout suite rather than claimed.
-- **Contrast is measured, not eyeballed.** The `contrast` spec walks every text token against
-  every surface it lands on, in both themes, and fails under 4.5:1.
+  asserted in the layout suite at phone width. The controls the full shape adds are not yet
+  covered.
+- **Contrast is measured, not eyeballed.** The `contrast` spec walks the severity and
+  secondary-text tokens against every surface they land on, in both themes, and fails under
+  4.5:1. An `axe` scan covers the rule-level checks on both routes.
 
 **The honest limitation:** a rendered PDF is not accessible. pdf.js paints to a canvas with a
 selectable text layer over it, which is good enough for search and selection but not a
@@ -262,7 +265,7 @@ the resolved tree. The list is short, and every line should be defensible.
 | Package | Version | Why it's here |
 |---|---|---|
 | `react`, `react-dom` | ^19.2.8 | The framework. React 19 for the current baseline, no experimental APIs used. |
-| `react-router` | ^8.3.0 | Two real routes and a standalone harness. A router rather than a hand-rolled `pushState`, for the same reason this uses shadcn over hand-rolled components: reach for the library when one exists. |
+| `react-router` | ^8.3.0 | Three routes and a standalone harness. A router rather than a hand-rolled `pushState`, for the same reason this uses shadcn over hand-rolled components: reach for the library when one exists. |
 | `react-pdf` | ^10.4.1 | Thin, maintained React binding over Mozilla's pdf.js. Adds no rendering of its own; it saves writing the worker and text-layer glue, not the engine. |
 | `pdfjs-dist` | 5.4.296 | The PDF engine. **Pinned exactly**, with no caret: the worker version must match what `react-pdf` loads or it throws at runtime. Declared rather than relied on via hoisting. |
 | `tailwindcss`, `@tailwindcss/vite` | ^4.3.3 | Styling, and the token layer the whole theme rests on. |
@@ -283,6 +286,7 @@ the resolved tree. The list is short, and every line should be defensible.
 | `@vitejs/plugin-react` | ^6.0.4 | React fast refresh and JSX transform. |
 | `typescript` | ~6.0.2 | `strict`, with `noUnusedLocals` and `noUnusedParameters`. |
 | `vitest` | ^4.1.10 | Unit tests for the rules. |
+| `@axe-core/playwright` | ^4.13.0 | The WCAG rule scan in the browser suite. A floor under the accessibility claims, not a substitute for a screen reader. |
 | `@playwright/test` | ^1.62.1 | Layout tests in real browsers, which is the only place layout can be tested. |
 | `oxlint` | ^1.75.0 | Linting. Fast enough to run without thinking about it. |
 | `shadcn` | ^4.18.0 | The CLI that copies component source into the repo. Not a runtime dependency; nothing imports it. |

@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 
 /**
- * The documents list and the version switch. The list exists so the gate can be
+ * The documents list and the version switch. The list exists so submission can be
  * opened from somewhere, returned to, and run again, which makes it demo
  * infrastructure rather than product. These tests are about it being honest: the
  * placeholders must not pretend to be interactive, and the reset must reset.
@@ -46,7 +46,7 @@ test('opening the document lands on the review, and the back link returns', asyn
 })
 
 test.describe('versions', () => {
-  test('the review opens on v2, where the gate is closed', async ({ page }) => {
+  test('the review opens on v2, where submission is blocked', async ({ page }) => {
     await page.goto(REVIEW)
     await expect(page.getByRole('region', { name: 'Issues found' })).toContainText(
       '12 issues must be fixed',

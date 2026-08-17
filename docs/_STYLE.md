@@ -193,3 +193,37 @@ the personified UI, and the counts and cross-references that have gone stale —
 and reports before it changes anything. The judgement half is still yours: it
 cannot tell whether an alternative was genuinely on the table, and that is the
 question the whole first rule turns on.
+
+---
+
+## Numbers
+
+**A number in prose is a promise to keep it current.** Most of them are not worth
+that, and a stale one costs more credibility than the number ever bought.
+
+Before writing one, ask what stops it going wrong.
+
+| Kind | Example | Write it? |
+|---|---|---|
+| **Something enforces it** | 4.5:1 — a test fails under it. 1024px, 44px — constants in the source. 34 pages, 25 issues — the fixture. | **Yes.** Nothing can drift without something going red. |
+| **Nothing enforces it** | test counts, file counts, bundle sizes, run times, GitHub stars, weekly downloads | **No.** These rot silently and nobody notices until a reader does. |
+
+For the second kind, say the durable thing instead:
+
+```diff
+- 244 browser tests across nine spec files
++ both suites, across Chromium and WebKit
+
+- ~53k stars, ~23M weekly downloads, on npm since 2014
++ shipped inside Firefox, maintained continuously since 2011
+
+- the rules run in ~0.2s and the browsers in ~60s
++ the rules are instant, the browsers take about a minute
+```
+
+The test is not *"is this true today"*. It is **"who finds out when it stops being
+true?"** If the answer is a reader, do not write it.
+
+Measurements that a test guards are the exception, and worth keeping precisely
+because the guard exists — `4.27:1` is more useful than "under the floor", and
+`tests/contrast.spec.ts` goes red if it changes.

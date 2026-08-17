@@ -78,8 +78,11 @@ test('canvases are windowed, so 34 pages do not cost 34 canvases', async ({ page
   // ~10 MB per full-width canvas at DPR 2 means all 34 approaches 350 MB, and
   // iOS Safari discards tabs for less. The text layer is what find needs; the
   // canvas is what costs memory.
-  const canvases = await page.locator('.react-pdf__Page__canvas').count()
-  expect(canvases).toBeLessThan(10)
+  // Scoped to the viewer. The thumb strip renders its own page images from a
+  // second <Document>, so counting every canvas on the page counts those too —
+  // 34 of them — and the number this test exists to check disappears into them.
+  const canvases = await page.locator('#document-panel .react-pdf__Page__canvas').count()
+  expect(canvases, 'canvases near the reading position, not all 34').toBeLessThan(10)
   expect(canvases).toBeGreaterThan(0)
 })
 
@@ -92,7 +95,7 @@ test('clicking an issue scrolls the document, and the page in view reports back'
   // too and it comes first in the DOM, so the unscoped locator reads a element
   // that never moves and reports every seek as a failure.
   const scrollTop = () =>
-    page.locator('#document-panel div.overflow-y-auto').evaluate((el) => Math.round(el.scrollTop))
+    page.locator('[data-scroller="document"]').evaluate((el) => Math.round(el.scrollTop))
 
   // Polled throughout: scrolling is asynchronous and smooth scrolling is slow,
   // so a bare read is a race that passes on an idle machine and fails on a busy
@@ -179,7 +182,7 @@ test.describe('a window taller than a page', () => {
 
     // All the way down, the way a reader gets to the end.
     await page
-      .locator('#document-panel div.overflow-y-auto')
+      .locator('[data-scroller="document"]')
       .evaluate((el) => el.scrollTo({ top: el.scrollHeight, behavior: 'instant' }))
 
     await expect
@@ -196,8 +199,8 @@ test.describe('a window taller than a page', () => {
 test('the issues list follows the document, until you turn tracking off', async ({ page }) => {
   await gotoViewer(page)
 
-  const issues = page.locator('#issues-panel div.overflow-y-auto')
-  const doc = page.locator('#document-panel div.overflow-y-auto')
+  const issues = page.locator('[data-scroller="issues"]')
+  const doc = page.locator('[data-scroller="document"]')
   const issuesTop = () => issues.evaluate((el) => Math.round(el.scrollTop))
 
   expect(await issuesTop()).toBe(0)
@@ -272,7 +275,7 @@ test.describe('tapping an issue on a phone', () => {
     // and WebKit animates it more slowly than Chromium.
     await expect
       .poll(
-        () => page.locator('#document-panel div.overflow-y-auto').evaluate((el) => el.scrollTop),
+        () => page.locator('[data-scroller="document"]').evaluate((el) => el.scrollTop),
         { timeout: 15_000 },
       )
       .toBeGreaterThan(1000)

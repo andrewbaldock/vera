@@ -31,13 +31,30 @@ function stripMetrics(page: Page) {
   })
 }
 
+/**
+ * Waits for the panel record to actually exist, rather than for longer than the
+ * hook's debounce and hoping. A fixed wait racing a timer is a test that passes
+ * until the machine is busy.
+ */
+async function storageWritten(page: Page) {
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem('vera.panels')))
+    .not.toBeNull()
+}
+
 /** Drags a separator by an x offset, in the pointer events it listens for. */
 async function dragBy(page: Page, selector: string, dx: number) {
-  const box = (await page.locator(selector).boundingBox())!
+  const handle = page.locator(selector)
+  await expect(handle).toBeVisible()
+  const box = (await handle.boundingBox())!
   const y = box.y + box.height / 2
   await page.mouse.move(box.x + box.width / 2, y)
   await page.mouse.down()
-  await page.mouse.move(box.x + box.width / 2 + dx, y, { steps: 8 })
+  // Stepped, and with a settling move at the end: a single jump can outrun the
+  // pointer handler on a loaded runner and land the drag short of where it was
+  // aimed.
+  await page.mouse.move(box.x + box.width / 2 + dx, y, { steps: 12 })
+  await page.mouse.move(box.x + box.width / 2 + dx, y)
   await page.mouse.up()
 }
 
@@ -117,7 +134,7 @@ test('a closed strip stays closed across a reload', async ({ page }) => {
   await dragBy(page, STRIP_RESIZER, 400)
   await expect(page.locator(STRIP)).toBeHidden()
 
-  await page.waitForTimeout(500)
+  await storageWritten(page)
   await page.reload()
   await expect(page.getByRole('button', { name: 'Show page strip' })).toBeVisible()
   await expect(page.locator(STRIP)).toBeHidden()
@@ -131,8 +148,7 @@ test('panel sizes survive a reload', async ({ page }) => {
   const issues = Math.round((await page.locator('#issues-panel').boundingBox())!.width)
   expect(strip).toBeGreaterThan(44)
 
-  // Longer than the hook's write debounce, or the reload beats the record.
-  await page.waitForTimeout(500)
+  await storageWritten(page)
   await page.reload()
   await expect(page.locator(STRIP)).toBeVisible()
 
@@ -145,7 +161,7 @@ test('a reader who never drags is never switched into the resized behavior', asy
   // Changing the other panel writes the record. The strip must still come back
   // as never-dragged, rather than being pinned at whatever it happened to be.
   await dragBy(page, ISSUES_RESIZER, 60)
-  await page.waitForTimeout(500)
+  await storageWritten(page)
   await page.reload()
   await expect(page.locator(STRIP)).toBeVisible()
 

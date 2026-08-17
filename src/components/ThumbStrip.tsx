@@ -82,7 +82,7 @@ interface ThumbStripProps {
    * thing that decides how big a page is, and the strip scrolls to hold them.
    */
   width?: number | null
-  /** Only needed once the strip is wide enough to render page images. */
+  /** Absent only where there is no document to render, as in a test. */
   pdfUrl?: string
   /** So the splitter beside it can name what it controls. */
   id?: string
@@ -113,6 +113,17 @@ export function ThumbStrip({
   /** Where the finger is, so the edge loop can keep working between events. */
   const scrubY = useRef(0)
   const edgeFrame = useRef(0)
+  /**
+   * The loop below reschedules itself, so it runs for its whole duration inside
+   * the closure of the render that started it. Anything it reads has to come
+   * from a ref, or it reads a value frozen at scrub start — and the one that
+   * matters is `focusedPage`, which is what stops it re-seeking the page it is
+   * already on. Frozen, the dedupe never matches and `onSeek` fires every
+   * frame, which is the strobing the viewer's scroll suppression exists to
+   * prevent, arriving through the back door.
+   */
+  const live = useRef({ focusedPage, pages, onSeek })
+  live.current = { focusedPage, pages, onSeek }
   const [scrubbing, setScrubbing] = useState(false)
   const [column, setColumn] = useState({ width: 0, height: 0, rem: 16 })
 
@@ -183,7 +194,7 @@ export function ThumbStrip({
   const numberHeight = 0.625 * column.rem
   const segmentWidth = widestPage * scale
   /**
-   * Page images, at every width. D6 declined them on the grounds that a picture
+   * Page images, at every width. The original build declined them on the grounds that a picture
    * this small is unreadable, which is true of the picture and beside the point
    * of it: even as a smear, a cover sheet, a table and a photo page are three
    * different shapes, and that is enough to navigate by. The number and the
@@ -279,7 +290,10 @@ export function ThumbStrip({
       list.scrollTop += delta
       // The content moved under a stationary finger, so the page beneath it is
       // a different one now even though the pointer never sent an event.
-      if (list.scrollTop !== before) scrubTo(y)
+      if (list.scrollTop !== before) {
+        const page = pageAt(y)
+        if (page !== null && page !== live.current.focusedPage) live.current.onSeek(page)
+      }
     }
     edgeFrame.current = requestAnimationFrame(stepEdgeScroll)
   }

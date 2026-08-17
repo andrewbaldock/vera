@@ -86,8 +86,7 @@ rule scanner catches the mechanical failures; it cannot hear the page.
 
 ## Color and contrast
 
-Measured, not eyeballed. [`tests/contrast.spec.ts`](../tests/contrast.spec.ts) walks every text
-token against every surface it lands on, in both themes, and fails under 4.5:1.
+Measured, not eyeballed. [`tests/contrast.spec.ts`](../tests/contrast.spec.ts) walks the severity and secondary-text tokens against every surface they land on, in both themes, and fails under 4.5:1.
 
 Two findings came out of doing that.
 
@@ -117,7 +116,7 @@ appears. In the thumb strip, where a narrow segment has no room for a label, the
 - Every icon-only control has an accessible name.
 - **Touch targets are 44px.** Apple's HIG number, and also WCAG 2.1's AAA target size — WCAG
   2.2's AA minimum is only 24px, and exceeding it is a decision about a one-way submit with no
-  undo. Asserted at twelve viewports rather than claimed.
+  undo. Asserted in the layout suite rather than claimed — at phone width, which is where the compact controls live.
 - **The thumb strip meets that as one control rather than thirty-four.** Thirty-four segments at
   44px would need 1,496px of column; as a single press-and-drag scrubber the minimum applies
   once. Designing it for a thumb is also what earned it slider semantics and full keyboard
@@ -128,9 +127,10 @@ appears. In the thumb strip, where a narrow segment has no room for a label, the
 
 ## Motion and preferences
 
-Every animation honors `prefers-reduced-motion`, and each degrades to its **end state** rather
-than to nothing — a state that exists only as an animation would otherwise disappear entirely
-for the people who asked for less movement. The row that settles after a submission keeps its
+Every animation honors `prefers-reduced-motion`, and each degrades to whichever of its
+keyframes carries the meaning rather than to nothing. The row that settles after a submission
+holds its tint and ring instead of fading, because a state that exists only as an animation
+would otherwise disappear entirely for the people who asked for less movement. The row that settles after a submission keeps its
 tint and ring; the sweep, the landing mark and the shimmer simply stop.
 
 Seeking a page scrolls smoothly, because the movement shows you where you went in a way a hard
@@ -146,7 +146,7 @@ base size keeps it and gets this on top.
 
 **This exists because browser zoom is the wrong tool.** Zoom magnifies the document along with
 the interface, so a reader who can already read the pages gets bigger pages they did not ask
-for. The document is deliberately excluded and has its own zoom for when that is what is wanted.
+for. The document is deliberately excluded and has its own zoom for when that is what is wanted, on buttons in the page bar as well as on a gesture, so it is reachable from the keyboard.
 
 It was added because someone outside the project found the type too small — which is the only
 reason this section is not a checklist item.
@@ -163,12 +163,13 @@ We are not going to fix that client-side. The real answer is server-side: tagged
 
 ## How this was verified
 
-- **Automated, every push.** [`axe.spec.ts`](../tests/axe.spec.ts) runs the WCAG A and AA rule
+- **Automated, on `main` and on every pull request.** [`axe.spec.ts`](../tests/axe.spec.ts) runs the WCAG A and AA rule
   set over both routes in both themes, and over the confirmation dialog while it is open.
-  [`contrast.spec.ts`](../tests/contrast.spec.ts) measures every text token on every surface in
-  both themes, which is the more specific check of the two. [`keyboard.spec.ts`](../tests/keyboard.spec.ts) drives
+  [`contrast.spec.ts`](../tests/contrast.spec.ts) measures the severity and secondary-text
+  tokens on every surface they land on, in both themes. [`keyboard.spec.ts`](../tests/keyboard.spec.ts) drives
   the issues grid with no mouse at all. [`layout.spec.ts`](../tests/layout.spec.ts) asserts every
-  touch target clears 44px, at twelve viewports.
+  touch target in the compact shape clears 44px. The controls the full shape adds are not yet
+  covered.
 - **By hand, before a release.** A keyboard-only pass from the top of the tab order: skip link to
   the document, drive the grid, open and dismiss the confirmation. Both themes, all three text
   sizes.

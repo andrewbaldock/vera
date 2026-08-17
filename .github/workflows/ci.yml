@@ -1,6 +1,6 @@
 name: CI
 
-# Every push and every pull request. The suites are the strongest evidence in
+# Every push to main, and every pull request. The suites are the strongest evidence in
 # this repo that the thing works; leaving them to be run by hand means the
 # evidence is only as good as somebody's memory.
 on:
@@ -63,7 +63,7 @@ jobs:
     name: deploy to production
     # Both suites, and only from main. Vercel's own Git integration is
     # deliberately not connected: it deploys whatever was pushed, green or not,
-    # and the point of having 244 browser tests is that they get to vote.
+    # and the point of having the suites is that they get to vote.
     needs: [check, browser]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest

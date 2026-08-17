@@ -10,11 +10,12 @@ import '@/lib/pdf'
  * Lazily loaded, and on the review page it costs nothing: the viewer has
  * already pulled the same chunk, so these arrive with it.
  *
- * D6 decided against thumbnails and was right for a 44px strip, where a page
- * image is a grey smudge and you cannot tell page 22 from page 23. That
- * reasoning is about size rather than about thumbnails, so it inverts once the
- * reader has dragged the strip wide enough to see one. Below that width the
- * strip is still coloured rectangles.
+ * The original build decided against thumbnails, and was right about the
+ * picture: at 44px a page image is a grey smudge and you cannot tell page 22
+ * from page 23. It was wrong about what the picture is for. A cover sheet, a
+ * table and a photo page are three different shapes even as a smudge, and that
+ * is enough to navigate by, so these render at every width — the page number
+ * and the severity marks carry the reading either way.
  */
 
 export function RasterDocument({

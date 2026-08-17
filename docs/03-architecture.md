@@ -143,9 +143,12 @@ Who owns each piece, who reads it, and whether it outlives the tab.
 | theme | [`useTheme`](../src/hooks/useTheme.ts) | CSS only | `localStorage`, device |
 | text size | [`useUiScale`](../src/hooks/useUiScale.tsx) — a context | account menu | `localStorage`, device |
 | panel sizes | [`usePanelSizes`](../src/hooks/usePanelSizes.ts) | both splitters, thumb strip | `localStorage`, device |
-| zoom · `nearPage` | [`DocumentViewer`](../src/components/DocumentViewer.tsx) | itself | no |
+| zoom | [`DocumentPanel`](../src/components/DocumentPanel.tsx) | the viewer, the page bar | no |
+| `nearPage` | [`DocumentViewer`](../src/components/DocumentViewer.tsx) | itself | no |
 
 Two of those are worth a sentence.
+
+**Zoom sits one level above the thing it zooms.** The viewer does the work, but the control for it is in the page bar, which the panel owns. The panel is the one place that can see both.
 
 **Text size is a context where theme is a bare hook.** The theme is consumed only by CSS, so two components each holding their own copy still agree. Text size is read in JS by the thumb strip, which sizes its segments from the root font size, so a change made in the menu has to reach it.
 
@@ -265,7 +268,7 @@ There is no `useMediaQuery`, no `isMobile` branch and no second subtree. Three t
   quietly over months.
 - **No layout flash**, because there is no JS deciding anything at mount.
 - **The layout suite can prove the shapes by resizing a single page**, which it does across
-  twelve viewports and a 320→1920px sweep.
+  twelve viewports and a 320→1920px sweep, with touch targets measured at phone width.
 
 The mechanism is `max-lg:hidden` on the inactive view and `lg:w-[var(--issues-width)]` for
 the splitter's width, with `--issues-width` set as an inline custom property so a JS number
@@ -286,7 +289,7 @@ The riskiest component, and the one that carries acceptance criterion #1.
 | Concern | How |
 |---|---|
 | **Whole-document find** | Every page's text layer is mounted, always. Browser find only searches the DOM, so this is the price of using the platform's find rather than reimplementing it. |
-| **Memory** | Canvases render only within `CANVAS_WINDOW` pages of the one being read. ~5 canvases instead of 34: roughly 50 MB instead of 350 MB, and iOS Safari discards tabs for less. |
+| **Memory** | Canvases render only within `CANVAS_WINDOW` pages of the one being read. about 7 canvases instead of 34: roughly 70 MB instead of 350 MB, and iOS Safari discards tabs for less. |
 | **Correct navigation** | Page wrapper heights are reserved from the API's `width`/`height` before pdf.js paints. Unreserved, the document is nearly zero pixels tall while loading and every scroll target lands in the wrong place. |
 | **Which page** | The reading line, measured against the scroll container. A floating counter reports it over the document while a scroll is in progress, since nobody is looking at the top of the panel mid-scroll. |
 | **Zoom** | Pinch on touch, trackpad pinch on desktop. A transform follows the gesture and a real re-render lands when it ends: re-rendering the canvas window every frame is not viable. |

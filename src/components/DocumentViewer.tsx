@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Document, Page } from 'react-pdf'
 import 'react-pdf/dist/Page/TextLayer.css'
 import '@/lib/pdf'
+import { clampZoom } from '@/lib/zoom'
 import { cn } from '@/lib/utils'
 import type { DocumentPage } from '@/types/review'
 
@@ -56,16 +57,12 @@ const SCROLL_END_SUPPORTED = typeof window !== 'undefined' && 'onscrollend' in w
  */
 const COUNTER_IDLE_MS = 1100
 
-/**
- * Zoom bounds. One is fit-to-panel, which is where it opens and what a
- * double-tap returns to. Four is the point past which a Letter page at this
- * panel's width is wider than any phone can usefully pan across.
- */
-const ZOOM_MIN = 1
-const ZOOM_MAX = 4
 
 /** Below this much movement a two-finger touch is a scroll, not a pinch. */
 const PINCH_DEADZONE = 0.02
+
+/** How long after the last trackpad wheel event the zoom is made real. */
+const WHEEL_COMMIT_MS = 120
 
 /** Two taps closer together than this, and near enough, mean "reset". */
 const DOUBLE_TAP_MS = 300
@@ -75,7 +72,19 @@ function distance(a: { clientX: number; clientY: number }, b: typeof a) {
   return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY)
 }
 
-const clampZoom = (value: number) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, value))
+
+/**
+ * Hard ceiling on a single page's backing store, in device pixels.
+ *
+ * react-pdf rasterises at `width x devicePixelRatio`. At full zoom on a Retina
+ * screen that is 900 x 4 x 2 = 7200px wide, and iOS Safari refuses a canvas over
+ * 4096px on a side — it allocates a blank one instead, so the pages simply go
+ * white on the device the gesture exists for.
+ *
+ * This is a different problem from `CANVAS_WINDOW`, which limits how *many*
+ * canvases exist and does nothing about how big any one of them is.
+ */
+const MAX_RASTER_PX = 4096
 
 /**
  * How many pages either side of the one you are reading get a canvas. A
@@ -108,6 +117,9 @@ interface DocumentViewerProps {
   pages: DocumentPage[]
   seek: SeekTarget
   onPageInView: (page: number) => void
+  /** Owned by the panel, because the control for it lives in the page bar. */
+  zoom: number
+  onZoomChange: (zoom: number) => void
   className?: string
 }
 
@@ -116,6 +128,8 @@ export function DocumentViewer({
   pages,
   seek,
   onPageInView,
+  zoom,
+  onZoomChange,
   className,
 }: DocumentViewerProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -156,11 +170,25 @@ export function DocumentViewer({
    * and is what the finger follows. The transform is thrown away and the real
    * width applied the moment the fingers lift.
    */
-  const [zoom, setZoom] = useState(1)
   const [pinchScale, setPinchScale] = useState(1)
   /** Active touches, by pointer id, so a pinch can be told from a scroll. */
   const touches = useRef(new Map<number, { clientX: number; clientY: number }>())
   const pinch = useRef<{ startDistance: number; startZoom: number } | null>(null)
+  /**
+   * Where the fingers are, in the scaled wrapper's own coordinates, so the
+   * transform grows the content under them.
+   *
+   * `transform-origin: top center` scales from the top of the *whole document*,
+   * which is tens of thousands of pixels above the reader. At page 20 a 1.2x
+   * pinch would push everything down by a fifth of the scroll offset — the
+   * content launches off the bottom of the panel instead of growing in place,
+   * and it looks fine on page 1, which is why it survives a casual test.
+   */
+  const [pinchOrigin, setPinchOrigin] = useState({ x: 0, y: 0 })
+  const wheelCommit = useRef(0)
+  const wheelPending = useRef(false)
+  /** The live gesture scale, so a pointerup does not read a stale render. */
+  const pinchScaleRef = useRef(1)
   const lastTap = useRef({ time: 0, x: 0, y: 0 })
   /**
    * Where to land after a zoom. Committed zoom changes every reserved height,
@@ -184,6 +212,22 @@ export function DocumentViewer({
   const canvasWindow = Math.max(1, Math.round(CANVAS_WINDOW / zoom))
 
   /**
+   * Device pixels per CSS pixel, held under the platform's canvas limit. Above
+   * the cap the page renders slightly soft; over it, it renders as nothing.
+   */
+  const tallestRatio = Math.max(1, ...pages.map((page) => page.height / page.width))
+  const rasterRatio =
+    pageWidth > 0
+      ? Math.min(
+          typeof window === 'undefined' ? 1 : window.devicePixelRatio,
+          // Against the *larger* rendered side. These pages are portrait, so
+          // height is what hits the limit first and a width-only cap does
+          // nothing at all.
+          MAX_RASTER_PX / (pageWidth * tallestRatio),
+        )
+      : 1
+
+  /**
    * Remembers which page is where, so a zoom can put it back. Called before the
    * committed zoom changes, read after the layout it invalidated has been redone.
    */
@@ -202,7 +246,7 @@ export function DocumentViewer({
     const value = clampZoom(next)
     if (value === zoom) return
     captureAnchor()
-    setZoom(value)
+    onZoomChange(value)
   }
 
   // Put the anchored page back where it was. Layout effect, so it happens
@@ -343,7 +387,36 @@ export function DocumentViewer({
       event.preventDefault()
       // Exponential, so a given amount of finger travel is the same proportion
       // of zoom whether you are at 1x or at 3x.
-      applyZoom(zoom * Math.exp(-event.deltaY / 180))
+      //
+      // Accumulated into the transform and committed on a trailing timer, for
+      // the same reason the touch path does: a trackpad pinch delivers wheel
+      // events at refresh rate, and committing each one re-renders every
+      // windowed page at a new width.
+      const target = clampZoom(zoom * pinchScaleRef.current * Math.exp(-event.deltaY / 180))
+      const next = target / zoom
+      pinchScaleRef.current = next
+      setPinchScale(next)
+
+      if (!wheelPending.current) {
+        const scroller = scrollRef.current!
+        const bounds = scroller.getBoundingClientRect()
+        setPinchOrigin({
+          x: event.clientX - bounds.left + scroller.scrollLeft,
+          y: event.clientY - bounds.top + scroller.scrollTop,
+        })
+        captureAnchor()
+        wheelPending.current = true
+      }
+
+      window.clearTimeout(wheelCommit.current)
+      wheelCommit.current = window.setTimeout(() => {
+        wheelPending.current = false
+        const settled = clampZoom(zoom * pinchScaleRef.current)
+        pinchScaleRef.current = 1
+        setPinchScale(1)
+        if (settled === zoom) anchor.current = null
+        else onZoomChange(settled)
+      }, WHEEL_COMMIT_MS)
     }
     scroller.addEventListener('wheel', onWheel, { passive: false })
     return () => scroller.removeEventListener('wheel', onWheel)
@@ -358,6 +431,13 @@ export function DocumentViewer({
     const points = [...touches.current.values()]
     if (points.length === 2) {
       pinch.current = { startDistance: distance(points[0], points[1]), startZoom: zoom }
+      const scroller = scrollRef.current
+      if (scroller) {
+        const bounds = scroller.getBoundingClientRect()
+        const midX = (points[0].clientX + points[1].clientX) / 2 - bounds.left
+        const midY = (points[0].clientY + points[1].clientY) / 2 - bounds.top
+        setPinchOrigin({ x: midX + scroller.scrollLeft, y: midY + scroller.scrollTop })
+      }
       captureAnchor()
     }
   }
@@ -374,7 +454,9 @@ export function DocumentViewer({
     if (Math.abs(ratio - 1) < PINCH_DEADZONE) return
     // The transform is relative to what is already painted, so it is the target
     // zoom over the committed one.
-    setPinchScale(clampZoom(gesture.startZoom * ratio) / zoom)
+    const next = clampZoom(gesture.startZoom * ratio) / zoom
+    pinchScaleRef.current = next
+    setPinchScale(next)
   }
 
   function endPointer(event: React.PointerEvent<HTMLDivElement>) {
@@ -384,9 +466,23 @@ export function DocumentViewer({
     if (!gesture || touches.current.size > 0) return
 
     pinch.current = null
-    // Hand the transform's scale over to a real re-render at the new width.
+    // Read from the ref, not from state: pointermove is a continuous event and
+    // React may not have committed the final setPinchScale before this discrete
+    // pointerup flushes, which would commit the second-to-last frame's scale.
+    const scale = pinchScaleRef.current
+    pinchScaleRef.current = 1
     setPinchScale(1)
-    setZoom((previous) => clampZoom(previous * pinchScale))
+
+    const next = clampZoom(zoom * scale)
+    if (next === zoom) {
+      // The gesture resolved without changing anything — under the deadzone, or
+      // already at a bound. `captureAnchor` ran at the second finger-down, and
+      // only a width change clears it, so without this the anchor stays armed
+      // and the next unrelated resize yanks the reader back to here.
+      anchor.current = null
+      return
+    }
+    onZoomChange(next)
   }
 
   /** Double-tap anywhere on the document returns it to fit. */
@@ -473,9 +569,10 @@ export function DocumentViewer({
     // The wrapper exists so the counter can sit against the panel rather than
     // against the content. Inside the scroller it would travel with the pages
     // and be somewhere else on every frame.
-    <div className={cn('relative flex min-h-0 flex-1 flex-col', className)}>
+    <div className={cn('relative flex min-h-0 min-w-0 flex-1 flex-col', className)}>
       <div
         ref={scrollRef}
+        data-scroller="document"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={(event) => {
@@ -490,7 +587,7 @@ export function DocumentViewer({
         // Both axes named separately rather than `overflow-auto`: the layout
         // suite selects this element by its vertical-scroll class, which is the
         // honest description of what it is when nothing is zoomed.
-        className="min-h-0 flex-1 touch-pan-x touch-pan-y overflow-x-auto overflow-y-auto overscroll-contain bg-muted/40"
+        className="min-h-0 min-w-0 flex-1 touch-pan-x touch-pan-y overflow-x-auto overflow-y-auto overscroll-contain bg-muted/40"
       >
         {/*
           The pinch transform lives on a wrapper, because `<Document>` takes no
@@ -504,7 +601,7 @@ export function DocumentViewer({
               ? undefined
               : {
                   transform: `scale(${pinchScale})`,
-                  transformOrigin: 'top center',
+                  transformOrigin: `${pinchOrigin.x}px ${pinchOrigin.y}px`,
                   willChange: 'transform',
                 }
           }
@@ -540,6 +637,7 @@ export function DocumentViewer({
               <Page
                 pageNumber={page.page_num}
                 width={pageWidth}
+                devicePixelRatio={rasterRatio}
                 renderAnnotationLayer={false}
                 renderTextLayer
                 // The text layer mounts either way; only the canvas is windowed.
@@ -557,6 +655,7 @@ export function DocumentViewer({
         </div>
       </div>
 
+
       {/*
         Where you are, where your eyes already are. The status bar above the
         viewer carries the same page number, but during a scroll nobody is
@@ -573,14 +672,14 @@ export function DocumentViewer({
       */}
       <div
         aria-hidden
+        data-readout={`${nearPage} / ${pages.length}`}
         className={cn(
-          'pointer-events-none absolute bottom-4 left-1/2 z-10 -translate-x-1/2',
+          'readout pointer-events-none absolute bottom-4 left-1/2 z-10 -translate-x-1/2',
           'rounded-full bg-paper-chip px-3 py-1.5 text-xs font-medium text-paper-chip-text tabular-nums shadow-lg',
           'transition-opacity motion-reduce:transition-none',
           scrolling ? 'opacity-100 duration-150' : 'opacity-0 duration-600',
         )}
       >
-        {nearPage} / {pages.length}
       </div>
     </div>
   )

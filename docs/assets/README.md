@@ -56,13 +56,13 @@ The SVGs are large because draw.io embeds fonts and raster fills on export. Expo
 From a doc in `docs/`:
 
 ```markdown
-![The two layout shapes, at six sizes](assets/wireframes/vera-layouts-six-sizes.svg)
+![The two layout shapes, at six sizes](assets/wireframes/VERA_layouts.svg)
 ```
 
 From the root README:
 
 ```markdown
-![VERA on an iPhone and an iPad](docs/assets/screens/vera-mobile.png)
+![VERA on an iPhone and an iPad](docs/assets/screens/mobile.png)
 ```
 
 Always write real alt text. "Diagram" is not alt text.

@@ -31,22 +31,27 @@ const ROUTES = [
  * gone a frame later. Infinite animations are excluded, or the shimmer and the
  * submit sweep would never resolve.
  */
+const runningCount = (page: Page) =>
+  page.evaluate(
+    () =>
+      document.getAnimations().filter(
+        (a) =>
+          a.playState === 'running' &&
+          (a.effect as KeyframeEffect | null)?.getTiming().iterations !== Infinity,
+      ).length,
+  )
+
 async function settle(page: Page) {
-  // Polled rather than awaited once: a dialog's entrance animation starts
-  // after it becomes visible, so a single `finished` resolves before the
-  // interesting transition has begun.
-  await expect
-    .poll(() =>
-      page.evaluate(
-        () =>
-          document.getAnimations().filter(
-            (a) =>
-              a.playState === 'running' &&
-              (a.effect as KeyframeEffect | null)?.getTiming().iterations !== Infinity,
-          ).length,
-      ),
+  // Two passes, each preceded by a couple of frames. A transition that has not
+  // started yet registers nothing, so a single poll can read zero *before* the
+  // interesting animation begins and scan mid-fade anyway — which is what a
+  // slow CI runner reliably produces and a fast laptop hides.
+  for (let pass = 0; pass < 2; pass += 1) {
+    await page.evaluate(
+      () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))),
     )
-    .toBe(0)
+    await expect.poll(() => runningCount(page)).toBe(0)
+  }
 }
 
 async function scan(page: Page) {
@@ -96,6 +101,18 @@ test('the confirmation dialog is clean while open', async ({ page }) => {
   await expect(page.getByRole('alertdialog')).toBeVisible()
   await settle(page)
 
-  const { violations } = await scan(page)
-  expect(violations.map((v) => `${v.id} — ${v.help}`)).toEqual([])
+  // Scoped to the dialog, which is what this test is about. Scanning the whole
+  // page here re-checks the page the test above already covers, and adds the
+  // trigger behind the overlay — whose background is mid-fade at this moment,
+  // so contrast reads against a blend that exists for one frame. That is a
+  // property of the screenshot, not of the interface.
+  const { violations } = await new AxeBuilder({ page })
+    .withTags(TAGS)
+    .include('[role="alertdialog"]')
+    .analyze()
+
+  expect(
+    violations.map((v) => `${v.id} (${v.nodes.length}) — ${v.help}`),
+    'axe violations inside the confirmation dialog',
+  ).toEqual([])
 })

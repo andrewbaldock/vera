@@ -1,5 +1,5 @@
 import { Suspense, lazy, useState } from 'react'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, Minus, Plus } from 'lucide-react'
 import type { SeekTarget } from '@/components/DocumentViewer'
 
 /**
@@ -11,10 +11,11 @@ import type { SeekTarget } from '@/components/DocumentViewer'
 const DocumentViewer = lazy(async () => ({
   default: (await import('@/components/DocumentViewer')).DocumentViewer,
 }))
-import { SeverityDot } from '@/components/severity'
+import { SeverityIcon } from '@/components/severity'
 import { SEVERITY_LABEL, SEVERITY_TEXT } from '@/lib/severity'
 import type { NumberedIssue } from '@/lib/review'
 import type { DocumentPage } from '@/types/review'
+import { ZOOM_MAX, ZOOM_MIN, ZOOM_STEP, clampZoom } from '@/lib/zoom'
 import { cn } from '@/lib/utils'
 
 /**
@@ -67,6 +68,11 @@ export function DocumentPanel({
    *  on a page are usually read together, and closing one to read the next is
    *  the kind of help nobody asked for. */
   const [openIssues, setOpenIssues] = useState<ReadonlySet<string>>(new Set())
+  /**
+   * Zoom belongs to the viewer and its control belongs to this bar, so the
+   * value is held here — the one place that can see both.
+   */
+  const [zoom, setZoom] = useState(1)
 
   function toggleIssue(id: string) {
     setOpenIssues((previous) => {
@@ -80,7 +86,7 @@ export function DocumentPanel({
     count === 0 ? 'No issues on this page' : `${count} ${count === 1 ? 'issue' : 'issues'}`
 
   return (
-    <div className={cn('flex min-h-0 flex-1 flex-col bg-muted/40', className)}>
+    <div className={cn('flex min-h-0 min-w-0 flex-1 flex-col bg-muted/40', className)}>
       <div className={cn('relative z-10 shrink-0 border-b', count > 0 ? 'bg-focus-tint' : 'bg-card')}>
         <button
           type="button"
@@ -109,6 +115,60 @@ export function DocumentPanel({
           )}
         </button>
 
+        {/*
+          Centred in the bar rather than floating over the document. The bar's
+          middle is empty — the page number and its findings sit left, the
+          expand control right — and a control for the document reads better in
+          the strip of chrome above it than as an object lying on the page.
+
+          Outside the expand button, because nesting controls is invalid.
+        */}
+        <div
+          className={cn(
+            'absolute inset-x-0 top-0 flex h-11 items-center justify-center gap-0.5',
+            'pointer-events-none [&>*]:pointer-events-auto',
+          )}
+        >
+          <button
+            type="button"
+            onClick={() => setZoom((z) => clampZoom(z / ZOOM_STEP))}
+            disabled={zoom <= ZOOM_MIN}
+            className="flex size-7 items-center justify-center rounded-full border border-transparent text-muted-foreground transition-colors hover:border-border hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:hover:border-transparent disabled:hover:bg-transparent focus-visible:ring-ring/50 focus-visible:ring-2 focus-visible:outline-none"
+          >
+            <Minus className="size-3.5" aria-hidden />
+            <span className="sr-only">Zoom out</span>
+          </button>
+          {/*
+            The readout is also the way back to 100%, which is the shape most
+            zoom controls in map and document software take.
+
+            Its percentage is generated content, so `⌘F 100` finds the document
+            and not the app's own chrome. That leaves the button with nothing
+            for a screen reader to read, hence the label beside it.
+          */}
+          <button
+            type="button"
+            onClick={() => setZoom(1)}
+            data-readout={`${Math.round(zoom * 100)}%`}
+            className="readout flex h-7 min-w-12 items-center justify-center rounded-full border border-transparent text-xs font-medium text-muted-foreground tabular-nums transition-colors hover:border-border hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 focus-visible:ring-2 focus-visible:outline-none"
+          >
+            <span className="sr-only">Reset zoom to 100 percent</span>
+          </button>
+          <span className="sr-only" aria-live="polite">
+            Zoom {Math.round(zoom * 100)} percent
+          </span>
+          <button
+            type="button"
+            onClick={() => setZoom((z) => clampZoom(z * ZOOM_STEP))}
+            disabled={zoom >= ZOOM_MAX}
+            className="flex size-7 items-center justify-center rounded-full border border-transparent text-muted-foreground transition-colors hover:border-border hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:hover:border-transparent disabled:hover:bg-transparent focus-visible:ring-ring/50 focus-visible:ring-2 focus-visible:outline-none"
+          >
+            <Plus className="size-3.5" aria-hidden />
+            <span className="sr-only">Zoom in</span>
+          </button>
+        </div>
+
+
         {expanded && count > 0 && (
           /*
             Each finding opens on its own. A title names the finding; the
@@ -122,14 +182,14 @@ export function DocumentPanel({
             {issuesOnPage.map((issue) => {
               const isOpen = openIssues.has(issue.id)
               return (
-                <li key={issue.id} className="text-xs">
+                <li key={issue.id} className="text-sm">
                   <button
                     type="button"
                     onClick={() => toggleIssue(issue.id)}
                     aria-expanded={isOpen}
                     className="flex min-h-11 w-full items-start gap-2 py-2 text-start"
                   >
-                    <SeverityDot severity={issue.severity} className="mt-1 shrink-0" />
+                    <SeverityIcon severity={issue.severity} className="mt-1 shrink-0" />
                     <span className="min-w-0 flex-1">
                       <span className="font-medium">
                         {/* Hashed for the same reason as the issues list: a bare
@@ -177,7 +237,14 @@ export function DocumentPanel({
           </p>
         }
       >
-        <DocumentViewer url={pdfUrl} pages={pages} seek={seek} onPageInView={onPageInView} />
+        <DocumentViewer
+          url={pdfUrl}
+          pages={pages}
+          seek={seek}
+          onPageInView={onPageInView}
+          zoom={zoom}
+          onZoomChange={setZoom}
+        />
       </Suspense>
     </div>
   )

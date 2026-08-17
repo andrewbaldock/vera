@@ -12,7 +12,7 @@
 Fictional Jane Cooper needs legal documents to be accurate and well groomed. Manual
 review of a large PDF is tedious, time-consuming and error-prone.
 
-**VERA — Uploaded New Doc Issue Review Tool.**
+**VERA.** *Latin* verus, *true*.
 
 Today, AI can scan a document and produce an issue report. VERA is the UI on top of
 that: it lets Jane review what the automation found, quickly and in context. She

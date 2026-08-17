@@ -90,6 +90,8 @@ So the full shape is a touch layout that also has a pointer, and every control i
 
 **Pinch-to-zoom zooms the document, not the app.** It was cut from the first build on cost, and the cost was real: zoom changes every reserved page height and the reading-line measurement that decides which page is in view. Both had to be handled, and both were. On a trackpad the same gesture does the same thing, so hovering the document and pinching magnifies the pages rather than the interface.
 
+A gesture cannot be the only way in, so the same zoom has controls in the centre of the page bar: `−`, the percentage, `+`. The percentage is itself a button and returns the document to fit, which is the shape zoom controls take in map and document software. They sit in the bar rather than floating on the page because the bar is where this view's chrome already lives, and its middle was empty.
+
 A useful side effect of drawing the line at 1024: **rotating an iPad switches between the two designs.** That is the clearest possible demonstration that the full shape is a design in its own right and not the compact one stretched.
 
 The **verdict summary always stays visible**, in both shapes. It's the answer to acceptance criterion #3, and it is the one thing that must never be a tab away.

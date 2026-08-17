@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test'
 
 /**
  * The reviewer's private worklist. The load-bearing property is what it *cannot*
- * do: ticking issues off never moves the gate. `canSubmit` takes a whole
+ * do: ticking issues off never changes what is blocking. `canSubmit` takes a whole
  * `Review` and a checkbox is not part of one, so the separation is structural
  * rather than a rule someone remembers.
  */
@@ -35,7 +35,7 @@ test('there is no Done control until something is done', async ({ page }) => {
   await expect(verdict(page).getByText(/marked done/)).toHaveCount(0)
 })
 
-test('marking issues done reports progress without moving the gate', async ({ page }) => {
+test('marking issues done reports progress without changing what is blocking', async ({ page }) => {
   await open(page)
   await markDone(page, 4)
 

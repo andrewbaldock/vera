@@ -325,7 +325,10 @@ function ReviewShell({
           id={DOCUMENT_PANEL_ID}
           tabIndex={-1}
           className={cn(
-            'flex min-h-0 w-full flex-col lg:w-auto lg:flex-1',
+            // min-w-0 all the way down, or a zoomed page pushes this panel
+            // wider instead of scrolling inside it: a flex item defaults to
+            // min-width:auto and will happily grow past its container.
+            'flex min-h-0 w-full min-w-0 flex-col lg:w-auto lg:flex-1',
             tab !== 'document' && 'max-lg:hidden',
           )}
         >
@@ -391,11 +394,13 @@ function ReviewShell({
               'h-12 w-4 items-center justify-center rounded-l-md border border-r-0 bg-card text-muted-foreground shadow-md transition-colors',
               'hover:w-5 hover:bg-accent hover:text-foreground active:bg-accent',
               'focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none',
-              // The tab stays small; the target does not. Opened out to the
-              // left only, over the document, and only for a finger — under a
-              // cursor it would sit 24px over the page and take its clicks.
+              // The tab stays small; the target does not. 16px of tab plus
+              // 28px of zone is the 44px minimum the rest of this layout is
+              // held to. Opened out to the left only, over the document, and
+              // only for a finger — under a cursor it would sit there and take
+              // the page's clicks.
               "after:absolute after:inset-y-0 after:right-0 after:content-['']",
-              'pointer-coarse:after:-left-6 pointer-coarse:after:-top-3 pointer-coarse:after:-bottom-3',
+              'pointer-coarse:after:-left-7 pointer-coarse:after:-top-3 pointer-coarse:after:-bottom-3',
             )}
           >
             <PanelLeftOpen className="size-3" aria-hidden />

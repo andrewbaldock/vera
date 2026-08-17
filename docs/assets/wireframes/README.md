@@ -32,4 +32,4 @@ The final implementation may differ. The sketches record intent, not a spec.
   marked with a colored bar per issue on that page.
 - **A checkbox per issue:** the user's private notepad, never an input to `canSubmit`.
 
-Reasoning for each of these is in [`../DESIGN.md`](../DESIGN.md).
+Reasoning for each of these is in [`02-design.md`](../../02-design.md).

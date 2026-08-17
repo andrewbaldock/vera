@@ -18,6 +18,17 @@ export const SEVERITY_COLOR: Record<Severity, string> = {
 }
 
 /**
+ * The same fills as SVG paint, for the shape glyphs. Tailwind's `bg-` and
+ * `fill-` are different properties, so the mapping has to exist twice even
+ * though the token behind it is one.
+ */
+export const SEVERITY_FILL: Record<Severity, string> = {
+  critical: 'fill-severity-critical',
+  major: 'fill-severity-major',
+  minor: 'fill-severity-minor',
+}
+
+/**
  * Text color, separate from the fill. The dot colors are picked to read as marks
  * at 8px; reusing them for 12px type fails contrast, the amber by a mile, so
  * severity as a *word* gets its own darkened token.

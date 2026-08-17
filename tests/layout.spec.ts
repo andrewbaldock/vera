@@ -127,7 +127,7 @@ for (const viewport of VIEWPORTS) {
 
       // One in the header for the full shape, one in the bottom bar for the
       // compact one. Never both, never neither: this is the control the whole
-      // page exists to gate.
+      // page exists to protect.
       const visible = await primaryAction(page).filter({ visible: true }).all()
       expect(visible).toHaveLength(1)
 

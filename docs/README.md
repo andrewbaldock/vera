@@ -9,7 +9,7 @@
 
 ## Status
 
-These files are a **template being filled in**. The prose they replace is parked in [`../OLDDOCS/`](../OLDDOCS/) — source material to rewrite from, not to copy.
+Nine documents in reading order, plus the decision log. They replace the four long files the first build shipped with, which are in the git history.
 
 ---
 

@@ -1,10 +1,10 @@
 import { test, expect, type Page } from '@playwright/test'
 
 /**
- * The gate: acceptance criteria #2 and #3. Both halves are tested, because a
+ * The submit rule: acceptance criteria #2 and #3. Both halves are tested, because a
  * build that can only demonstrate the blocked branch proves half the rule.
  * `?v=3` loads the same document re-uploaded with the blockers resolved; the
- * gate itself is unchanged, it just has different issues to read.
+ * rule itself is unchanged, it just has different issues to read.
  */
 
 const BLOCKED = '/reviews/souj5sd12c8a3f'
