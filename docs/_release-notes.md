@@ -66,6 +66,7 @@ something worth looking at specifically.
 
 ## If you are also telling someone
 
+
 Six lines and a link. Say what prompted it, what they would notice, and anything worth
 pointing at — then the URL and the notes. No ask, no apology for the previous version:
 post-release improvement is normal work, and framing it as a fix to something embarrassing
