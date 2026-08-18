@@ -927,3 +927,10 @@ That regrouping also moved the detail phrase out of second place among the parag
 The comment above that effect claimed the column was "measured before paint, so there is no frame at the wrong size". A `ResizeObserver` delivers its first observation asynchronously, so this was never true of the code beneath it; the effect now takes its own synchronous reading first, and the sentence is.
 
 60 consecutive runs with retries off, across both engines, after having been 8-in-30.
+
+**The same test bug was in `panels.spec.ts`, and was left there.** It reads the strip the same way, so CI reported it flaky on the very next run — a fix applied where the failure happened to surface rather than where the pattern lived. Both specs now pick the list with a size in it, and a sweep confirms no other spec measures the strip.
+
+Two further rules came out of that, both in `tests/panels.spec.ts`:
+
+- **A baseline is waited for, not timed.** The reload test compared a width read the instant a drag returned against the width restored after a reload. It now waits for the debounced record to be written *before* reading the baseline: the record is written from the same state that sizes the panels, so a landed write is proof the drag has been applied. That is a fact about the app rather than a guess about how long a frame takes. This test was flaky before any of this work, on `539c9dc`.
+- **A settled measurement is three identical reads, not two.** Two consecutive polls can both land before a re-render has started, which settles on the value the gesture was about to replace. The budget is 20s, because a drag re-renders every page image in the strip and pdf.js is doing that on a machine already running the rest of the suite.
