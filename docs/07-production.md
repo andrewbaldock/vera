@@ -113,6 +113,21 @@ submitted with which minor findings accepted as-is.** It is also why the reviewe
 separate API from the review: different owners, different write permissions, different audit
 requirements.
 
+### Reporting and export
+
+**A whole dimension this build does not have.** The roadmap describes a printable findings report
+built the cheap way — a print stylesheet and the browser's *Save as PDF*. That is the right first
+version and the wrong permanent one, because of what the artifact becomes the moment it leaves
+the screen.
+
+| | Why it matters here |
+|---|---|
+| **Server-side generation** | A report a lender files is evidence. Produced by the reviewer's browser it carries whatever that browser did — a stale tab, a zoom level, an extension — and no two reviewers produce the same bytes from the same review. Generated server-side from the stored review, it is reproducible and attributable. |
+| **The export is a disclosure event** | The output is borrower NPI in a file that leaves the system, so it belongs in the audit trail below: who exported which review, when, and at what version. |
+| **Version and provenance on the page** | A findings report with no document version, no generated-at and no reviewer on it cannot be told apart from the report for v2 when v3 is the live one. |
+| **Determinism** | Two exports of an unchanged review must match. Client rendering makes that a property of the client. |
+| **Accessibility of the artifact** | A PDF of rastered pages is an image to a screen reader. Tagged output, or a text alternative alongside it, is the difference between a report and a picture of one. |
+
 ### Web application security
 
 | | Why it matters here |

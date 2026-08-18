@@ -70,3 +70,32 @@ In the order I would actually do them.
    actually reads is not.
 2. **A `/dev` route** — swap the PDF and edit the mock payload, so other document-and-report
    combinations can be tried without a rebuild.
+3. **Export the findings as a printable report.** The app's whole subject is a PDF report and it
+   cannot produce one. A reviewer who wants the findings on paper, or attached to the loan file,
+   has nothing but a screenshot.
+
+   **The shape.** One row per page *that has a finding* — the page rastered on the left, its
+   findings listed on the right. On the supplied fixture that is 20 rows, not 34: 25 issues fall
+   on 20 distinct pages, and the 14 clean pages say nothing worth a row. Numbering comes from
+   [`numberByPage`](../src/lib/review.ts) and the grouping from `groupByPage`, so the report and
+   the list agree about what `#12` refers to. `Issue` carries a page number and no coordinates,
+   so a page is the finest location the report can honestly claim — nothing is drawn inside one.
+
+   **How.** A print stylesheet and `window.print()`, reached from the user menu. pdf.js is
+   already in the bundle and already renders a page to a canvas, so this needs no new dependency;
+   the browser's own *Save as PDF* does the export. The cost is that the browser owns the
+   filename and the page furniture, which is the trade being accepted rather than an oversight.
+
+   Four things that decide whether it works:
+
+   - **Canvas count.** The viewer windows canvases on purpose, so 34 pages never cost 34
+     canvases. A print view mounting 20 at once walks straight into what that decision avoids —
+     they have to be rendered sequentially, at a modest scale, and released.
+   - **Print colour is dropped by default.** Severity is carried by colour, so without
+     `print-color-adjust: exact` the report prints as grey rows and loses the one distinction it
+     exists to show.
+   - **Resolution.** Paper is ~300dpi against a 96dpi canvas. pdf.js has to render at 2–3× and be
+     constrained by CSS, or the page images arrive as the smears the strip deliberately settles
+     for.
+   - **Page breaks.** `break-inside: avoid` per row, or a page image is separated from its own
+     findings.
