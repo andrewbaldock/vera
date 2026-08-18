@@ -12,6 +12,7 @@ jobs:
   check:
     name: lint · types · unit
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
@@ -35,6 +36,11 @@ jobs:
   browser:
     name: layout · a11y · viewer
     runs-on: ubuntu-latest
+    # This job runs in about eight minutes. The ceiling is here because the
+    # default is six hours: a runner once wedged inside `playwright install`
+    # and sat there for three and a half hours before GitHub declared it dead,
+    # having run no tests at all. A hang should read as a failure quickly.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
@@ -67,6 +73,7 @@ jobs:
     needs: [check, browser]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
