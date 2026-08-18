@@ -94,6 +94,7 @@ answer were always obvious.
 72. [A scroll container clips the ring you hang outside it](#72-a-scroll-container-clips-the-ring-you-hang-outside-it)
 73. [The severity chips shrink before they wrap, and they measure the panel](#73-the-severity-chips-shrink-before-they-wrap-and-they-measure-the-panel)
 74. [The verdict badge is part of the headline, not a third thing beside it](#74-the-verdict-badge-is-part-of-the-headline-not-a-third-thing-beside-it)
+75. [The thumb strip's flaky test was three real bugs](#75-the-thumb-strips-flaky-test-was-three-real-bugs)
 
 ---
 
@@ -902,3 +903,27 @@ The row that [71](#71-the-verdict-is-one-sentence-and-never-breaks-mid-phrase) m
 Grouping the badge with the headline gives the row back the two units the decision assumed it had. Asserted at six widths from 1600 down to 320 by whether the two boxes overlap vertically at all, which is the whole claim.
 
 That regrouping also moved the detail phrase out of second place among the paragraph's spans, where a test was locating it by index. It is found by its words now.
+
+---
+
+### 75. The thumb strip's flaky test was three real bugs
+
+**2026-08-17**
+
+**Decided:** **Fix what the flake was reporting**, rather than let it keep costing retries
+
+**Over:** Retrying it; loosening the assertion; calling it a slow-runner artifact
+
+`tests/uiscale.spec.ts` had been failing intermittently in CI on `expect(before.scrolls).toBe(true)` and on a segment height of 0. It failed 8 times in 30 local runs once the machine was loaded, which is what made it reproducible enough to chase. It was three separate faults wearing one costume.
+
+**The list was not being constrained, so it never scrolled.** react-pdf renders its `loading` / `error` / `noData` slot inside a `.react-pdf__message` div of its own. `display: contents` on `<Document>` removed one wrapper from the layout and left that one standing — a block box with `min-height: auto` between the strip and its list. The list is `flex-1`, so it sized against *that* instead of against the strip and grew to its content: 4333px of pages in an 851px column, running off the bottom with nothing to scroll. It corrected itself the moment the file parsed and the wrapper went away, which is why it read as flakiness rather than as a layout bug. Anyone on a slow connection was looking at it for the whole parse.
+
+**The first fix for that silently did nothing.** Written as `[&_.react-pdf__message]:contents`, it compiled to `.react-pdf message` — a descendant selector matching nothing — because Tailwind reads a bare `_` in an arbitrary value as a space. The underscores need escaping. It looked right in the source, passed review by eye, and changed no pixels. Check the built CSS.
+
+**The test was measuring a hidden element.** When the raster chunk suspends, React keeps the already-mounted subtree in the DOM and hides it with an inline `display: none !important`, rendering the fallback beside it. So the strip holds two `<ol>`s and the hidden one is first, which is the one `querySelector('ol')` returns. A hidden element reports a segment height of 0 and a list that does not scroll — both true of it, neither true of the strip. It now picks the list with a height.
+
+**And a zero measurement could latch.** `scale` falls to 0 whenever the observed column height is 0, and because the list is `flex-1` its own box then never changes again, so no further `ResizeObserver` callback ever arrives to undo it. A transient zero was permanent. Zeros are now ignored, which is also the right answer when the compact shape takes the strip out of the layout entirely.
+
+The comment above that effect claimed the column was "measured before paint, so there is no frame at the wrong size". A `ResizeObserver` delivers its first observation asynchronously, so this was never true of the code beneath it; the effect now takes its own synchronous reading first, and the sentence is.
+
+60 consecutive runs with retries off, across both engines, after having been 8-in-30.

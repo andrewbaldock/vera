@@ -45,7 +45,26 @@ export function RasterDocument({
       loading={fallback}
       error={fallback}
       noData={fallback}
-      className="contents"
+      /*
+        Both wrappers taken out of the layout, not just this one. react-pdf
+        renders the three slots above inside a `.react-pdf__message` div of its
+        own, so neutralizing only `<Document>` left that one standing: a block
+        box with `min-height: auto` between the strip and its list.
+
+        The list is `flex-1` and was sized against it rather than against the
+        strip, so for the whole parse window it grew to its content — 4333px of
+        pages inside an 851px column, running off the bottom with nothing to
+        scroll. It snapped to the right height once the file parsed and the
+        message wrapper went away, which is why it read as an intermittent
+        "the strip does not scroll" rather than as a layout bug.
+
+        The underscores are escaped because Tailwind reads a bare `_` in an
+        arbitrary value as a space. Unescaped, this compiles to
+        `.react-pdf message` — a descendant selector matching nothing, which
+        is a fix that looks right in the source and does nothing at all. Check
+        the built CSS, not this line.
+      */
+      className="contents [&_.react-pdf\_\_message]:contents"
     >
       {children}
     </Document>

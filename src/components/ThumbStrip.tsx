@@ -134,15 +134,51 @@ export function ThumbStrip({
   useLayoutEffect(() => {
     const list = listElement
     if (!list) return
-    const observer = new ResizeObserver(([entry]) => {
-      const { width, height } = entry.contentRect
+
+    function take(width: number, height: number) {
+      /**
+       * A zero is the column being reflowed or hidden, never a column with no
+       * room in it, and taking one **latches**: `scale` falls to zero, every
+       * segment collapses to nothing, and because this list is `flex-1` its own
+       * box never changes again — so no further callback ever arrives to undo
+       * it. The strip is left with 34 segments of no height and no way back.
+       *
+       * That is what blanked the strip when the interface size went to Large:
+       * the reflow reported a zero on the way through, and the zero stuck.
+       *
+       * Keeping the last good measurement is also right when the strip is
+       * genuinely hidden — the compact shape takes it out of the layout, and it
+       * re-measures for itself when it comes back.
+       */
+      if (width === 0 || height === 0) return
       const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
       setColumn((previous) =>
         previous.width === width && previous.height === height && previous.rem === rem
           ? previous
           : { width, height, rem },
       )
-    })
+    }
+
+    /**
+     * Read once, here, rather than waiting for the observer to deliver the same
+     * number. A `ResizeObserver` reports its first observation *asynchronously*,
+     * so the sentence above this effect was not true of the code under it: the
+     * strip painted a frame with `column` still at zero, which is a scale of
+     * zero, which is 34 segments of no height. Brief, and long enough to be
+     * caught — it is what made the interface-size test flaky under load.
+     *
+     * `clientWidth`/`clientHeight` include padding and `contentRect` does not,
+     * so the padding comes back off to keep the two paths reporting the same
+     * column.
+     */
+    const style = getComputedStyle(list)
+    const inline = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight)
+    const block = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom)
+    take(list.clientWidth - inline, list.clientHeight - block)
+
+    const observer = new ResizeObserver(([entry]) =>
+      take(entry.contentRect.width, entry.contentRect.height),
+    )
     observer.observe(list)
     return () => observer.disconnect()
   }, [listElement])

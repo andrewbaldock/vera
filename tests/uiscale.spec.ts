@@ -100,7 +100,15 @@ test.describe('the interface size setting', () => {
 
     const measure = () =>
       strip.evaluate((el) => {
-        const list = el.querySelector('ol')!
+        // The *rendered* list, not merely the first one in the DOM. When the
+        // raster chunk suspends, React keeps the already-mounted copy mounted
+        // and hides it with an inline `display: none !important`, rendering the
+        // fallback list beside it — so there are two `<ol>`s, and the hidden one
+        // comes first. Measuring that one reports a segment height of 0 and a
+        // list that does not scroll, which is a fact about a hidden element
+        // rather than about this strip.
+        const list = [...el.querySelectorAll('ol')].find((ol) => ol.clientHeight > 0)
+        if (!list) return { segmentHeight: 0, scrolls: false, numberPx: 0, ready: false }
         const segment = list.children[0] as HTMLElement
         // Selected by the inline size the component sets, not by being the
         // first span in the list: the segment holds other spans, and which one
@@ -110,8 +118,14 @@ test.describe('the interface size setting', () => {
           segmentHeight: segment.getBoundingClientRect().height,
           scrolls: list.scrollHeight > list.clientHeight,
           numberPx: number ? parseFloat(number.style.fontSize) : 0,
+          ready: true,
         }
       })
+
+    // The strip sizes itself from a measurement of its own column, so settle on
+    // a measured strip before reading anything off it. This is a precondition,
+    // not the subject.
+    await expect.poll(async () => (await measure()).ready).toBe(true)
 
     // The default width is past the point where 34 pages fit the column, so the
     // strip scrolls from the start rather than shrinking them to a thread.
@@ -123,8 +137,10 @@ test.describe('the interface size setting', () => {
     await expect.poll(async () => (await measure()).numberPx).toBeGreaterThan(before.numberPx)
 
     // The segments do not move with it: their size comes from the strip's
-    // width, and the reader sets that by dragging.
-    expect((await measure()).segmentHeight).toBe(before.segmentHeight)
+    // width, and the reader sets that by dragging. Polled rather than sampled
+    // once — the size change reflows the strip, and the claim is about where it
+    // lands, not about every frame on the way there.
+    await expect.poll(async () => (await measure()).segmentHeight).toBe(before.segmentHeight)
   })
 
   test('the document does not scale with the interface', async ({ page }) => {
